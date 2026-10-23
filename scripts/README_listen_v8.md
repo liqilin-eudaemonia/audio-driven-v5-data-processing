@@ -19,7 +19,7 @@
 
 **解码并发实测：** 同一源视频的 60 秒区间，在单卡 4/6/8 路并发下分别达到 11.52/14.77/17.16 源秒/墙钟秒，全部成功；6 路比 4 路约提高 28%。8 路显存消耗更高，因此正式先采用 6 路，模型仍每卡 4 个，并保持 12 GiB 余量保护。这是单卡局部测试，不代表全量整体加速比。
 
-**首批写盘修复：** 少数回收切片的 `extended_for_completeness` 来自 NumPy 布尔值，标准 JSON 无法直接编码。全量入口新增仅处理 NumPy 标量的编码器，布尔/整数/浮点保持对应 JSON 类型，未知类型仍报错；没有改动任何切点或音质判断。旧契约保存在 `cluster/maintenance/serialization_fix/contract_before.json`，新契约记录 `numpy-json-scalars-1` 执行补丁。暂停新认领、完成在途来源后恢复，旧结果保留，失败来源重试；原始错误日志留作审计，最终错误数排除已成功重试的来源。新增序列化回归测试通过。
+**首批写盘修复：** 少数回收切片的 `extended_for_completeness` 来自 NumPy 布尔值，标准 JSON 无法直接编码。全量入口新增仅处理 NumPy 标量的编码器，布尔/整数/浮点保持对应 JSON 类型，未知类型仍报错；没有改动任何切点或音质判断。旧契约保存在 `cluster/maintenance/serialization_fix/contract_before.json`，新契约记录 `numpy-json-scalars-1` 执行补丁。暂停新认领、完成在途来源后恢复，旧结果保留，失败来源重试；原始错误日志留作审计，最终错误数排除已成功重试的来源。新增序列化回归测试通过。2026-10-23 10:47:13 UTC 已恢复三机 96 进程，首轮 9 个写盘失败来源均已成功重试；共 36 项相关测试通过，恢复证据见 `experiments/p3_listen_local_full_20261023/resume_verification.json`。
 
 使用原项目 Python 环境，项目根目录运行：
 
