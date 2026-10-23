@@ -2,6 +2,8 @@
 
 ## 提速调度更新（2026-10-23 06:19 UTC）
 
+**首轮实测结论：** 三机 4×1 合计约 325.8 对/分钟，相比此前约 163.4 对/分钟约提高一倍。node12/node17 的 4×2 准备并发测试因 CPU 持续超过 92% 分别于 06:27:13 / 06:27:23 UTC 回退为 4×1，模型进程没有降为 1；node4 暂无足够 CPU 余量测试 4×2。当前维持每卡 4 模型进程、每进程 1 路准备，后续仍由持续负载保护控制。[实测结论](../data_corpora/seamless_listen_v8_audio_final_full/cluster/governor/tuning_conclusion.json)。实现已备份到 GitHub [71cdbd0](https://github.com/liqilin-eudaemonia/audio-driven-v5-data-processing/commit/71cdbd023b07740e51ad8901860277f6deb9b8d5)。
+
 用户要求最大限度提速。发现旧调度器对单次 CPU > 80% 的采样直接从每卡 4 进程降到 1，且不自动恢复；实际每卡 4 进程下 CPU 多数在 70%–80%，没有明显 I/O 等待，三机仍有其他任务占用资源。因此新增 [独立调度器](run_listen_v8_audio_governor.py)，只替换原 coordinator，保留原 node supervisor、worker、共享队列、已完成结果和切分/音质契约。
 
 并发上限仍为每卡 4 个模型进程、每进程 2 路准备，即三机最多 96 个模型进程。先运行 4×1，预热后每台机器观察约 4 分钟的 pair 吞吐；资源有余量时试 4×2，若实测增益不足 5% 则恢复 4×1。随机来源不同，因此这是生产负载下的观测速率，不是相同输入的严格加速比。
