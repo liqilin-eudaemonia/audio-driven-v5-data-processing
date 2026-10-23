@@ -1,5 +1,72 @@
 # V8 倾听数据处理代码导航
 
+## 完整源视频全量运行（2026-10-23）
+
+用户已认可两条长视频与前后 3 秒边界审核，授权备份后全量处理 Seamless。新入口 [run_listen_local_full.py](run_listen_local_full.py)，版本 `full-source-local-recovery-crop-statistics-1`。使用 [listen_local_recovery.py](listen_local_recovery.py) 的已审完整源视频扫描；音质继续使用 `v8-audio-severity-review-2`，不新增人工放行，不按人脸大小排除。
+
+完整目录含 64,087 对来源，保持已有 train/dev/test 和身份隔离。旧全量错误也重新尝试。局部音质问题只截断有证据的区间，新子片段重新质检；未知/全局问题不擅自放行。被子片段替代的父候选保存于 `superseded_attempts`，最终各池与清单只统计互不重叠的终端片段，避免重复计算。每个来源的 `coverage` 同时记录相对旧版增加和减少的时间区间；净增长不等于所有旧切片原样保留。
+
+输出独立保存于 `data_corpora/seamless_listen_local_full/`：
+
+- `contract.json` 固定代码、反馈、目录及集群配置哈希；`results/` 保存候选与完整音质证据，`audit/` 保存原视频角色区间、切镜、未覆盖原因。
+- `screening_summary.json` 为各 split / admission pool / 音质池进度和时长；`errors/` 是处理错误，不能视作音质不合格；来源异常另计。
+- `face_size_distribution.json` 统计原生面部关键点宽高、短边及有效帧；`crop_size_distribution.json` 统计向肩部扩展的固定参考方框边长、框内面部面积占比和缩放到 512 后的面部高度。speaker/listener 分开统计，数量和时长分别加权；缺失/异常框单列，仍参与音质结果。
+- `crop_proposals` 是统计和构图参考，不是最终裁框。预计头部放不下也只标记；没有尺寸准入、最终裁剪或训练媒体导出。统计每约 5 分钟更新，`final=false` 为未完成快照。
+
+三机配置 [p3_listen_local_full_cluster.json](../configs/p3_listen_local_full_cluster.json)：24 卡共最多 96 个模型进程、192 路准备，每卡同时最多 4 路镜头解码。独立共享队列及逐对原子结果支持恢复。复用持续负载 governor，GPU 空闲显存保留至少 12 GiB、系统空闲内存至少 10%，持续 CPU 压力优先减少准备并发；不停止其他任务。活跃 GPU 进程数、完成数、控制档位以 `cluster/nodes/`、`runtime.json` 为准，GPU 总利用率包含其他任务，不能全部归为此作业。
+
+[listen_full_source_runtime.py](listen_full_source_runtime.py) 仅加速执行：NVDEC 解码后仍采用原软件缩放及 scene > 0.35，解码不支持则明确退回原 CPU 路径。170 秒样本的 5,100 帧缩放输出逐帧 MD5 一致，单轨耗时 34.79→23.10 秒；这不是全量整体加速比。镜头结果按媒体位置、文件 stat 与算法版本缓存。真实两条审核样本没有硬切，镜头切点两侧继续提取的验证来自合成硬切测试，尚不能宣称所有真实切镜类型均已验证。
+
+使用原项目 Python 环境，项目根目录运行：
+
+```bash
+python scripts/run_listen_local_full.py verify
+python scripts/run_listen_local_full.py report
+# 首次运行 init 后 detach；已启动时勿重复启动
+python scripts/run_listen_local_full.py init
+python scripts/run_listen_local_full.py detach
+# 中断后使用 resume，先检查三机无本作业活跃进程，保留已有结果、重新认领未完成来源
+python scripts/run_listen_local_full.py resume
+```
+
+相关验证：新全量/切分 16 项、无视觉准入/人脸统计 7 项、持续负载调度 12 项测试通过。正式入口另回归已审核的两条原视频，并用未参与审核来源实际运行音质模型；证据保存于 `experiments/p3_listen_local_full_20261023/`。历史每分钟 650 对是旧候选流程，不能当作此版重新扫描全视频的速度预测。
+
+## 完整源视频连续提取与审核（2026-10-23）
+
+**切分边界上下文：** 逐段审核页默认展示每段起点前 3 秒至终点后 3 秒。原片起止时间、角色、判定和编号不变；源首尾不足 3 秒时明确展示实际长度。上下文 MP4 烧录“切分前上下文 / 切分范围内 / 切分后上下文”、切入切出提示及范围条，下载后仍可辨认边界。页面另有可点击的起止标记、查看起点/终点前 3 秒按钮、三种音轨，以及“仅原切片”对照。上下文不计入该片段时长，也不继承片段音质结论；角色名称按待审片段固定，前后文可能换说话人。入口：[extend_listen_clip_context.py](extend_listen_clip_context.py)，复用源 WAV 按采样点取上下文，原切片文件不变，验证记录见预览目录的 `context_export_summary.json` 与 `context_validation.json`。重新运行独立片段导出入口时也会自动生成上下文。
+
+**逐段独立导出：** 按用户要求，将本节两条源会话的全部 33 个质检候选单独导出，[打开逐段审核页](http://127.0.0.1:8875/listen_full_source_clips/)。第一组 20 段（19 段音质通过），第二组 13 段（9 段通过）；包含被拒绝的父候选和回收子片段，重叠不重复计入可用时长。每段提供双人完整画面、参考框、双音轨/speaker/listener 三种独立 MP4，以及从已校验归一化源 WAV 按样本精确截取的两条 PCM WAV；页面可按组下载 ZIP、记录和导出反馈。视频使用已有连续审核合成画面进行准确寻址重编码，属于审核预览，不是最终裁剪训练媒体；原切点、筛选结论与波形处理均未修改。导出入口：[export_listen_full_source_clips.py](export_listen_full_source_clips.py)，输出目录 `data_previews/seamless_listen_full_source_clips/`，逐文件音视频时长、解码及哈希检查见该目录的 `clips.json`，输入结果哈希与导出汇总见 `export_summary.json`。
+
+用户指出：一个原始长视频应沿完整时间线生成多个小 pair，局部接话、镜头切换或音质问题不能导致其前后都不再提取；审核必须保留原时间线，展示未提取区间。此修订独立于冻结的 `v8-audio-final-full-no-face-filter-1` 全量运行，先提供两条实际原数据验收，不自动替换全量队列。
+
+- 算法：[listen_local_recovery.py](listen_local_recovery.py)，版本 `local-listening-recovery-1`。扫描源视频全部逐词时间；主发言方为 speaker，另一方为 listener。短附和不抢占主发言角色；双方实质性发言同时出现时仅局部断开。旧 `track_floors` 只保留诊断用途，不再控制候选提名。
+- 两轨视频逐帧检测硬切（缩放分析宽度 320，FFmpeg scene > 0.35），将两轨切点合并；每个切点前后都进入后续提取，候选不能跨切点。该检测不是镜头真值，闪光可误报，渐变可漏检；本次两条真实原片均未检出切点。专门的三镜头合成视频测试验证 2/4 秒硬切检出及两侧继续分段，不能代替真实切镜验收。
+- 优先完整句界，其次自然停顿/标点，再其次完整词之间。长句可产生多个 2–11.95 秒子片段；组合失败后尝试更早的终点。句内切分显式标记 `recovered_partial_sentence`，仍做原始 PCM 双轨声学切点检查，不截断已标注的词。此处是根据用户新要求对旧“完整句优先且不可拆”策略的明确调整。
+- 对已定位的音质事件，按源时间加 150ms 保护区后局部避开。最终分池未带出的 `local_match_unresolved` 窗口从 QC3 的 `possible_local_speaker_match` 事件恢复；参考匹配原因从 QC4 的完整扫描 `suspicious` 窗口恢复。所有有效拒绝/复核原因都必须能定位，才允许回收；一个局部原因不能覆盖另一个全局原因。持续底噪、无法定位的音质原因、人工拒绝和任务 hold 不自动放行。音质证据为片段相对时间，使用时必须加片段起点；原角色的拒绝不直接继承给交换后的角色。
+- 每个新切分重新跑冻结 QC3/QC4，并按已验收音质规则分池；只有角色、来源、精确区间及归一化音频 SHA 均一致才可复用 QC。新切片不继承父片段的音质失败结论；新的局部失败可继续产生子片段并重新质检，最多 6 层，达到上限记录为未通过而不是自动放行。
+- 入口：[review_listen_full_source.py](review_listen_full_source.py)。默认处理 `naturalistic_V02_S3610_I00000088`（170 秒）及 `improvised_V01_S0122_I00000125`（196 秒），可重复 `--pair` 指定其他完整源会话；`--prepare-only` 仅做源扫描和候选规划。复用原目录只读来源与响度归一化，输出到 `experiments/p3_listen_full_source_recovery_20261023/`，不修改旧结果。
+- 展示：[listen_full_source_review.html](listen_full_source_review.html)，[打开审核页](http://127.0.0.1:8875/listen_full_source/)。整条 A/B 原视频同步播放，A/B 音轨保持分离，可切换当前 speaker/listener 或混音；旧结果、新完整覆盖、所有小 pair 三条时间轴均可定位。无输出区间也保留在原视频与表格中。所有时间覆盖区间合计必须等于完整源时长，不重叠、不留未解释的时间洞。片段结束不会停止原视频播放。
+- 蓝色裁框为当前片段的固定头肩构图提案；未提取处采用 10 秒参考窗口的虚线框。显示脸占裁框面积及缩放到 512 后的人脸高度，缺失则明确未测量；不按框大小或关键点有效率筛数据。下载的视频保留原时间线、完整双画面和双通道音频；动态框和边界在页面叠加，可保存当前标注截图、按原时间导出反馈。
+
+本次两条选择是定位问题的诊断样本，不是随机产量估计：
+
+| 原始会话 | 旧音质通过 | 新音质通过 | 新覆盖 / 旧覆盖不再保留 |
+|---|---:|---:|---:|
+| naturalistic_V02_S3610_I00000088 | 8 段 / 53.519 秒 | 19 段 / 96.826 秒 | +43.4375 / −0.1305 秒 |
+| improvised_V01_S0122_I00000125 | 3 段 / 18.861 秒 | 9 段 / 48.428 秒 | +29.6070 / −0.0400 秒 |
+
+第二条 9.712–19.179 秒已重新形成候选并独立质检，但父片段仍被音质规则拒绝；补齐局部证据后，进一步回收的 11.373–13.960 秒子片段重新通过音质。不能把整个父片段算作新增合格时长。28 段通过候选中 14 段为句内切分，需重点听切点自然度。源 ASR/角色归属仍可能错误；VAD 与关键点不是真人发言或真实可见性的充分证明。通过音质也不等于人工或训练准入。
+
+运行方式（在项目根目录，使用已安装项目依赖的环境）：
+
+```bash
+PYTHONPATH=src OPENBLAS_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=7 \
+  /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python \
+  scripts/review_listen_full_source.py
+```
+
+资源只增加 1 个模型进程；运行前应确认所选卡留有模型加载与原任务保护所需余量。11 项新增测试覆盖局部区间差集、角色切换、镜头两侧连续提取、真实 PCM 切点、真实 FFmpeg 硬切检测、长句拆分、组合失败重试、音质相对时间偏移、分池遗漏窗口恢复与人工/全局阻断，原无视觉筛选及缓存回归 7 项也通过。浏览器检查入口：[check_listen_full_source_review.py](check_listen_full_source_review.py)，依赖此前安装在 `/tmp/v8_browser_deps` 的 Playwright 与 `/tmp/v8_browser_libs` 的系统库。
+
 ## 二次提速与故障恢复（2026-10-23 08:00 UTC）
 
 当前使用 `sustained-pressure-governor-3`，三机每卡 4 模型进程、每进程 2 路准备；GPU 模型实例数和 batch16 不变。机器上的其他任务转为较低 CPU / 较高显存占用后，原先 CPU 受限的 4×2 档位已有余量。07:59:50 UTC 的最近 5 分钟实测约 647 对/分钟（3 分钟约 669），当时完成 31,835 对；这是当前资源条件下的观测速率，不是相同输入的严格加速比。
