@@ -1,5 +1,7 @@
 # audio-driven-v5 总索引
 
+**Seamless 运行恢复（2026-10-23）：** 检查发现全量曾因 node4 一次 GPU 监控查询超时停止，实际已完成 475 对。已修复短暂遥测超时处理，新增有资源检查和次数上限的自动恢复；切分/音质/裁框只统计规则不变。[故障与修复说明](scripts/README_listen_v8.md#监控超时修复与自动恢复2026-10-23)、[实时状态](data_corpora/seamless_listen_local_full/runtime.json)、[自动恢复监控](data_corpora/seamless_listen_local_full/cluster/watchdog/status.json)。以下完成数量和启动记录为历史快照。
+
 **当前 Seamless 全量版本（2026-10-23 10:35:55 UTC 启动）：** 已按用户验收的完整源视频逻辑启动独立全量入口，覆盖 64,087 对来源；音质基线保持 `v8-audio-severity-review-2`，裁框只统计、不筛选。三机 24 卡共享队列，每卡最多 4 个模型进程、每进程 2 路准备；逐帧镜头扫描使用已验证的 NVDEC 解码和原缩放算法。详见 [全量入口与恢复说明](scripts/README_listen_v8.md#完整源视频全量运行2026-10-23)、[运行状态](data_corpora/seamless_listen_local_full/runtime.json)、[音质进度](data_corpora/seamless_listen_local_full/screening_summary.json)、[原生人脸分布](data_corpora/seamless_listen_local_full/face_size_distribution.json)、[头肩参考框分布](data_corpora/seamless_listen_local_full/crop_size_distribution.json)。[GitHub 当前代码备份 `01318e6`](https://github.com/liqilin-eudaemonia/audio-driven-v5-data-processing/commit/01318e690928543a917a8ebaf1a479b3fbeb37b5)。以下旧全量状态为历史记录；新运行不会覆盖旧结果。
 
 **RealTalk 全量切分与人脸尺寸统计（2026-10-23）：** [处理规则与代码](../../realtalk_processing/full_20261023/README.md)、[可恢复备份说明](../audio-driven-v5-data-processing/realtalk/README.md)、[GitHub 备份目录](https://github.com/liqilin-eudaemonia/audio-driven-v5-data-processing/tree/main/realtalk)、[本地统计页](http://127.0.0.1:8798/)。版本 `realtalk-pairs-10s-max11-v1`：镜头/角色边界两侧分别提取，目标 10 秒、最长 11 秒，尽量沿句末切分且保留短尾段。692 条源视频产生 129,094 个候选 pair、110.7779 小时；仅做全量清单和原生人脸/预裁剪框时长统计，未应用分辨率或音质筛选，未导出全量裁剪视频。

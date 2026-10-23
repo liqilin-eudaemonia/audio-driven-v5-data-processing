@@ -25,6 +25,7 @@ import run_listen_v8_audio_governor as governor_module
 import listen_local_recovery as policy
 import listen_full_source_runtime as acceleration
 import listen_crop_distribution as crops
+import listen_local_health as health
 from p3_listen.common import read, sha
 import numpy as np
 
@@ -71,6 +72,7 @@ def bind():
     baseline.OUT=OUT;baseline.SCHED=SCHED;baseline.SCRIPT=SCRIPT;baseline.REVISION=REVISION
     BASE_BIND()
     cluster.CONFIG=CONFIG;cluster.SCRIPT=SCRIPT;cluster.verify=verify
+    health.install(cluster)
     acceleration.install(OUT/'scene_cache')
     governor_module.run=sys.modules[__name__]
 
@@ -91,7 +93,7 @@ def initialize():
     code=set(read(BASE/'contract.json')['code_sha256'])|{
         'scripts/listen_local_recovery.py','scripts/listen_full_source_runtime.py',
         'scripts/listen_crop_distribution.py','scripts/run_listen_local_full.py',
-        'scripts/run_listen_v8_audio_governor.py'}
+        'scripts/run_listen_v8_audio_governor.py','scripts/listen_local_health.py'}
     write(OUT/'contract.json',dict(revision=REVISION,utc=full.now(),source_pairs=len(rows),
         source_scope=read(OUT/'catalog.json')['scope'],segmentation_revision=policy.REVISION,
         audio_revision=baseline.policy.REVISION,acceleration_revision=acceleration.REVISION,
@@ -281,7 +283,7 @@ def supervise():
                 if complete and all(n['state']=='finished' for n in nodes.values()):break
                 ctrl=cluster.read(SCHED/'control.json');changed=False
                 for name,node in nodes.items():
-                    if node['state']=='finished':continue
+                    if node['state']=='finished' or node.get('telemetry_stale'):continue
                     setting,reasons=governor.consider(name,node,ctrl['nodes'][name],snap['node_counts'].get(name,0),now)
                     if setting:
                         with (SCHED/'governor/events.jsonl').open('a') as f:f.write(json.dumps(dict(utc=full.now(),node=name,previous=ctrl['nodes'][name],setting=setting,reasons=reasons))+'\n')
@@ -301,8 +303,11 @@ def supervise():
             if reporter:reporter.wait()
             for p in (OUT/'results').glob('*.json'):
                 if not (OUT/'summaries'/p.name).exists():write_pair_summary(read(p))
-            summary=report(True)
+            summary=report(False)
+            if summary['pending_pairs'] and cluster.read(SCHED/'control.json').get('stop'):
+                write(OUT/'runtime.json',dict(state='stopped',utc=full.now(),summary=summary,workers=0,training_started=False));return
             assert summary['pending_pairs']==0,'Unaccounted claims; resume required'
+            summary=report(True)
             write(OUT/'runtime.json',dict(state='finished_with_errors' if summary['error_pairs'] else 'finished',utc=full.now(),summary=summary,workers=0,training_started=False))
         except BaseException as e:
             ctrl=cluster.read(SCHED/'control.json');ctrl['stop']=True;write(SCHED/'control.json',ctrl)
@@ -318,14 +323,7 @@ def detach():
 
 def resume():
     verify();bind()
-    code="""import psutil,json
-script=%r
-active=[]
-for p in psutil.process_iter(['pid','cmdline']):
-    args=p.info['cmdline'] or []
-    if script in args and any(x in args for x in ['worker','launch-node','supervise']):active.append(p.pid)
-print(json.dumps(active))
-""" % str(SCRIPT)
+    code=health.process_probe(SCRIPT)
     for n in cluster.configuration()['nodes']:
         active=json.loads(cluster.ssh(n,[cluster.configuration()['python'],'-c',code]))
         if active:raise RuntimeError('Run-owned processes still active on '+n['name']+': '+str(active))

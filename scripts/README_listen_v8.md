@@ -1,5 +1,15 @@
 # V8 倾听数据处理代码导航
 
+## 监控超时修复与自动恢复（2026-10-23）
+
+全量曾在 10:49 UTC 因 node4 的一次 `nvidia-smi` 超过 15 秒而停止：节点 supervisor 异常退出，总调度随后因心跳超时停止认领。停止后在途任务完成，实际留下 475 对成功结果，没有未解决的数据处理错误；旧汇总停留在 317 对。不能将这一时期描述为持续处理中。
+
+新增 [listen_local_health.py](listen_local_health.py)：监控短暂失败时最多使用 60 秒内的上次资源证据，并明确标记 `telemetry_stale`；此期间调度器不据旧指标升降并发。首次采样最多尝试 3 次；长期无指标仍停止，不无限掩盖 GPU 异常。切分、音质和尺寸统计不变。
+
+独立 watchdog 仅恢复已知心跳/遥测故障；先检查三机无本任务存活进程、每卡可用显存至少 24 GiB、RAM 余量至少 15%，再断点续跑。最多总计 6 次、每 30 分钟 3 次；人工停止、未知处理错误不自动重启，不停止其他作业。状态与错误可在 `data_corpora/seamless_listen_local_full/cluster/watchdog/status.json` 查看；运行 `python scripts/listen_local_health.py detach` 启动，重复启动受文件锁保护。原 475 对结果保留，未完成认领会重试。手工停止全量时，未完成统计保持 `final=false`。
+
+24 项切分/全量/健康监控测试通过，包括 7 项新恢复测试；证据见 `experiments/p3_listen_local_full_20261023/telemetry_fix_validation.json`。原契约和故障快照保存在 `cluster/maintenance/telemetry_timeout/`。
+
 ## 完整源视频全量运行（2026-10-23）
 
 用户已认可两条长视频与前后 3 秒边界审核，授权备份后全量处理 Seamless。代码已推送至 GitHub `0e99354`，2026-10-23 10:35:55 UTC 启动三机队列，已核实三机各 32 个存活工作进程及每卡 4 个绑定。新入口 [run_listen_local_full.py](run_listen_local_full.py)，版本 `full-source-local-recovery-crop-statistics-1`。使用 [listen_local_recovery.py](listen_local_recovery.py) 的已审完整源视频扫描；音质继续使用 `v8-audio-severity-review-2`，不新增人工放行，不按人脸大小排除。
