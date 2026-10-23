@@ -1,5 +1,15 @@
 # V8 倾听数据处理代码导航
 
+## 二次提速与故障恢复（2026-10-23 08:00 UTC）
+
+当前使用 `sustained-pressure-governor-3`，三机每卡 4 模型进程、每进程 2 路准备；GPU 模型实例数和 batch16 不变。机器上的其他任务转为较低 CPU / 较高显存占用后，原先 CPU 受限的 4×2 档位已有余量。07:59:50 UTC 的最近 5 分钟实测约 647 对/分钟（3 分钟约 669），当时完成 31,835 对；这是当前资源条件下的观测速率，不是相同输入的严格加速比。
+
+本次修复了两次调度停止：07:12:52 因节点目录一次列举不完整误报心跳缺失，停前后节点遥测仍正常；07:51:39 因 GPU 空闲略低于旧 16 GiB 预留线触发停止，没有 CUDA OOM。已完成结果保留，并从共享队列恢复。节点读取改为已知节点文件名直接读取、短暂读取失败沿用最近心跳、超过 120 秒才认定实际缺失；已完成节点不要求继续发布心跳。GPU 运行预留调整为 **12 GiB**，持续低余量仍会排空本运行任务；未增加 GPU 进程数或模型批大小。两次停止和旧契约保存在 `cluster/governor_history/`，不计入提速效果。
+
+[调度器](run_listen_v8_audio_governor.py) 12 项针对性测试通过；新增 [运行监控与受限恢复](watch_listen_v8_audio_full.py)，2 项恢复边界测试通过。恢复仅限已知心跳/内存保护停止，先确认三机本运行进程已退出、每卡至少 30 GiB 可用于重新加载模型且系统内存足够；半小时最多尝试 3 次。未知模型错误、代码契约不一致等不自动重试，不停止其他任务。任务完成后监控退出。[监控状态](../data_corpora/seamless_listen_v8_audio_final_full/cluster/watchdog/status.json)。
+
+注意：`runtime.json` 的 `progress` 统计当前恢复轮次；累计处理量请读 [screening_summary.json](../data_corpora/seamless_listen_v8_audio_final_full/screening_summary.json) 或监控中的 `complete_pairs_lower_bound`。最终时长、人脸分布仍按全部保留结果汇总；切分、音质、无视觉筛选规则均未改变。以下为此前调度与各阶段历史记录。
+
 ## 提速调度更新（2026-10-23 06:19 UTC）
 
 **首轮实测结论：** 三机 4×1 合计约 325.8 对/分钟，相比此前约 163.4 对/分钟约提高一倍。node12/node17 的 4×2 准备并发测试因 CPU 持续超过 92% 分别于 06:27:13 / 06:27:23 UTC 回退为 4×1，模型进程没有降为 1；node4 暂无足够 CPU 余量测试 4×2。当前维持每卡 4 模型进程、每进程 1 路准备，后续仍由持续负载保护控制。[实测结论](../data_corpora/seamless_listen_v8_audio_final_full/cluster/governor/tuning_conclusion.json)。实现已备份到 GitHub [71cdbd0](https://github.com/liqilin-eudaemonia/audio-driven-v5-data-processing/commit/71cdbd023b07740e51ad8901860277f6deb9b8d5)。

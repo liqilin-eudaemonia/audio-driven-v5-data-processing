@@ -18,10 +18,10 @@ import run_listen_v8_audio_full as run
 
 SCRIPT = Path(__file__).resolve()
 DIRECTORY = run.SCHED/'governor'
-POLICY = dict(revision='sustained-pressure-governor-1', maximum_models_per_gpu=4,
+POLICY = dict(revision='sustained-pressure-governor-3', maximum_models_per_gpu=4,
     maximum_prep_per_worker=2, cpu_sustained_percent=92., cpu_sustained_seconds=60.,
     cpu_critical_percent=97., cpu_critical_seconds=30., io_sustained_percent=20.,
-    minimum_memory_fraction=.10, minimum_free_gpu_mib=16384,
+    minimum_memory_fraction=.10, minimum_free_gpu_mib=12288,
     recovery_cpu_percent=82., recovery_free_gpu_mib=24576, recovery_memory_fraction=.15,
     change_cooldown_seconds=120., recovery_cooldown_seconds=180.,
     evaluation_seconds=240., evaluation_warmup_seconds=60., minimum_throughput_gain=.05,
@@ -131,6 +131,53 @@ def node_counts():
     return counts
 
 
+class ResilientSnapshot:
+    """Read known node names, retain fresh evidence across transient shared-FS reads."""
+    def __init__(self, node_names):
+        self.node_names = tuple(node_names)
+        self.nodes = {}
+        self.workers = {}
+
+    def refresh_nodes(self, reader):
+        for name in self.node_names:
+            try:
+                value = reader(name)
+            except (FileNotFoundError, json.JSONDecodeError):
+                continue
+            if name not in self.nodes or value['unix'] >= self.nodes[name]['unix']:
+                self.nodes[name] = value
+        return dict(self.nodes)
+
+    def snapshot(self):
+        for path in (run.SCHED/'progress').glob('*.json'):
+            try:
+                value = run.cluster.read(path)
+            except (FileNotFoundError,json.JSONDecodeError):
+                continue
+            old = self.workers.get(path.stem)
+            if old is None or value['unix'] >= old['unix']:
+                self.workers[path.stem] = value
+        nodes = self.refresh_nodes(lambda name:run.cluster.read(run.SCHED/'nodes'/(name+'.json')))
+        total=collections.Counter();by_node=collections.Counter()
+        for value in self.workers.values():
+            total.update(value['counts'])
+            by_node[value['node']] += value['counts'].get('complete_pairs',0)
+        return dict(unix=time.time(),utc=run.full.now(),nodes=nodes,counts=dict(total),
+                    node_counts=dict(by_node),queue=run.cluster.read(run.SCHED/'queue_state.json'))
+
+
+def validate_heartbeats(nodes, expected, now, started):
+    missing=set(expected)-set(nodes)
+    if missing and now-started>POLICY['heartbeat_timeout_seconds']:
+        raise RuntimeError('Missing node heartbeat beyond grace period: '+','.join(sorted(missing)))
+    for name,node in nodes.items():
+        if node['state']=='failed':raise RuntimeError(name+' worker failure')
+        # Finished nodes deliberately stop publishing heartbeats while others drain.
+        if node['state']!='finished' and now-node['unix']>POLICY['heartbeat_timeout_seconds']:
+            raise RuntimeError(name+' stale heartbeat beyond grace period')
+    return not missing
+
+
 def verify():
     run.verify()
     contract=run.read(DIRECTORY/'contract.json')
@@ -143,6 +190,8 @@ def supervise():
     verify();run.bind()
     governor=Governor()
     reporter=None;last_report=0
+    expected=[n['name'] for n in run.cluster.configuration()['nodes']]
+    reader=ResilientSnapshot(expected);started=time.time()
     with (run.SCHED/'coordinator.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         try:
@@ -159,14 +208,13 @@ def supervise():
                     governor.evaluations[name]=dict(setting=[4,1],started=time.time(),baseline=None)
             ctrl['stage']='sustained_pressure_governor';run.write(run.SCHED/'control.json',ctrl)
             while True:
-                snap=run.cluster.progress();nodes=snap['nodes'];now=time.time()
-                if len(nodes)==3 and all(n['state']=='finished' for n in nodes.values()):break
-                assert len(nodes)==3,'Missing node heartbeat'
-                counts=node_counts();ctrl=run.cluster.read(run.SCHED/'control.json');changed=False
+                snap=reader.snapshot();nodes=snap['nodes'];now=time.time()
+                complete=validate_heartbeats(nodes,expected,now,started)
+                if complete and all(n['state']=='finished' for n in nodes.values()):break
+                counts=snap['node_counts'];ctrl=run.cluster.read(run.SCHED/'control.json');changed=False
                 for name,node in nodes.items():
-                    if node['state']=='failed':raise RuntimeError(name+' worker failure')
-                    if now-node['unix']>POLICY['heartbeat_timeout_seconds']:raise RuntimeError(name+' stale heartbeat')
-                    desired,reasons=governor.consider(name,node,ctrl['nodes'][name],counts[name],now)
+                    if node['state']=='finished':continue
+                    desired,reasons=governor.consider(name,node,ctrl['nodes'][name],counts.get(name,0),now)
                     if desired:
                         event=dict(utc=run.full.now(),node=name,previous=ctrl['nodes'][name],setting=desired,reasons=reasons)
                         ctrl['nodes'][name]=desired;changed=True
@@ -203,7 +251,7 @@ def handoff():
     runtime=run.read(run.OUT/'runtime.json');assert runtime['state']=='cluster_screening'
     pid=runtime['coordinator_pid']
     args=Path(f'/proc/{pid}/cmdline').read_bytes().decode().split('\0')
-    assert str(run.SCRIPT) in args and 'supervise' in args,'Unexpected coordinator; no signal sent'
+    assert (str(run.SCRIPT) in args or str(SCRIPT) in args) and 'supervise' in args,'Unexpected coordinator; no signal sent'
     # Only replace the old coordinator. Its default SIGTERM handler releases the
     # flock without setting stop; node supervisors/workers remain untouched.
     run.write(DIRECTORY/'before_handoff.json',dict(runtime=runtime,control=run.read(run.SCHED/'control.json'),
@@ -213,6 +261,7 @@ def handoff():
         authorization='用户要求最大限度提速；只调整调度，保持切分/音质/无视觉筛选契约。'))
     verify()
     os.kill(pid,signal.SIGTERM)
+    os.kill(pid,signal.SIGCONT)
     deadline=time.monotonic()+15
     while run.cluster.alive(pid):
         if time.monotonic()>deadline:raise RuntimeError('Old coordinator did not exit')
