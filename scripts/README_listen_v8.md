@@ -1,5 +1,24 @@
 # V8 倾听数据处理代码导航
 
+## 当前全量：切分与音质、人脸只统计（2026-10-23）
+
+用户已授权按已备份标准全量处理，并明确暂不做人脸区域裁剪筛选。新运行版本 `v8-audio-final-full-no-face-filter-1`；音质仍为 `v8-audio-severity-review-2`。范围沿用完整来源目录的 64,087 对及原身份隔离，不使用旧版裁剪通过名单作为输入。启动时间 2026-10-23 06:01 UTC；动态状态以 [runtime.json](../data_corpora/seamless_listen_v8_audio_final_full/runtime.json) 为准。
+
+- [全量入口](run_listen_v8_audio_full.py)：独立契约、三机共享队列、每卡最多 4 进程/每进程 2 路准备；有资源压力自动降档，不升档或干预其他任务。按 pair 原子写结果，可恢复；模型按需加载。
+- [无视觉门槛规划](plan_listen_v8_audio_full.py)：复用 V8 完整语句和已审查的 ASR 区间修复，移除旧裁框 448px、wide_crop、关键点有效率及方向准入。AV 不同步、缺少视频流/转写仍单列来源问题；缺少/异常关键点仅记为未测量。没有输出最终裁框或导出裁剪视频。
+- [人脸统计](listen_v8_face_statistics.py)：使用原视频坐标中的面部关键点 23:91，置信度 > 0.4、每帧至少 45 个有效点，以 3%/97% 分位跨度度量宽高。这是面部关键点范围，不是旧头部裁框尺寸。统计原始宽高/短边像素、占原画面面积比例、片段内分位数、有效帧比例；无测量值单列，不记为小脸或淘汰。
+- [规则测试](../tests/test_listen_v8_audio_full.py)：7 项通过，覆盖小脸/缺失人脸仍进入音质、像素/面积口径、缺失帧分母、汇总和缓存匹配。历史 84 段的音质池及原因与备份规则一致；正式试跑 20 段（13 复用、7 重检）成功。
+
+输出根目录：`data_corpora/seamless_listen_v8_audio_final_full/`。`results/` 保存完整证据，`audit/` 保存所有切分与未决原因，`summaries/` 保存逐 pair 统计，`errors/` 保留处理错误。旧 62 对报错也在此次全量队列中重试。旧 QC4 结果及其冻结代码保持原样。
+
+人脸分布：[face_size_distribution.json](../data_corpora/seamless_listen_v8_audio_final_full/face_size_distribution.json)；进度/各池时长：[screening_summary.json](../data_corpora/seamless_listen_v8_audio_final_full/screening_summary.json)。按 split / primary 或 onset_reserve / 音质池分组，再分 speaker/listener。像素分桶边界为 64、96、128、160、192、256、320、384、448、512、768、1024；这些仅是统计边界，不是准入阈值。分别报告片段数量、片段时长、有效帧分布、未测量数量和时长。按片段有效帧 p10 短边计算的各阈值覆盖时长只供比较，必须结合有效帧比例阅读，不能自动当作可用量。
+
+统计约每 5 分钟更新；`final=false` 是进行中快照。结束后统一导出各池 JSONL 清单并更新最终统计；音质 `audio_review` 仍不放行，`keep_candidate` 只代表切分与音质候选，人脸裁剪阈值尚未选择。最终有错误时以 `error_pairs` 单列，不能归为音质淘汰。
+
+复用音质证据必须双角色、原始来源、起止区间完全一致，且归一化音轨 SHA256 一致；人工作用范围和任务证据按新计划刷新。新增/变更区间运行原 QC3/QC4 检测。运行契约：[contract.json](../data_corpora/seamless_listen_v8_audio_final_full/contract.json)；历史样本一致性：[routing_regression.json](../data_corpora/seamless_listen_v8_audio_final_full/routing_regression.json)。
+
+从项目根目录使用现有 Python 环境：`scripts/run_listen_v8_audio_full.py report` 更新统计；`report --export` 另导出当前清单；`verify` 校验运行契约。启动使用 `init` 后 `detach`，已在运行时勿重复启动。中断恢复使用 `resume`，它先检查三机无本运行的存活进程，再重置队列游标、保留结果并重试未完成/报错 pair。保留旧统计中的历史阶段状态，以下基线记录的“未全量切换”描述对应本次授权之前。
+
 ## 当前音质筛选基线（2026-10-23）
 
 用户决定：“关于音质的筛选先这样，你记录好筛选规则和重要代码”。当前工作基线为 **`v8-audio-severity-review-2`**，后续裁剪讨论沿用此音质方案。阶段决定记录在 [checkpoint](../data_reviews/listener_v8_audio_policy_checkpoint_20261023.json)。这条决定没有新增逐条人工标签；最新 24 段的自动分组及既有人工反馈原样保留。

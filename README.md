@@ -1,5 +1,7 @@
 # audio-driven-v5 数据处理备份
 
+最新更新：2026-10-23 已按用户授权接入独立全量处理，移除视觉准入、保留人脸尺寸统计；入口 `scripts/run_listen_v8_audio_full.py`。音质规则保持 `v8-audio-severity-review-2`。三机每卡最多 4 进程，资源压力降档；最终裁剪暂不执行。新入口 7 项测试通过，历史 84 段分组/原因一致，20 段实际音质试跑成功。运行契约及试跑证据已归档，动态进度保留在原机器。以下“未替换全量入口”等描述为此前音质基线备份时的状态。
+
 备份时间：2026-10-23。音质工作基线：`v8-audio-severity-review-2`。
 
 本仓库保存当前 V8 完整语句切分、ASR 区间误拦恢复、边界分级、音质三路分流、人工反馈约束及相关调度/导出代码。源目录为 `/private/liqi_workspace/project_code/audio-driven-v5`；源代码逐字节保留，文件校验见 [BACKUP_MANIFEST.json](BACKUP_MANIFEST.json)。
