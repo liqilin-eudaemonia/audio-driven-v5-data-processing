@@ -1,5 +1,23 @@
 # V8 倾听数据处理代码导航
 
+## Seamless 无切镜全量完成（2026-10-23）
+
+本次正式版本 `seamless-full-source-no-scene-crop-statistics-2` 已完成。64,087 对来源全部核算，63,895 对结果（包含 2,074 对源数据无效），192 对处理错误，剩余 0。192 对分别为响度目标未达到 176 对、真峰值超容差 16 对；错误不算音质通过，也不算正常音质拒绝。
+
+训练主池 1,200,212 段、2,002.627 小时；起始反应储备池 218,912 段、333.317 小时。相对此前同为“不做人脸筛选”的全量入口，主池由 1459.782 小时增至 2002.627 小时，净增 542.845 小时（37.19%）。这是整条视频遍历及局部重新切分后的音质候选量，未完成裁剪准入。
+
+四机运行 12:48:46–13:49:46 UTC，共 61 分钟。主阶段原三机每卡 4 进程，node8 经实测稳定为 106 个活跃模型；13:41:11 node4 持续低于 12 GiB 显存余量触发保护。检查全部本轮进程退出、资源恢复后，于 13:44:26 恢复，尾部原三机每卡 2 进程，node8 每卡 8 进程。保护阈值、音质与切分规则未放宽。最终 16 进程 / 32 分片清单导出耗时 100.46 秒，片段计数与汇总完全一致，清单 SHA256 已记录。
+
+原生人脸短边 p10 至少 128px/160px 对应主池 1,472.540/822.392 小时；原生头肩参考框边长至少 448px/512px 对应 801.155/587.554 小时。所有数值均为统计，未按这些阈值排除。p10 基于可测量帧；人脸未测量 10.878 小时，参考框预计头部不完整 168.846 小时，待裁框讨论时结合检查。
+
+- [可读尺寸报告](../data_corpora/seamless_listen_local_full/size_distribution_report.md)
+- [最终音质统计](../data_corpora/seamless_listen_local_full/screening_summary.json)
+- [最终清单与哈希](../data_corpora/seamless_listen_local_full/manifests/index.json)
+- [完成验证](../experiments/p3_listen_local_full_20261023/completion_verification.json)
+- [显存保护后人工检查与恢复记录](../data_corpora/seamless_listen_local_full/cluster/maintenance/tail_memory_recovery.json)
+
+以下运行设计和进度为历史记录。
+
 ## 全量清单并行导出与并发微调（2026-10-23）
 
 计算结束后，使用 [listen_local_export.py](listen_local_export.py) 的 16 个 CPU 进程、32 个分片读取质检结果，再合并各池清单。导出的每一行仍是原终端候选去掉 qc3/qc4 大证据字段、加上原结果文件指针；父候选不重复导出。分片顺序可不同，行内容与各池数量一致；数量不符不发布 index，每份清单仍有 SHA256。此优化不修改筛选与统计，只消除末尾串行读取大 JSON 的瓶颈。28 项切分/全量/健康监控/导出测试通过。`supervise-existing` / `detach-existing` 可在核验旧 coordinator 身份后接管现有节点，工作进程不重启。
