@@ -1,5 +1,15 @@
 # V8 倾听数据处理代码导航
 
+## 提速调度更新（2026-10-23 06:19 UTC）
+
+用户要求最大限度提速。发现旧调度器对单次 CPU > 80% 的采样直接从每卡 4 进程降到 1，且不自动恢复；实际每卡 4 进程下 CPU 多数在 70%–80%，没有明显 I/O 等待，三机仍有其他任务占用资源。因此新增 [独立调度器](run_listen_v8_audio_governor.py)，只替换原 coordinator，保留原 node supervisor、worker、共享队列、已完成结果和切分/音质契约。
+
+并发上限仍为每卡 4 个模型进程、每进程 2 路准备，即三机最多 96 个模型进程。先运行 4×1，预热后每台机器观察约 4 分钟的 pair 吞吐；资源有余量时试 4×2，若实测增益不足 5% 则恢复 4×1。随机来源不同，因此这是生产负载下的观测速率，不是相同输入的严格加速比。
+
+CPU 约 60 秒窗口持续超过 92%，或连续约 30 秒达到 97%，才按“准备 2→1、模型 4→2→1”降档；单次 80% 尖峰不触发降档。约 2 分钟稳定余量并满足 3 分钟恢复冷却后允许 1→2→4。内存保护不等待 CPU 窗口：每卡空闲显存至少 16 GiB、系统可用内存至少 10%；持续严重内存压力 120 秒会排空本运行任务。不会停止其他任务。完整阈值以 [调度契约](../data_corpora/seamless_listen_v8_audio_final_full/cluster/governor/contract.json) 为准。
+
+7 项针对性测试通过：[test_listen_v8_audio_governor.py](../tests/test_listen_v8_audio_governor.py)。[调度切换记录](../data_corpora/seamless_listen_v8_audio_final_full/cluster/governor/launch.json)、[分档吞吐实验](../data_corpora/seamless_listen_v8_audio_final_full/cluster/governor/trials.json)、[当前运行状态](../data_corpora/seamless_listen_v8_audio_final_full/runtime.json) 可追溯。恢复中断的全量任务时，先执行原入口的 `resume`，确认三机运行后再执行 `run_listen_v8_audio_governor.py handoff`，避免恢复到旧的单次采样降档逻辑。不得对已有 governor 重复 handoff；脚本会校验被替换进程的实际命令行。
+
 ## 当前全量：切分与音质、人脸只统计（2026-10-23）
 
 用户已授权按已备份标准全量处理，并明确暂不做人脸区域裁剪筛选。新运行版本 `v8-audio-final-full-no-face-filter-1`；音质仍为 `v8-audio-severity-review-2`。范围沿用完整来源目录的 64,087 对及原身份隔离，不使用旧版裁剪通过名单作为输入。启动时间 2026-10-23 06:01 UTC；动态状态以 [runtime.json](../data_corpora/seamless_listen_v8_audio_final_full/runtime.json) 为准。
