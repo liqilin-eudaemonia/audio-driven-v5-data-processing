@@ -35,3 +35,7 @@ python /path/to/new_run/code/serve.py
 ```
 
 恢复脚本要求新目录，复制代码及依赖并仅改写路径；不复制旧 index.json，首次运行从原始 tar/ASR 重建索引。数据目录需要保留原有 tar 分片和 asr 子目录结构。默认 32 个处理进程，需调整时修改恢复目录中的 run_all.py；预览默认端口 8798。全量程序未重新运行 Whisper，源 ASR 时间可能不准，待复核标记必须保留。
+
+## 分辨率抽样审核
+
+新增 [11 档、33 条同步对照抽样](resolution_review/README.md)，用于人工确定阈值，未执行阈值筛选。
