@@ -20,7 +20,7 @@ from p3_listen.common import read, write
 REVISION='nvdec-original-scaler-scene-cache-1'
 CPU_DETECT=policy.detect_shots
 CACHE=None
-DECODERS_PER_GPU=4
+DECODERS_PER_GPU=6
 
 
 @contextlib.contextmanager

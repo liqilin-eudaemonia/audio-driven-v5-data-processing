@@ -13,9 +13,11 @@
 - `face_size_distribution.json` 统计原生面部关键点宽高、短边及有效帧；`crop_size_distribution.json` 统计向肩部扩展的固定参考方框边长、框内面部面积占比和缩放到 512 后的面部高度。speaker/listener 分开统计，数量和时长分别加权；缺失/异常框单列，仍参与音质结果。
 - `crop_proposals` 是统计和构图参考，不是最终裁框。预计头部放不下也只标记；没有尺寸准入、最终裁剪或训练媒体导出。统计每约 5 分钟更新，`final=false` 为未完成快照。
 
-三机配置 [p3_listen_local_full_cluster.json](../configs/p3_listen_local_full_cluster.json)：24 卡共最多 96 个模型进程、192 路准备，每卡同时最多 4 路镜头解码。独立共享队列及逐对原子结果支持恢复。复用持续负载 governor，GPU 空闲显存保留至少 12 GiB、系统空闲内存至少 10%，持续 CPU 压力优先减少准备并发；不停止其他任务。活跃 GPU 进程数、完成数、控制档位以 `cluster/nodes/`、`runtime.json` 为准，GPU 总利用率包含其他任务，不能全部归为此作业。
+三机配置 [p3_listen_local_full_cluster.json](../configs/p3_listen_local_full_cluster.json)：24 卡共最多 96 个模型进程、192 路准备，每卡同时最多 6 路镜头解码。独立共享队列及逐对原子结果支持恢复。复用持续负载 governor，GPU 空闲显存保留至少 12 GiB、系统空闲内存至少 10%，持续 CPU 压力优先减少准备并发；不停止其他任务。活跃 GPU 进程数、完成数、控制档位以 `cluster/nodes/`、`runtime.json` 为准，GPU 总利用率包含其他任务，不能全部归为此作业。
 
 [listen_full_source_runtime.py](listen_full_source_runtime.py) 仅加速执行：NVDEC 解码后仍采用原软件缩放及 scene > 0.35，解码不支持则明确退回原 CPU 路径。170 秒样本的 5,100 帧缩放输出逐帧 MD5 一致，单轨耗时 34.79→23.10 秒；这不是全量整体加速比。镜头结果按媒体位置、文件 stat 与算法版本缓存。真实两条审核样本没有硬切，镜头切点两侧继续提取的验证来自合成硬切测试，尚不能宣称所有真实切镜类型均已验证。
+
+**解码并发实测：** 同一源视频的 60 秒区间，在单卡 4/6/8 路并发下分别达到 11.52/14.77/17.16 源秒/墙钟秒，全部成功；6 路比 4 路约提高 28%。8 路显存消耗更高，因此正式先采用 6 路，模型仍每卡 4 个，并保持 12 GiB 余量保护。这是单卡局部测试，不代表全量整体加速比。
 
 **首批写盘修复：** 少数回收切片的 `extended_for_completeness` 来自 NumPy 布尔值，标准 JSON 无法直接编码。全量入口新增仅处理 NumPy 标量的编码器，布尔/整数/浮点保持对应 JSON 类型，未知类型仍报错；没有改动任何切点或音质判断。旧契约保存在 `cluster/maintenance/serialization_fix/contract_before.json`，新契约记录 `numpy-json-scalars-1` 执行补丁。暂停新认领、完成在途来源后恢复，旧结果保留，失败来源重试；原始错误日志留作审计，最终错误数排除已成功重试的来源。新增序列化回归测试通过。
 
