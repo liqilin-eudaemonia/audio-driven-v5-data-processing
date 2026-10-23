@@ -44,7 +44,7 @@ active=[]
 for token in p.stdout.split():
  try:
   proc=psutil.Process(int(token));args=proc.cmdline()
-  if proc.status()!=psutil.STATUS_ZOMBIE and script in args and any(x in args for x in ['worker','launch-node','supervise']):active.append(proc.pid)
+  if proc.status()!=psutil.STATUS_ZOMBIE and script in args and any(x in args for x in ['worker','launch-node','supervise','supervise-existing']):active.append(proc.pid)
  except (psutil.NoSuchProcess,psutil.ZombieProcess):pass
 print(json.dumps(active))
 ''' % str(script)

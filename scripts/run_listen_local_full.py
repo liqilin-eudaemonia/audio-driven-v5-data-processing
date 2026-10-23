@@ -26,6 +26,7 @@ import listen_local_recovery as policy
 import listen_full_source_runtime as acceleration
 import listen_crop_distribution as crops
 import listen_local_health as health
+import listen_local_export as manifests
 from p3_listen.common import read, sha
 import numpy as np
 
@@ -115,7 +116,7 @@ def initialize():
     code=set(read(BASE/'contract.json')['code_sha256'])|{
         'scripts/listen_local_recovery.py','scripts/listen_full_source_runtime.py',
         'scripts/listen_crop_distribution.py','scripts/run_listen_local_full.py',
-        'scripts/run_listen_v8_audio_governor.py','scripts/listen_local_health.py'}
+        'scripts/run_listen_v8_audio_governor.py','scripts/listen_local_health.py','scripts/listen_local_export.py'}
     write(OUT/'contract.json',dict(revision=REVISION,utc=full.now(),source_pairs=len(rows),
         source_scope=read(OUT/'catalog.json')['scope'],segmentation_revision=policy.REVISION,
         audio_revision=baseline.policy.REVISION,acceleration_revision=acceleration.REVISION,
@@ -227,10 +228,15 @@ def write_pair_summary(result):
 
 
 def report(export=False):
-    bind();summary=BASE_REPORT(export)
+    bind();summary=BASE_REPORT(False)
     distribution=read(OUT/'face_size_distribution.json')
+    if export:
+        summary['final']=summary['pending_pairs']==0
+        manifests.export(OUT,summary)
+        write(OUT/'screening_summary.json',summary)
+        distribution['final']=summary['final'];write(OUT/'face_size_distribution.json',distribution)
     write(OUT/'crop_size_distribution.json',dict(utc=summary['utc'],revision=crops.REVISION,
-        complete_pairs=summary['complete_pairs'],total_pairs=summary['total_pairs'],final=export,
+        complete_pairs=summary['complete_pairs'],total_pairs=summary['total_pairs'],final=summary['final'],
         pixel_edges=[None if x==float('inf') else x for x in crops.EDGES],area_fraction_edges=crops.AREA_EDGES,
         pools={k:dict(clips=v['clips'],seconds=v['seconds'],roles=v.get('crop_roles',{})) for k,v in distribution['pools'].items()},
         definitions=dict(side='Native-pixel fixed square head/shoulder proposal side; no upsampling floor or admission gate.',
@@ -290,15 +296,16 @@ def worker(node_name,local_rank):
     progress('finished')
 
 
-def supervise():
+def supervise(attach=False):
     verify();bind();governor=governor_module.Governor()
     expected=[n['name'] for n in cluster.configuration()['nodes']]
     snapshot=governor_module.ResilientSnapshot(expected);began=time.time();reporter=None;last_report=0
     with (SCHED/'coordinator.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         try:
-            for n in cluster.configuration()['nodes']:
-                print(cluster.ssh(n,[cluster.configuration()['python'],str(SCRIPT),'detach-node','--node',n['name']]),flush=True)
+            if not attach:
+                for n in cluster.configuration()['nodes']:
+                    print(cluster.ssh(n,[cluster.configuration()['python'],str(SCRIPT),'detach-node','--node',n['name']]),flush=True)
             while True:
                 snap=snapshot.snapshot();now=time.time();nodes=snap['nodes']
                 complete=governor_module.validate_heartbeats(nodes,expected,now,began)
@@ -336,10 +343,10 @@ def supervise():
             write(OUT/'runtime.json',dict(state='stopping_after_error',utc=full.now(),error=repr(e),training_started=False));raise
 
 
-def detach():
+def detach(attach=False):
     verify();bind()
     with (SCHED/'logs/coordinator.log').open('ab',buffering=0) as f:
-        p=subprocess.Popen([sys.executable,'-u',str(SCRIPT),'supervise'],stdin=subprocess.DEVNULL,stdout=f,stderr=f,start_new_session=True)
+        p=subprocess.Popen([sys.executable,'-u',str(SCRIPT),'supervise-existing' if attach else 'supervise'],stdin=subprocess.DEVNULL,stdout=f,stderr=f,start_new_session=True)
     write(SCHED/'launch.json',dict(utc=full.now(),pid=p.pid));print(json.dumps(read(SCHED/'launch.json')),flush=True)
 
 
@@ -372,7 +379,7 @@ def smoke(pairs):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('stage',choices=['init','verify','smoke','report','detach','supervise','worker','launch-node','detach-node','resume'])
+    p=argparse.ArgumentParser();p.add_argument('stage',choices=['init','verify','smoke','report','detach','supervise','supervise-existing','detach-existing','worker','launch-node','detach-node','resume'])
     p.add_argument('--node');p.add_argument('--local-rank',type=int,default=0);p.add_argument('--export',action='store_true');p.add_argument('--pair',action='append')
     a=p.parse_args()
     if a.stage=='init':initialize()
@@ -380,8 +387,10 @@ if __name__=='__main__':
     elif a.stage=='smoke':smoke(a.pair or ['naturalistic_V02_S3610_I00000088','improvised_V01_S0122_I00000125'])
     elif a.stage=='report':print(json.dumps(report(a.export)),flush=True)
     elif a.stage=='detach':detach()
+    elif a.stage=='detach-existing':detach(True)
     elif a.stage=='resume':resume()
     elif a.stage=='supervise':supervise()
+    elif a.stage=='supervise-existing':supervise(True)
     else:
         bind()
         if a.stage=='worker':worker(a.node,a.local_rank)

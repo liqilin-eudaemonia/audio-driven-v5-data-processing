@@ -1,5 +1,13 @@
 # V8 倾听数据处理代码导航
 
+## 全量清单并行导出与并发微调（2026-10-23）
+
+计算结束后，使用 [listen_local_export.py](listen_local_export.py) 的 16 个 CPU 进程、32 个分片读取质检结果，再合并各池清单。导出的每一行仍是原终端候选去掉 qc3/qc4 大证据字段、加上原结果文件指针；父候选不重复导出。分片顺序可不同，行内容与各池数量一致；数量不符不发布 index，每份清单仍有 SHA256。此优化不修改筛选与统计，只消除末尾串行读取大 JSON 的瓶颈。28 项切分/全量/健康监控/导出测试通过。`supervise-existing` / `detach-existing` 可在核验旧 coordinator 身份后接管现有节点，工作进程不重启。
+
+node8 的 120 个活跃模型进程曾使持续 CPU 超过 92%，自动降至 64。实测降档后 CPU 约 66%，因此将允许认领的 rank 上限设为 112，再保留 GPU2 的每卡 8 限额，实际启用 106 个模型进程（GPU0/1/3/4/5/6/7 各 14，GPU2 8），其余已加载进程空闲。`models_per_gpu=16` 保留名义上限，`model_workers=112` 是实际 rank 预算；四机实际活跃模型上限 202。调度的全部保护继续有效，未重载模型。调整后 CPU 约 79%–83%，吞吐维持约 1,200 对/分钟。
+
+尺寸摘要入口 [summarize_listen_local_full.py](summarize_listen_local_full.py) 从同一统计快照生成 `size_distribution_report.md`，分别列训练主池的原生面部、头肩参考框与框内面部占比；这些都是统计，不是新增筛选阈值。
+
 ## Seamless 四机无切镜运行（2026-10-23）
 
 用户要求 4 机 32 卡、zz-dev 更高并发，目标半小时到一小时，并明确 Seamless 不需要 RealTalk 的切镜检测。正式全量版本为 `seamless-full-source-no-scene-crop-statistics-2`，入口通过 `SourceContext(..., shot_times=[[], []])` 显式关闭整段视频解码与切镜扫描。没有降低音质阈值，没有跳过完整角色时间线、接话处理或边界质检。最终人脸/参考裁框仍只统计、不准入。历史连续审核脚本和切镜测试保留用于追溯，不代表此版 Seamless 生产流程继续检测镜头。
