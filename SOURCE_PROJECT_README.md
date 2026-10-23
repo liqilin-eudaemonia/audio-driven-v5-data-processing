@@ -1,5 +1,7 @@
 # audio-driven-v5 总索引
 
+**Seamless 四机 32 卡提速（2026-10-23）：** 用户明确 Seamless 不需要 RealTalk 的切镜检测，正式入口已取消整段视频逐帧扫描；完整词时间线、角色切换、接话边界、音质规则与人脸只统计保持不变。新增 node8（zz-dev，实际内网 IP `172.29.104.220`）；原三机每卡 4 个模型进程，node8 目标每卡 16 个，其第 2 卡因其他作业显存占用较高上限 8 个。共最多 216 个活跃模型进程，按持续资源压力降档。保留 993 对无切镜影响的已完成结果，4 对受旧切镜边界影响者归档重跑。[实施细节](scripts/README_listen_v8.md#seamless-四机无切镜运行2026-10-23)、[实时进度](data_corpora/seamless_listen_local_full/screening_summary.json)。半小时至一小时为用户目标，是否达标以切换后的实测吞吐判断。
+
 **Seamless 运行恢复（2026-10-23）：** 检查发现全量曾因 node4 一次 GPU 监控查询超时停止，实际已完成 475 对。已修复短暂遥测超时处理，新增有资源检查和次数上限的自动恢复；切分/音质/裁框只统计规则不变。[故障与修复说明](scripts/README_listen_v8.md#监控超时修复与自动恢复2026-10-23)、[实时状态](data_corpora/seamless_listen_local_full/runtime.json)、[自动恢复监控](data_corpora/seamless_listen_local_full/cluster/watchdog/status.json)。以下完成数量和启动记录为历史快照。
 
 **当前 Seamless 全量版本（2026-10-23 10:35:55 UTC 启动）：** 已按用户验收的完整源视频逻辑启动独立全量入口，覆盖 64,087 对来源；音质基线保持 `v8-audio-severity-review-2`，裁框只统计、不筛选。三机 24 卡共享队列，每卡最多 4 个模型进程、每进程 2 路准备；逐帧镜头扫描使用已验证的 NVDEC 解码和原缩放算法。详见 [全量入口与恢复说明](scripts/README_listen_v8.md#完整源视频全量运行2026-10-23)、[运行状态](data_corpora/seamless_listen_local_full/runtime.json)、[音质进度](data_corpora/seamless_listen_local_full/screening_summary.json)、[原生人脸分布](data_corpora/seamless_listen_local_full/face_size_distribution.json)、[头肩参考框分布](data_corpora/seamless_listen_local_full/crop_size_distribution.json)。[GitHub 当前代码备份 `01318e6`](https://github.com/liqilin-eudaemonia/audio-driven-v5-data-processing/commit/01318e690928543a917a8ebaf1a479b3fbeb37b5)。以下旧全量状态为历史记录；新运行不会覆盖旧结果。

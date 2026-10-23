@@ -15,6 +15,20 @@ import listen_crop_distribution as crops
 
 
 class FullRunTests(unittest.TestCase):
+    def test_seamless_context_disables_scene_scan_explicitly(self):
+        with patch.object(run.policy,'SourceContext') as context:
+            run.source_context({'pair':'p'})
+            context.assert_called_once_with({'pair':'p'},shot_times=[[],[]])
+
+    def test_node8_gpu_memory_cap_limits_active_ranks(self):
+        node={'gpu_model_limits':[16,16,8,16,16,16,16,16]}
+        setting={'model_workers':128}
+        enabled=[i for i in range(128) if run.rank_enabled(node,i,setting)]
+        self.assertEqual(len(enabled),120)
+        self.assertEqual(sum(i%8==2 for i in enabled),8)
+        self.assertEqual(sum(i%8==0 for i in enabled),16)
+        self.assertEqual(sum(run.rank_enabled({'maximum_models_per_gpu':4},i,setting) for i in range(128)),32)
+
     def test_numpy_evidence_is_saved_as_native_json_types(self):
         import numpy as np
         with tempfile.TemporaryDirectory() as d:

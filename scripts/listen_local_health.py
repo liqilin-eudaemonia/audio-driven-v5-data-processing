@@ -59,8 +59,8 @@ def allowed(attempts,now):
     return len(attempts)<6 and sum(now-t<1800 for t in attempts)<3
 
 
-def enough(probes):
-    return len(probes)==3 and all(p['free_gpu_mib']>=24576 and p['memory_fraction']>=.15 for p in probes)
+def enough(probes,expected_nodes=3):
+    return len(probes)==expected_nodes and all(p['free_gpu_mib']>=24576 and p['memory_fraction']>=.15 for p in probes)
 
 
 def probes(run):
@@ -75,7 +75,7 @@ print(json.dumps(dict(free_gpu_mib=min(a),memory_fraction=m['MemAvailable']/m['M
         active=json.loads(run.cluster.ssh(n,[cfg['python'],'-c',process_probe(run.SCRIPT)]))
         if active:return dict(node=n['name'],active=active,free_gpu_mib=0,memory_fraction=0)
         r=json.loads(run.cluster.ssh(n,[cfg['python'],'-c',code]));r.update(node=n['name'],active=[]);return r
-    with concurrent.futures.ThreadPoolExecutor(3) as pool:return list(pool.map(probe,cfg['nodes']))
+    with concurrent.futures.ThreadPoolExecutor(len(cfg['nodes'])) as pool:return list(pool.map(probe,cfg['nodes']))
 
 
 def watch(run):
@@ -94,7 +94,7 @@ def watch(run):
                     else:
                         resources=probes(run);status['resources']=resources
                         if any(x['active'] for x in resources):status['state']='waiting_for_run_processes_to_exit'
-                        elif not enough(resources):status['state']='waiting_for_resource_headroom'
+                        elif not enough(resources,len(run.cluster.configuration()['nodes'])):status['state']='waiting_for_resource_headroom'
                         else:
                             run.verify();attempts.append(now);run.write(out/'attempts.json',attempts)
                             run.write(out/'status.json',dict(status,state='recovering'))

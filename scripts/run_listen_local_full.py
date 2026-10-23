@@ -48,12 +48,34 @@ OUT=ROOT/'data_corpora/seamless_listen_local_full'
 SCHED=OUT/'cluster'
 SCRIPT=Path(__file__).resolve()
 CONFIG=ROOT/'configs/p3_listen_local_full_cluster.json'
-REVISION='full-source-local-recovery-crop-statistics-1'
+REVISION='seamless-full-source-no-scene-crop-statistics-2'
 cluster=baseline.cluster
 full=baseline.full
 faces=baseline.faces
 BASE_BIND=baseline.bind
 BASE_REPORT=baseline.report
+
+
+def dimensions(models,prep):
+    cfg=cluster.configuration()
+    if models not in (1,2,4,8,16) or prep not in (1,2) or models*8>cfg['maximum_model_workers_per_node'] or models*8*prep>cfg['maximum_preparation_slots_per_node']:
+        raise ValueError('Unsafe scheduler dimensions')
+    return dict(models_per_gpu=models,prep_per_worker=prep,model_workers=8*models,preparation_slots=8*models*prep)
+
+
+def initial_nodes():
+    return {n['name']:dimensions(*n.get('initial_setting',[4,2])) for n in cluster.configuration()['nodes']}
+
+
+def rank_enabled(node,local_rank,setting):
+    limits=node.get('gpu_model_limits',[node.get('maximum_models_per_gpu',4)]*8)
+    return local_rank<setting['model_workers'] and local_rank//8<limits[local_rank%8]
+
+
+def source_context(item):
+    # User correction: Seamless participant streams do not require RealTalk's
+    # shot scan. Keep full word/role traversal and all acoustic/QC constraints.
+    return policy.SourceContext(item,shot_times=[[],[]])
 
 
 def verify():
@@ -72,8 +94,8 @@ def bind():
     baseline.OUT=OUT;baseline.SCHED=SCHED;baseline.SCRIPT=SCRIPT;baseline.REVISION=REVISION
     BASE_BIND()
     cluster.CONFIG=CONFIG;cluster.SCRIPT=SCRIPT;cluster.verify=verify
+    cluster.dimensions=dimensions;governor_module.dimensions=dimensions
     health.install(cluster)
-    acceleration.install(OUT/'scene_cache')
     governor_module.run=sys.modules[__name__]
 
 
@@ -105,7 +127,7 @@ def initialize():
         user_authorization='用户认可两条连续提取小批，要求备份后全量处理 Seamless、统计面部裁剪框分布，并用满三机24卡安全提速。'))
     bind()
     write(SCHED/'control.json',dict(stop=False,drain=False,stage='fixed_4x2',
-        nodes={n['name']:cluster.dimensions(4,2) for n in cluster.configuration()['nodes']}))
+        nodes=initial_nodes()))
     write(OUT/'runtime.json',dict(state='ready',utc=full.now(),source_pairs=len(rows),training_started=False))
     verify()
 
@@ -114,7 +136,7 @@ def prepare(item):
     began=time.monotonic()
     path=BASE/'results'/(item['pair']+'.json')
     previous=read(path) if path.exists() else dict(clips=[])
-    try:context=policy.SourceContext(item)
+    try:context=source_context(item)
     except ValueError as e:
         if not str(e).startswith(baseline.KNOWN_FAILURES):raise
         return dict(context=None,candidates=[],norm=None,cache={},elapsed=time.monotonic()-began,
@@ -183,7 +205,7 @@ def screen_prepared(item,prepared,models,feedback,progress=lambda **kw:None):
     kept=[(r['start'],r['end']) for r in leaves if r['audio_final']['pool']=='keep_candidate']
     old_kept=prepared.get('old_kept',[])
     result=dict(pair=item['pair'],split=item['split'],group_id=item['group_id'],complete=True,utc=full.now(),
-        revision=REVISION,clips=leaves,superseded_attempts=parents,rejected=diagnostic['unresolved'],
+        revision=REVISION,scene_detection_applied=False,clips=leaves,superseded_attempts=parents,rejected=diagnostic['unresolved'],
         source_ok=context is not None,source_seconds=context.limit if context else None,
         source_shots=context.shots_by_track if context else None,training_ready=False,visual_filter_applied=False,
         counts=dict(counts),timing_seconds=dict(preparation=prepared['elapsed'],quality_and_statistics=time.monotonic()-started),
@@ -224,7 +246,7 @@ def worker(node_name,local_rank):
     verify();bind()
     import torch
     torch.set_num_threads(1);torch.set_num_interop_threads(1)
-    rank=cluster.worker_rank(cluster.node_config(node_name)['index'],local_rank)
+    node=cluster.node_config(node_name);rank=cluster.worker_rank(node['index'],local_rank)
     lookup={r['pair']:r for r in read(OUT/'catalog.json')['rows']};queue=read(SCHED/'queue.json')['pairs']
     feedback=dict(rejects=read(OUT/'human_rejections.json')['rows'],positives=read(OUT/'human_retained.json')['rows'])
     counts=collections.Counter();timing=collections.Counter();models=[];started=time.monotonic();consecutive=0
@@ -237,7 +259,7 @@ def worker(node_name,local_rank):
         pending={}
         def fill():
             ctrl=cluster.read(SCHED/'control.json');setting=ctrl['nodes'][node_name]
-            active=local_rank<setting['model_workers'] and not ctrl.get('stop') and not ctrl.get('drain')
+            active=rank_enabled(node,local_rank,setting) and not ctrl.get('stop') and not ctrl.get('drain')
             while active and len(pending)<setting['prep_per_worker']:
                 pair=cluster.claim(queue,rank)
                 if pair is None:break
@@ -330,7 +352,7 @@ def resume():
     history=SCHED/'attempts'/str(time.time_ns());history.mkdir(parents=True)
     for name in ('nodes','progress'):(SCHED/name).rename(history/name);(SCHED/name).mkdir()
     write(SCHED/'queue_state.json',dict(cursor=0,total=len(read(SCHED/'queue.json')['pairs'])))
-    write(SCHED/'control.json',dict(stop=False,drain=False,stage='resume_4x2',nodes={n['name']:cluster.dimensions(4,2) for n in cluster.configuration()['nodes']}))
+    write(SCHED/'control.json',dict(stop=False,drain=False,stage='seamless_four_nodes',nodes=initial_nodes()))
     detach()
 
 

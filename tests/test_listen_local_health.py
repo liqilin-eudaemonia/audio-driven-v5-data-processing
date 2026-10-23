@@ -43,6 +43,8 @@ class HealthTests(unittest.TestCase):
         self.assertTrue(health.enough([dict(free_gpu_mib=28000,memory_fraction=.8)]*3))
         self.assertFalse(health.enough([dict(free_gpu_mib=20000,memory_fraction=.8)]*3))
         self.assertFalse(health.enough([dict(free_gpu_mib=28000,memory_fraction=.8)]*2))
+        self.assertTrue(health.enough([dict(free_gpu_mib=28000,memory_fraction=.8)]*4,4))
+        self.assertFalse(health.enough([dict(free_gpu_mib=28000,memory_fraction=.8)]*3,4))
 
 
 if __name__=='__main__':unittest.main()
