@@ -25,7 +25,21 @@ import run_listen_v8_audio_governor as governor_module
 import listen_local_recovery as policy
 import listen_full_source_runtime as acceleration
 import listen_crop_distribution as crops
-from p3_listen.common import read, write, sha
+from p3_listen.common import read, sha
+import numpy as np
+
+
+def json_scalar(value):
+    """Preserve numeric/boolean evidence types emitted by NumPy-based QC."""
+    if isinstance(value,np.generic):return value.item()
+    raise TypeError('Unsupported JSON value: '+type(value).__name__)
+
+
+def write(path,value):
+    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
+    encoded=json.dumps(value,ensure_ascii=False,indent=2,default=json_scalar)+'\n'
+    temporary=path.with_suffix(path.suffix+'.pending')
+    temporary.write_text(encoded);temporary.replace(path)
 
 ROOT=baseline.ROOT
 BASE=baseline.OUT

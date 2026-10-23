@@ -15,6 +15,18 @@ import listen_crop_distribution as crops
 
 
 class FullRunTests(unittest.TestCase):
+    def test_numpy_evidence_is_saved_as_native_json_types(self):
+        import numpy as np
+        with tempfile.TemporaryDirectory() as d:
+            path=Path(d)/'result.json'
+            run.write(path,dict(qc=[dict(accepted=np.bool_(True),frames=np.int64(7),score=np.float32(.5))]))
+            row=json.loads(path.read_text())['qc'][0]
+            self.assertIs(row['accepted'],True)
+            self.assertEqual(row['frames'],7)
+            self.assertEqual(row['score'],.5)
+            with self.assertRaises(TypeError):run.write(path,dict(unsupported=object()))
+            self.assertEqual(json.loads(path.read_text())['qc'][0],row)
+
     def test_rejected_parent_is_not_double_counted_and_child_is_rescreened(self):
         parent=dict(sample_id='parent',start=0.,end=9.,duration_s=9.,speaker_id='a',listener_id='b',speaker_index=0,listener_index=1)
         child=dict(parent,sample_id='child',start=4.,end=7.,duration_s=3.)

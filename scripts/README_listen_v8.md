@@ -17,6 +17,8 @@
 
 [listen_full_source_runtime.py](listen_full_source_runtime.py) 仅加速执行：NVDEC 解码后仍采用原软件缩放及 scene > 0.35，解码不支持则明确退回原 CPU 路径。170 秒样本的 5,100 帧缩放输出逐帧 MD5 一致，单轨耗时 34.79→23.10 秒；这不是全量整体加速比。镜头结果按媒体位置、文件 stat 与算法版本缓存。真实两条审核样本没有硬切，镜头切点两侧继续提取的验证来自合成硬切测试，尚不能宣称所有真实切镜类型均已验证。
 
+**首批写盘修复：** 少数回收切片的 `extended_for_completeness` 来自 NumPy 布尔值，标准 JSON 无法直接编码。全量入口新增仅处理 NumPy 标量的编码器，布尔/整数/浮点保持对应 JSON 类型，未知类型仍报错；没有改动任何切点或音质判断。旧契约保存在 `cluster/maintenance/serialization_fix/contract_before.json`，新契约记录 `numpy-json-scalars-1` 执行补丁。暂停新认领、完成在途来源后恢复，旧结果保留，失败来源重试；原始错误日志留作审计，最终错误数排除已成功重试的来源。新增序列化回归测试通过。
+
 使用原项目 Python 环境，项目根目录运行：
 
 ```bash
