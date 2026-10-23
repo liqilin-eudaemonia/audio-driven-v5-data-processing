@@ -1,0 +1,25 @@
+# audio-driven-v5 数据处理备份
+
+备份时间：2026-10-23。音质工作基线：`v8-audio-severity-review-2`。
+
+本仓库保存当前 V8 完整语句切分、ASR 区间误拦恢复、边界分级、音质三路分流、人工反馈约束及相关调度/导出代码。源目录为 `/private/liqi_workspace/project_code/audio-driven-v5`；源代码逐字节保留，文件校验见 [BACKUP_MANIFEST.json](BACKUP_MANIFEST.json)。
+
+- [当前规则、阈值、代码导航](scripts/README_listen_v8.md)
+- [最终音质路由](scripts/listen_v8_audio_final.py) 与 [必需任务/人工约束](scripts/listen_v8_audio_first.py)
+- [切分策略](scripts/listen_policy_v8.py)、[规划](scripts/plan_listen_v8.py)、[恢复修复](scripts/listen_v8_recovery.py)
+- [阶段决定](data_reviews/listener_v8_audio_policy_checkpoint_20261023.json) 与 [历史验收记录](related/P3_V8_QC4_第二批音质验收.md)
+- [原始代码与证据快照](experiments/p3_listen_v8_audio_final_20261023/recorded_baseline/manifest.json)
+
+明确串音和严重噪声排除；轻微底噪及短暂弱匹配按条件保留；证据不明确者待复核。人工正例只覆盖精确样本与区间，负例保留重叠区间约束。当前版本完成小批验证，尚未替换旧 QC4 全量入口；待复核不计入可用数据。本次备份不修改音频或裁剪，不启动全量任务。
+
+仓库包含用于针对性测试的样本元数据、反馈和契约，不包含视频、音频、模型权重、全量中间产物或凭据。元数据中的绝对路径和预览 localhost 链接指向原机器，克隆后不会自动得到这些媒体。归档里的其他历史文档链接可能指向未纳入备份的大型实验产物。
+
+在原有 Python 环境下，从本仓库根目录检查核心回归：
+
+```bash
+OPENBLAS_NUM_THREADS=1 /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python -m unittest discover -s tests -p test_listen_v8_audio_final.py -v
+OPENBLAS_NUM_THREADS=1 /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python -m unittest discover -s tests -p test_listen_policy_v8.py -v
+OPENBLAS_NUM_THREADS=1 /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python -m unittest discover -s tests -p test_listen_v8_recovery.py -v
+```
+
+完整运行另需原始 TAR/索引、归一化 WAV、QC3/QC4 和恢复审计缓存、AST/PANNs、FFmpeg 等；模型重算需匹配的 CUDA 环境。这里不是脱离数据与环境的独立可执行包。`prepare_listen_v8_audio_final.py` 会根据当前历史展示记录重新选样，精确复查旧小批应使用归档 selection/review_selection；不要把重跑准备脚本当成原样回放。
