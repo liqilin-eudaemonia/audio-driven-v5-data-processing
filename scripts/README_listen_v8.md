@@ -2,7 +2,7 @@
 
 ## 完整源视频全量运行（2026-10-23）
 
-用户已认可两条长视频与前后 3 秒边界审核，授权备份后全量处理 Seamless。新入口 [run_listen_local_full.py](run_listen_local_full.py)，版本 `full-source-local-recovery-crop-statistics-1`。使用 [listen_local_recovery.py](listen_local_recovery.py) 的已审完整源视频扫描；音质继续使用 `v8-audio-severity-review-2`，不新增人工放行，不按人脸大小排除。
+用户已认可两条长视频与前后 3 秒边界审核，授权备份后全量处理 Seamless。代码已推送至 GitHub `0e99354`，2026-10-23 10:35:55 UTC 启动三机队列，已核实三机各 32 个存活工作进程及每卡 4 个绑定。新入口 [run_listen_local_full.py](run_listen_local_full.py)，版本 `full-source-local-recovery-crop-statistics-1`。使用 [listen_local_recovery.py](listen_local_recovery.py) 的已审完整源视频扫描；音质继续使用 `v8-audio-severity-review-2`，不新增人工放行，不按人脸大小排除。
 
 完整目录含 64,087 对来源，保持已有 train/dev/test 和身份隔离。旧全量错误也重新尝试。局部音质问题只截断有证据的区间，新子片段重新质检；未知/全局问题不擅自放行。被子片段替代的父候选保存于 `superseded_attempts`，最终各池与清单只统计互不重叠的终端片段，避免重复计算。每个来源的 `coverage` 同时记录相对旧版增加和减少的时间区间；净增长不等于所有旧切片原样保留。
 
