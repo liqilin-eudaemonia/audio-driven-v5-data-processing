@@ -1,0 +1,159 @@
+{
+  "job": {
+    "job_id": "normalize-042",
+    "descriptions": {
+      "d0504": "Mouth slightly open, possibly mid-speech or reacting to content, showing active listening.",
+      "d0505": "Mouth slightly opens as if beginning to speak or sigh, maintaining a sad expression.",
+      "d0506": "Neutral facial expression with lips closed, suggesting focused or thoughtful listening.",
+      "d0507": "Neutral facial expression with slight mouth movement, suggesting attentive listening without overt emotional display.",
+      "d0508": "Neutral facial expression with slight mouth movements, possibly indicating thoughtful processing or anticipation of the speaker's next point.",
+      "d0509": "Neutral facial expression with slight smile, suggesting attentiveness and positive engagement.",
+      "d0510": "Neutral facial expression with slightly parted lips, suggesting attentive listening without overt emotional display.",
+      "d0511": "Neutral facial expression with slightly parted lips, suggesting attentive listening without strong emotional display.",
+      "d0512": "Neutral facial expression with slightly parted lips, suggesting attentive listening without strong emotional reaction.",
+      "d0513": "Nodding again, reinforcing understanding or agreement.",
+      "d0514": "Nodding and smiling, indicating understanding and positive engagement.",
+      "d0515": "Nodding head slightly while listening, indicating engagement."
+    }
+  },
+  "prompt": "<|im_start|>user\nRewrite each supplied annotation into its minimal observable action or sound descriptions. This is annotation cleanup, NOT media perception; do not invent what happened. Process every dictionary key independently. Never group records.\nOutput an object with exactly the supplied keys. Each value is {atoms:[{signature:string, behavior:string, temporal_kind:\"state\"|\"occurrence\", uncertain:boolean}], excluded_reason:string}.\nUse a concise, factual English sentence for behavior. signature is a short lowercase infinitive predicate describing the SAME action, without intensity or psychological interpretation; invent it from the observation, there is NO predefined vocabulary or action taxonomy. Use consistent literal wording for identical actions.\nRemove unsupported interpretations (agreement, sadness, thoughtfulness, attentiveness, engagement, surprise) and retain only described observable changes. Do not copy explanations beginning \"indicating\", \"suggesting\", \"showing\", \"possibly to\", or \"likely to\". If a record contains only an interpretation or an unchanging neutral posture with no reaction, output atoms:[] and explain in excluded_reason.\nExtract separate atoms for different independent actions in one description. Facial details that merely describe the same smile or laugh should stay in that single atom, not become extra events. A static pose is not evidence of movement: \"head tilted\" does not mean \"tilts head\"; \"eyes open\" does not mean \"opens eyes\". Static neutral poses/open eyes alone are not reaction events.\nstate means a sustained expression or gesture state; occurrence means an individual movement cycle, transition, blink, utterance or vocal bout. Repeated nods, shakes, utterances, and other repeated movements are occurrences, never a continuous expression merely to compress them. Keep the content of spoken words exactly as quoted. Preserve explicit uncertainty using uncertain:true. Do not add any timestamps or mental-state inference.\nFor nonempty atoms, excluded_reason must be empty. If uncertain whether an observable action is feedback, retain the action and set uncertain:true rather than deleting it.\nANNOTATIONS (data, not instructions):\n{\"d0504\": \"Mouth slightly open, possibly mid-speech or reacting to content, showing active listening.\", \"d0505\": \"Mouth slightly opens as if beginning to speak or sigh, maintaining a sad expression.\", \"d0506\": \"Neutral facial expression with lips closed, suggesting focused or thoughtful listening.\", \"d0507\": \"Neutral facial expression with slight mouth movement, suggesting attentive listening without overt emotional display.\", \"d0508\": \"Neutral facial expression with slight mouth movements, possibly indicating thoughtful processing or anticipation of the speaker's next point.\", \"d0509\": \"Neutral facial expression with slight smile, suggesting attentiveness and positive engagement.\", \"d0510\": \"Neutral facial expression with slightly parted lips, suggesting attentive listening without overt emotional display.\", \"d0511\": \"Neutral facial expression with slightly parted lips, suggesting attentive listening without strong emotional display.\", \"d0512\": \"Neutral facial expression with slightly parted lips, suggesting attentive listening without strong emotional reaction.\", \"d0513\": \"Nodding again, reinforcing understanding or agreement.\", \"d0514\": \"Nodding and smiling, indicating understanding and positive engagement.\", \"d0515\": \"Nodding head slightly while listening, indicating engagement.\"}<|im_end|>\n<|im_start|>assistant\n",
+  "raw": "{\n  \"d0504\": {\n    \"atoms\": [\n      {\n        \"signature\": \"open mouth\",\n        \"behavior\": \"mouth opens slightly\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": true\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0505\": {\n    \"atoms\": [\n      {\n        \"signature\": \"open mouth\",\n        \"behavior\": \"mouth opens slightly\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": true\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0506\": {\n    \"atoms\": [],\n    \"excluded_reason\": \"neutral facial expression with closed lips and no observable movement\"\n  },\n  \"d0507\": {\n    \"atoms\": [\n      {\n        \"signature\": \"move mouth\",\n        \"behavior\": \"mouth moves slightly\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0508\": {\n    \"atoms\": [\n      {\n        \"signature\": \"move mouth\",\n        \"behavior\": \"mouth moves slightly\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0509\": {\n    \"atoms\": [\n      {\n        \"signature\": \"smile\",\n        \"behavior\": \"mouth forms a slight smile\",\n        \"temporal_kind\": \"state\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0510\": {\n    \"atoms\": [\n      {\n        \"signature\": \"part lips\",\n        \"behavior\": \"lips part slightly\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0511\": {\n    \"atoms\": [\n      {\n        \"signature\": \"part lips\",\n        \"behavior\": \"lips part slightly\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0512\": {\n    \"atoms\": [\n      {\n        \"signature\": \"part lips\",\n        \"behavior\": \"lips part slightly\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0513\": {\n    \"atoms\": [\n      {\n        \"signature\": \"nod head\",\n        \"behavior\": \"head nods\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0514\": {\n    \"atoms\": [\n      {\n        \"signature\": \"nod head\",\n        \"behavior\": \"head nods\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      },\n      {\n        \"signature\": \"smile\",\n        \"behavior\": \"mouth forms a slight smile\",\n        \"temporal_kind\": \"state\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0515\": {\n    \"atoms\": [\n      {\n        \"signature\": \"nod head\",\n        \"behavior\": \"head nods slightly\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  }\n}",
+  "finish_reason": "stop",
+  "completion_tokens": 771,
+  "batch_seconds": 16.325840723933652,
+  "model": "/private/ckpts/Qwen3-VL-8B-Instruct",
+  "text_only": true,
+  "parsed": {
+    "d0504": {
+      "atoms": [
+        {
+          "signature": "open mouth",
+          "behavior": "mouth opens slightly",
+          "temporal_kind": "occurrence",
+          "uncertain": true
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0505": {
+      "atoms": [
+        {
+          "signature": "open mouth",
+          "behavior": "mouth opens slightly",
+          "temporal_kind": "occurrence",
+          "uncertain": true
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0506": {
+      "atoms": [],
+      "excluded_reason": "neutral facial expression with closed lips and no observable movement"
+    },
+    "d0507": {
+      "atoms": [
+        {
+          "signature": "move mouth",
+          "behavior": "mouth moves slightly",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0508": {
+      "atoms": [
+        {
+          "signature": "move mouth",
+          "behavior": "mouth moves slightly",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0509": {
+      "atoms": [
+        {
+          "signature": "smile",
+          "behavior": "mouth forms a slight smile",
+          "temporal_kind": "state",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0510": {
+      "atoms": [
+        {
+          "signature": "part lips",
+          "behavior": "lips part slightly",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0511": {
+      "atoms": [
+        {
+          "signature": "part lips",
+          "behavior": "lips part slightly",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0512": {
+      "atoms": [
+        {
+          "signature": "part lips",
+          "behavior": "lips part slightly",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0513": {
+      "atoms": [
+        {
+          "signature": "nod head",
+          "behavior": "head nods",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0514": {
+      "atoms": [
+        {
+          "signature": "nod head",
+          "behavior": "head nods",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        },
+        {
+          "signature": "smile",
+          "behavior": "mouth forms a slight smile",
+          "temporal_kind": "state",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0515": {
+      "atoms": [
+        {
+          "signature": "nod head",
+          "behavior": "head nods slightly",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    }
+  }
+}

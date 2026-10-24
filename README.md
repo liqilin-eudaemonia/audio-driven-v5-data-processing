@@ -1,5 +1,7 @@
 # audio-driven-v5 数据处理备份
 
+**Listener 开放事件打标（2026-10-24，当前方案已获用户认可）：** [代码、prompt、复现与结果入口](event_labeling/README.md)。Qwen3-VL 视觉＋Qwen3-Omni 纯音频＋ASR 逐词时间，50 段的 1,089 条候选整合为 682 条开放事件。独立目录保存源码、原始响应、标签和来源追踪；支持无 GPU 逐字节重放。
+
 **Seamless 四机无切镜全量已完成（2026-10-23）：** 64,087 对来源全部有结论，63,895 对结果（含 2,074 对源无效诊断）、192 对归一化异常隔离，剩余 0。训练主池音质候选 **2,002.627 小时**，起始反应储备另有 **333.317 小时**。四机 32 卡含恢复与导出共 **61 分钟**；未做人脸尺寸筛选或最终裁剪。[尺寸分布报告](data_corpora/seamless_listen_local_full/size_distribution_report.md)、[完成核验](experiments/p3_listen_local_full_20261023/completion_verification.json)、[代码与运行说明](scripts/README_listen_v8.md#seamless-无切镜全量完成2026-10-23)。最终清单索引及哈希已备份，完整大清单和媒体仍在源机器。下方为历史过程记录。
 
 **Seamless 完整源视频回收全量版（2026-10-23）：** 用户已认可连续原片与前后 3 秒边界审核。新增 [全量入口](scripts/run_listen_local_full.py)、[处理规则与恢复说明](scripts/README_listen_v8.md#完整源视频全量运行2026-10-23)、[原项目总索引快照](SOURCE_PROJECT_README.md)。范围 64,087 对，3 机 24 卡最多 96 个模型进程；局部失败继续提取子片段，保持原音质基线，父子不重复计数。人脸和头肩参考框只做统计，不作为准入条件。35 项测试通过，正式入口复现已审核的 28 段/145.254 秒，并对未审核来源完成 6 段新切片质检。[验证证据](experiments/p3_listen_local_full_20261023/validation.json)、[冻结契约](data_corpora/seamless_listen_local_full/contract.json)。GPU 解码支持的样本已验证原缩放输出逐帧一致，不支持的格式回退 CPU。备份包含代码、小批元数据和验证，媒体、模型和全量动态结果留在原机器。以下为历史版本记录。
