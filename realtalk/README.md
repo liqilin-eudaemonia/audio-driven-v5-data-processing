@@ -41,3 +41,5 @@ python /path/to/new_run/code/serve.py
 ## 分辨率抽样审核
 
 新增 [11 档、33 条同步对照抽样](resolution_review/README.md)，用于人工确定阈值，未执行阈值筛选。
+
+全量v2入口：[full_v2](full_v2/README.md)，复现已确认137条pair后扩展到692条源视频，保留分离与优化双评分。
