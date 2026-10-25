@@ -1,5 +1,7 @@
 # audio-driven-v5 数据处理备份
 
+**当前打标信息原文整合（2026-10-25）：** [独立代码、规则、50段输入结果与CPU重放](event_labeling/integration_verbatim/README.md)。保留模型原文，减少跨窗重复，自动选择已有时间，来源分歧单列；175条候选、682条输入观测完整保留。原有打标基线继续保存在event_labeling，当前整合入口以此为准。
+
 **Listener 开放事件打标（2026-10-24，当前方案已获用户认可）：** [代码、prompt、复现与结果入口](event_labeling/README.md)。Qwen3-VL 视觉＋Qwen3-Omni 纯音频＋ASR 逐词时间，50 段的 1,089 条候选整合为 682 条开放事件。独立目录保存源码、原始响应、标签和来源追踪；支持无 GPU 逐字节重放。
 
 **Seamless 四机无切镜全量已完成（2026-10-23）：** 64,087 对来源全部有结论，63,895 对结果（含 2,074 对源无效诊断）、192 对归一化异常隔离，剩余 0。训练主池音质候选 **2,002.627 小时**，起始反应储备另有 **333.317 小时**。四机 32 卡含恢复与导出共 **61 分钟**；未做人脸尺寸筛选或最终裁剪。[尺寸分布报告](data_corpora/seamless_listen_local_full/size_distribution_report.md)、[完成核验](experiments/p3_listen_local_full_20261023/completion_verification.json)、[代码与运行说明](scripts/README_listen_v8.md#seamless-无切镜全量完成2026-10-23)。最终清单索引及哈希已备份，完整大清单和媒体仍在源机器。下方为历史过程记录。
