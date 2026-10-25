@@ -20,3 +20,9 @@
 运行环境为 `../av_baseline_pairs_20261024/venv/bin/python`（包含分离模型依赖）。在node8上运行`code/supervisor.py`，根据空闲显存安排每卡1–2个常驻worker，使用8张卡，不停止其他任务。每条源视频加文件锁；模型常驻；断点按代码、输入清单、模型、音轨哈希检查。后台任务不依赖聊天或浏览器存活。
 
 完整备份基线：GitHub `ae0b3c6` 的 `realtalk/boundary_v2/`。此目录为新的全量结果，不覆盖旧全量或已确认试片。
+
+## 2026-10-25 并发提升
+
+原12进程保持运行，额外控制器 `operations/boost_workers.py` 启动相同pipeline进程，共享原有每源文件锁和缓存；核心代码不变，不触发已完成结果重算。先升至32进程，90秒预热后按每进程13GB显存预算、每卡16GB余量、每卡最多8进程继续升并发，总上限64。实际并发取决于同机其他任务的显存占用。CPU压力过高时暂停增加进程，不杀正在运行的任务。新增控制器会在原监督进程和新增worker全部结束后再汇总最终结果。
+
+实时并发与资源：`operations/boost_status.json`；连续记录：`operations/boost_metrics.jsonl`。
