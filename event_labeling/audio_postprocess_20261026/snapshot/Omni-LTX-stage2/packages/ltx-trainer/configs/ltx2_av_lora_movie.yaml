@@ -1,0 +1,146 @@
+# =============================================================================
+# LTX-2.3 Audio-Video Movie LoRA Training Configuration
+# =============================================================================
+#
+# BASELINE Gemma-only recipe. Keep use_qwen_cond OFF here.
+# For Qwen3VL dual-condition experiments, use:
+#   configs/ltx2_av_lora_movie_qwen8b.yaml
+# and the symlink workflow in .cursor/skills/ltx-qwen-vl-caption-bridge/SKILL.md
+#
+# Train command examples:
+#   cd packages/ltx-trainer
+#   uv run python scripts/train.py configs/ltx2_av_lora_movie.yaml
+#   uv run accelerate launch scripts/train.py configs/ltx2_av_lora_movie.yaml
+#
+# Dataset structure:
+#   preprocessed_data_root/
+#   ├── latents/
+#   ├── conditions/
+#   ├── audio_latents/
+#   └── qwen_conditions/  # Optional symlink; ignored unless use_qwen_cond is enabled
+#
+# =============================================================================
+
+model:
+  model_path: "/mnt/data04/480634/728342682@qq.com/2_CKPT/LTX_23/ltx-2.3-22b-dev.safetensors"
+  text_encoder_path: "/mnt/data04/480634/public/2_CKPT/0_WM/LTX2.0_TEXT_ENCODER"
+  training_mode: "lora"
+  # Use this only when resuming from a previous LoRA checkpoint/directory.
+  # Do not point this at a full fine-tune checkpoint.
+  load_checkpoint: null
+
+lora:
+  rank: 64
+  alpha: 64
+  dropout: 0.0
+  target_modules:
+    - "to_k"
+    - "to_q"
+    - "to_v"
+    - "to_out.0"
+    # Short patterns above also match optional qwen_attn2/audio_qwen_attn2 modules when use_qwen_cond is enabled.
+    # Uncomment these for a higher-capacity LoRA at the cost of more VRAM.
+    # - "ff.net.0.proj"
+    # - "ff.net.2"
+    # - "audio_ff.net.0.proj"
+    # - "audio_ff.net.2"
+
+training_strategy:
+  name: "text_to_video"
+  first_frame_conditioning_p: 1.0
+  with_audio: true
+  audio_latents_dir: "audio_latents"
+  # Optional Wan-style second condition branch from cached Qwen3VL tokens.
+  # Requires data.preprocessed_data_root/qwen_conditions/*.pt files aligned with latents/ and conditions/.
+  # Preferred Qwen3-VL setup for this project is 8B:
+  #   qwen_model_path: /mnt/data04/480634/728342682@qq.com/2_CKPT/QWEN3VL/Qwen3-VL-8B-Instruct
+  #   qwen_conditions cache: qwen3vl_8b_conditions_1088_640_ltx121_len3072
+  #   selected-layer cache: qwen3vl_8b_conditions_1088_640_ltx121_len3072_layers12_24_36_mean
+  #   qwen max length: 3072 for the current 1088x640 LTX121 movie JSONL
+  #   qwen max pixels: 921600 (1280*720 first-frame budget)
+  # For 4B, use qwen_cross_attention_dim/audio_qwen_cross_attention_dim = 2560 instead.
+  # use_qwen_cond: true
+  # qwen_conditions_dir: "qwen_conditions"
+  # qwen_cond_for_audio: true
+  # qwen_cross_attention_dim: 4096
+  # audio_qwen_cross_attention_dim: 4096
+
+optimization:
+  learning_rate: 1e-4
+  steps: 10000
+  batch_size: 1
+  gradient_accumulation_steps: 10
+  max_grad_norm: 1.0
+  optimizer_type: "adamw"
+  scheduler_type: "linear"
+  scheduler_params: { }
+  enable_gradient_checkpointing: true
+
+acceleration:
+  mixed_precision_mode: "bf16"
+  quantization: null
+  load_text_encoder_in_8bit: false
+  offload_optimizer_during_validation: false
+
+data:
+  preprocessed_data_root: "/mnt/data04/480634/public/1_FEATURE/1_AUDIO/LTX23/avgen_data/precomputed_1088_640_gc_ltx121_av"
+  num_dataloader_workers: 2
+
+validation:
+  prompts:
+    - "[SCENE]lighting: dim, cool-toned blue and gray; location type: inside a vehicle; composition: close-up of a man seen through a reflective windshield[END_SCENE] [CHARATER_OBJECT] appearance: middle-aged man with short brown hair, wearing a dark jacket; posture: seated, slightly leaning forward; spatial relations: behind the steering wheel; actions: holding a cell phone to his left ear, looking forward with a serious and slightly confused expression[END_CHARATER_OBJECT] [SENSORY] background elements: reflections of trees and streetlights on the windshield glass, steering wheel visible at the bottom; atmosphere: suspenseful, serious; materials: glass, plastic, fabric; colors: dark blue, gray, pale skin tones[END_SENSORY] [DIALOGUE_SEQUENCE] [WORDS]I like that.[END_WORDS] [ACTION]speaks calmly while listening to the phone, eyes fixed forward[END_ACTION] [ENVIRONMENT_CONTINUATION]static frame; focus is on the man's face through the glass[END_ENVIRONMENT_CONTINUATION] [WORDS]What?[END_WORDS] [ACTION]his expression shifts to one of confusion and concern as he responds to the person on the line[END_ACTION] [ENVIRONMENT_CONTINUATION]static frame; the reflections on the windshield remain steady[END_ENVIRONMENT_CONTINUATION] [END_DIALOGUE_SEQUENCE] [AUDIO_CAPTION]A deep, resonant male voice speaks with a steady, inquisitive tone over a low, ambient hum of a vehicle interior.[END_AUDIO_CAPTION]"
+    - "[SCENE]lighting: artificial, slightly dim; location type: indoor hospital nurse's station; composition: medium shot of three people behind a counter[END_SCENE] [CHARATER_OBJECT] appearance: man on left has glasses, balding head, wears white lab coat over green shirt; man in center is tall with goatee, wears light blue lab coat and striped tie; woman on right has dark hair in bun, wears pink scrubs over striped shirt and stethoscope; posture: all standing behind a high counter; spatial relations: grouped together in a workspace; actions: man on left flips paper on clipboard and writes; woman on right flips through a yellow folder[END_CHARATER_OBJECT] [SENSORY] background elements: clinical charts, medical equipment, cardboard boxes, blurred hospital corridor in background; atmosphere: busy, professional yet casual; materials: paper, plastic, metal, fabric; colors: white, light blue, pink, muted greens and browns[END_SENSORY] [DIALOGUE_SEQUENCE] [WORDS]What's wrong with Carly?[END_WORDS] [ACTION]woman in pink scrubs looks at the folder while speaking[END_ACTION] [ENVIRONMENT_CONTINUATION]static frame, background characters moving slightly[END_ENVIRONMENT_CONTINUATION] [WORDS]Don't start. We had to make room for Heather.[END_WORDS] [ACTION]man in white lab coat responds without looking up from his clipboard, continues writing[END_ACTION] [ENVIRONMENT_CONTINUATION]static frame[END_ENVIRONMENT_CONTINUATION] [WORDS]So you got the one with the-[END_WORDS] [ACTION]woman looks up at the man and smiles while finishing the sentence[END_ACTION] [ENVIRONMENT_CONTINUATION]no camera movement[END_ENVIRONMENT_CONTINUATION] [END_DIALOGUE_SEQUENCE] [AUDIO_CAPTION]Clear, naturalistic dialogue between multiple people in a busy indoor environment, accompanied by the rustling of paper and clicking of pens against clipboards, set against a low-level background of hospital activity.[END_AUDIO_CAPTION]"
+    - "[SCENE]lighting: dim, warm, localized; location type: indoor bedroom; composition: medium close-up of a couple in bed[END_SCENE] [CHARATER_OBJECT] appearance: shirtless man with dark hair, woman with dark wavy hair; posture: man sitting up leaning on pillows, woman lying down tucked under covers; spatial relations: side-by-side in bed; actions: man folds newspaper and sets it down, woman watches him and speaks[END_CHARATER_OBJECT] [SENSORY] background elements: ornate gold-trimmed headboard, pink pillows, floral patterned sheets; atmosphere: quiet, intimate, nostalgic; materials: paper, cotton fabric, wood; colors: dark shadows, soft pink, white, flesh tones[END_SENSORY] [DIALOGUE_SEQUENCE] [WORDS]The music end.[END_WORDS] [ACTION]man looks down at the newspaper while speaking[END_ACTION] [ENVIRONMENT_CONTINUATION]static frame; focus on man's face and torso[END_ENVIRONMENT_CONTINUATION] [ACTION]man folds the newspaper with both hands and places it on the bed[END_ACTION] [WORDS]That's the place I got him. On fourth, right near the gaslight. You'd love it.[END_WORDS] [ACTION]woman looks up at him, speaking softly while gesturing with her hand[END_ACTION] [ENVIRONMENT_CONTINUATION]no camera movement; man turns his head to meet her gaze at the end of her sentence[END_ENVIRONMENT_CONTINUATION] [END_DIALOGUE_SEQUENCE] [AUDIO_CAPTION]Soft, low-pitched male and female voices speaking in a quiet, intimate indoor setting, followed by the crisp, dry rustling sound of paper being folded and placed on fabric.[END_AUDIO_CAPTION]"
+    - "[SCENE]lighting: muted, natural from window; location type: indoor traditional room; composition: medium shot of three characters, older man centered, younger man on right, woman on left with back to camera[END_SCENE]\n[CHARATER_OBJECT] appearance: older man with mustache wears grey fedora and brown trench coat; younger man in light blue tunic with white sash; woman (back to camera) has dark hair and dark collar; posture: men standing upright, younger man gesturing; spatial relations: younger man between center and right, woman on left; actions: younger man speaks and gestures toward the woman, then turns to lead the older man away[END_CHARATER_OBJECT]\n[SENSORY] background elements: white walls, wooden lattice window, globe on stand, dark wooden furniture, decorative vases; atmosphere: tense, domestic confrontation; materials: wood, fabric, plaster, ceramic; colors: brown, grey, light blue, white, dark tones[END_SENSORY]\n[DIALOGUE_SEQUENCE]\n[WORDS]妹妹，你何必那么固执呢？[END_WORDS]\n[ACTION]younger man speaks while looking at the woman with a concerned expression[END_ACTION]\n[ENVIRONMENT_CONTINUATION]static frame; focus on the interaction between the three characters[END_ENVIRONMENT_CONTINUATION]\n[WORDS]我跟马主任去拿封信，马上就回来。[END_WORDS]\n[ACTION]younger man explains his intent, gesturing slightly with his hands[END_ACTION]\n[WORDS]马主任，请。[END_WORDS]\n[ACTION]younger man turns to the older man and gestures for him to follow[END_ACTION]\n[WORDS]不行。[END_WORDS]\n[ACTION]woman speaks off-camera/back-to-camera with a sharp tone; both men halt and look at her in surprise[END_ACTION]\n[END_DIALOGUE_SEQUENCE]\n[AUDIO_CAPTION]Resonant, clear male voices speaking Mandarin with varied emotional intensity, followed by a sharp, firm female rejection; ambient indoor room tone with subtle acoustic reflections from the walls.[END_AUDIO_CAPTION]"
+  negative_prompt: "worst quality, inconsistent motion, blurry, jittery, distorted"
+  images:
+    - "/mnt/data04/480634/728342682@qq.com/4_RESULT/1_AUDIO/test_case/i2v/沉默生机 赎命密码_1.png"
+    - "/mnt/data04/480634/728342682@qq.com/4_RESULT/1_AUDIO/test_case/i2v/急诊室的故事_1.png"
+    - "/mnt/data04/480634/728342682@qq.com/4_RESULT/1_AUDIO/test_case/i2v/了不起的麦瑟尔夫人_1.png"
+    - "/mnt/data04/480634/728342682@qq.com/1_CODE/CAPTION/test_data/00014.png"
+  # Optional: when training_strategy.use_qwen_cond is enabled, provide one cached
+  # Qwen condition .pt file per validation prompt so validation uses the same branch.
+  # These validation files must be generated with the same Qwen size as the training cache
+  # (8B -> 4096 hidden dim, 4B -> 2560 hidden dim).
+  # qwen_condition_files:
+  #   - "/path/to/validation_case_1_qwen.pt"
+  #   - "/path/to/validation_case_2_qwen.pt"
+  #   - "/path/to/validation_case_3_qwen.pt"
+  #   - "/path/to/validation_case_4_qwen.pt"
+  video_dims: [ 1088, 640, 121 ]
+  frame_rate: 24.0
+  seed: 42
+  inference_steps: 30
+  interval: 100
+  guidance_scale: 4.0
+  stg_scale: 1.0
+  stg_blocks: [ 29 ]
+  stg_mode: "stg_av"
+  generate_audio: true
+  skip_initial_validation: false
+
+checkpoints:
+  interval: 1000
+  keep_last_n: -1
+  precision: "bfloat16"
+  no_resume: false
+  save_training_state: "minimal"
+
+flow_matching:
+  timestep_sampling_mode: "shifted_logit_normal"
+  timestep_sampling_params: { }
+
+hub:
+  push_to_hub: false
+  hub_model_id: null
+
+wandb:
+  enabled: true
+  project: "ltx-23-trainer"
+  entity: "fengjeffs-xi-an-jiaotong-university-"
+  tags: [ "ltx2", "lora", "movie" ]
+  log_validation_videos: true
+  resume_run: false
+
+seed: 42
+output_dir: "outputs/ltx2_av_lora_movie_64_1088_640_121"
