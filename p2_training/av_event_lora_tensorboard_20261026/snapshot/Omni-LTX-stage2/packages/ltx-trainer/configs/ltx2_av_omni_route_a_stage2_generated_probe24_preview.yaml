@@ -1,0 +1,49 @@
+# Primary empirical Stage-2 preview: keep all causally safe generated Plans,
+# default recoverable semantic/track fields, and record every repair as a warning.
+generated_plan_evaluation:
+  format: omni_stage2_generated_e2e_v1
+  validation_mode: preview
+  max_new_tokens: 4096
+  max_planned_duration_ms: 23733
+prompts: []
+metadata_jsonl: /public/2_CKPT/0_WM/llq/omni_route_a_stage1_train_4n32g_20260920/probe24_single_stage.jsonl
+from_train: false
+jsonl_caption_field: sd_text
+jsonl_video_field: video
+jsonl_max_samples: 24
+negative_prompt: worst quality, inconsistent motion, blurry, jittery, distorted
+images: null
+qwen_condition_files: null
+reference_videos: null
+reference_downscale_factor: 1
+video_dims: [1248, 704, 121]
+frame_rate: 30.0
+seed: 42
+inference_steps: 30
+interval: 1
+guidance_scale: 4.0
+stg_scale: 1.0
+stg_blocks: [29]
+stg_mode: stg_av
+generate_audio: true
+skip_initial_validation: false
+run_only: true
+metrics: [id_similarity, fid, fvd, sync_c]
+metric_prefix: generated_stage2_probe24_preview
+plain_prompt_is_transcript: false
+id_python: /private/software/conda/envs/ovi/bin/python
+id_model_root: /private/codes/exp/boxian_workspace/models/benchmark/insightface
+id_model_name: buffalo_l
+id_sample_frames: 8
+id_cpu: true
+benchmark_root: /private/codes/exp/boxian_workspace/codes/benchmark
+avbench_python: /private/software/conda/envs/avbench/bin/python
+vocal_sync_python: /private/software/conda/envs/vocal_sync/bin/python
+syncnet_root: /private/codes/joint_gen/complex_motion_train/syncnet_python
+metric_device: cuda:0
+syncnet_gpus: 0,1,2,3,4,5,6,7
+fid_frames: 4
+fvd_frames: 16
+metric_timeout_seconds: 7200
+metric_failure_policy: error
+include_reference_in_output: false

@@ -1,5 +1,7 @@
 # audio-driven-v5 数据处理备份
 
+**当前 P2 训练固定版（2026-10-26）：** [AV＋Event＋text-attention LoRA＋H200 优化＋TensorBoard：备份、验证及恢复说明](p2_training/av_event_lora_tensorboard_20261026/README.md)。保存实际使用的 P2/v4/LTX 源码、配置和依赖记录；备份副本 146 项 CPU 测试、两进程训练与监控检查通过。固定标签 `p2-av-event-text-lora-h200-tensorboard-20261026`。此前无 LoRA 标签不覆盖。
+
 **P2 AV / AV＋Event 训练代码（2026-10-26）：** [独立源码快照、配置、验证与恢复说明](p2_training/av_event_20261026/README.md)。显式关闭 feature decoder、teacher 读取、feature loss 和对应优化器组；首轮比较事件监督是否有效。版本标签 `p2-av-event-no-feature-20261026`，简化版真实 GPU S0 尚未执行。
 
 **RealTalk 切分边界 v2 已获确认（2026-10-25）：** [代码、规则、长视频结果与独立恢复](realtalk/boundary_v2/README.md)。完整611.64秒原视频生成137条／401.56秒候选，旧候选帧全部保留。原生裁剪、切点上下文和完整时间账本已审核；12项边界测试及恢复校验通过。全量切换、干净音轨认证与训练准入尚未执行。
