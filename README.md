@@ -1,5 +1,7 @@
 # audio-driven-v5 数据处理备份
 
+**P2 AV / AV＋Event 训练代码（2026-10-26）：** [独立源码快照、配置、验证与恢复说明](p2_training/av_event_20261026/README.md)。显式关闭 feature decoder、teacher 读取、feature loss 和对应优化器组；首轮比较事件监督是否有效。版本标签 `p2-av-event-no-feature-20261026`，简化版真实 GPU S0 尚未执行。
+
 **RealTalk 切分边界 v2 已获确认（2026-10-25）：** [代码、规则、长视频结果与独立恢复](realtalk/boundary_v2/README.md)。完整611.64秒原视频生成137条／401.56秒候选，旧候选帧全部保留。原生裁剪、切点上下文和完整时间账本已审核；12项边界测试及恢复校验通过。全量切换、干净音轨认证与训练准入尚未执行。
 
 **当前打标信息原文整合（2026-10-25）：** [独立代码、规则、50段输入结果与CPU重放](event_labeling/integration_verbatim/README.md)。保留模型原文，减少跨窗重复，自动选择已有时间，来源分歧单列；175条候选、682条输入观测完整保留。原有打标基线继续保存在event_labeling，当前整合入口以此为准。
