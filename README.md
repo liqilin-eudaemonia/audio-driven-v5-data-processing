@@ -1,5 +1,7 @@
 # audio-driven-v5 数据处理备份
 
+**最终数据处理流水线备份（2026-10-27）：** [当前代码、生产冻结版本与恢复说明](event_labeling/final_processing_20261027/README.md)。覆盖全量打标／整合、静音后处理、特征与事件缓存、新50h／双300h及test48；140项CPU测试通过，163个生产运行时文件按SHA恢复。固定标签 `p2-final-data-processing-20261027`；不含媒体、权重或latent。
+
 **四组正式训练代码固定备份（2026-10-27）：** [源码、实际run与恢复说明](p2_training/fourway_actual_runs_20261027/README.md)。AV、AV＋Event、AV＋Feature、AV＋Event＋Feature分别保存与实际checkpoint匹配的版本；289条源码绑定及681次CPU回归通过。固定标签 `p2-fourway-actual-runs-20261027`，不含权重、媒体和缓存。
 
 **Listener音频后处理与训练读取（2026-10-26）：** [独立代码、规则、恢复与验收](event_labeling/audio_postprocess_20261026/README.md)。固定50h的30,415段全部验收通过：不新增WAV，保存配方及音频latent；训练组合原视频与新音频、事件缓存。包含三机24卡调度、依赖源码和备份副本检查。

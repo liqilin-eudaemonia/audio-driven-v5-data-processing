@@ -1,0 +1,67 @@
+{
+  "revision": "qc4-cluster-fixed4-4",
+  "ssh_key": "/private/ssh_keys/root_dedicated-developjob-zhizhou-avgen-1-zzdsg_ed25519",
+  "python": "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+  "nodes": [
+    {
+      "name": "node17",
+      "host": "172.29.15.91",
+      "port": 22,
+      "external_port_note": 20342,
+      "index": 0
+    },
+    {
+      "name": "node12",
+      "host": "172.29.252.11",
+      "port": 22,
+      "external_port_note": 20382,
+      "index": 1
+    },
+    {
+      "name": "node4",
+      "host": "172.29.225.51",
+      "port": 22,
+      "external_port_note": 20359,
+      "index": 2
+    }
+  ],
+  "maximum_preparation_slots_per_node": 64,
+  "maximum_model_workers_per_node": 32,
+  "cpu_busy_backoff_percent": 80,
+  "minimum_available_memory_fraction": 0.1,
+  "minimum_free_gpu_memory_mib": 16384,
+  "benchmark_seconds": 120,
+  "warmup_seconds": 30,
+  "stages": [
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      1,
+      8
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      4,
+      2
+    ]
+  ],
+  "minimum_throughput_gain": 0.05,
+  "policy": "Scheduling only. Preserve frozen QC4, human routing, model batch and media rules. Never stop unrelated training. Max 64 preparation slots per node; back off under observed resource pressure.",
+  "fixed_setting": [
+    4,
+    2
+  ]
+}
