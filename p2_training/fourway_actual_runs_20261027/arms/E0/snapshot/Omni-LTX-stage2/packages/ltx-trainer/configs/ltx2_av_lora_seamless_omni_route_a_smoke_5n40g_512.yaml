@@ -1,0 +1,145 @@
+# Route-A Qwen3-Omni + LTX-2.3 AV multi-node FSDP smoke test.
+# The 512-aligned cache is complete and audited (5,341 AV latent pairs).
+# Use CLUSTER_NODE_NAMES=js-public,avgen-1 for a two-node subset smoke.
+
+model:
+  model_path: "/public/2_CKPT/2_AVATAR/LTX23/LTX_23/ltx-2.3-22b-dev.safetensors"
+  text_encoder_path: "/public/2_CKPT/0_WM/LTX2.0_TEXT_ENCODER"
+  training_mode: "lora"
+  load_checkpoint: null
+
+lora:
+  rank: 8
+  alpha: 8
+  dropout: 0.0
+  target_modules: ["to_k", "to_q", "to_v", "to_out.0"]
+  exclude_modules: '(?:^|.*\.)(?:omni_attn2|audio_omni_attn2|audio_ff_attn2)(?:\..*)?'
+  modules_to_save:
+    - "omni_attn2"
+    - "audio_omni_attn2"
+    - "video_omni_layer_adapter"
+    - "audio_omni_layer_adapter"
+    - "audio_ff_attn2"
+
+training_strategy:
+  name: "text_to_video"
+  i2av_only: true
+  first_frame_conditioning_p: 1.0
+  with_audio: true
+  audio_latents_dir: "audio_latents"
+  online_conditioning: false
+  online_text_conditioning: true
+  online_qwen_conditioning: false
+  use_qwen_cond: false
+  qwen_image_width: 512
+  qwen_image_height: 512
+  use_omni_cond: true
+  omni_conditions_dir: "/public/1_FEATURE/0_GM/3_CAPTION/1_omni_no_context"
+  omni_cond_for_audio: true
+  omni_cross_attention_dim: 1024
+  audio_omni_cross_attention_dim: 1024
+  use_omni_layer_adapters: true
+  omni_layer_adapter_num_layers: 4
+  omni_layer_adapter_input_dim: 1024
+  omni_dropout: 0.0
+  use_listener_timbre_cond: false
+  use_first_frame_audio_cond: true
+  first_frame_dropout: 0.0
+
+optimization:
+  learning_rate: 1.0e-4
+  steps: 30
+  batch_size: 1
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0
+  optimizer_type: "adamw8bit"
+  scheduler_type: "constant"
+  scheduler_params: {}
+  enable_gradient_checkpointing: true
+
+acceleration:
+  mixed_precision_mode: "bf16"
+  quantization: null
+  load_text_encoder_in_8bit: true
+  offload_optimizer_during_validation: false
+
+data:
+  preprocessed_data_root: "/private/liqi_workspace/data/seamless/subset_300h/ltx23_precomputed_512_aligned"
+  metadata_jsonls:
+    - "/private/liqi_workspace/data/seamless/subset_300h/ltx23_precomputed_512_aligned/metadata_train.jsonl"
+  num_dataloader_workers: 0
+  caption_field: "sd_text"
+  video_field: "video"
+  path_remap: {}
+  length_bucket:
+    enabled: false
+    sync_bucket_across_ranks: false
+    max_batches_per_epoch: null
+    allowed_frames: null
+
+validation:
+  # Primary profile: held-out test split. Secondary profile: held-out dev split.
+  # Both use fixed, deterministic 8-sample subsets and run every five steps.
+  metadata_jsonl: "/private/liqi_workspace/data/seamless/subset_300h/ltx23_precomputed_512_aligned/metadata_test.jsonl"
+  jsonl_caption_field: "sd_text"
+  jsonl_video_field: "video"
+  jsonl_max_samples: 8
+  extended_metadata_jsonl: "/private/liqi_workspace/data/seamless/subset_300h/ltx23_precomputed_512_aligned/metadata_dev.jsonl"
+  extended_interval: 5
+  extended_jsonl_caption_field: "sd_text"
+  extended_jsonl_video_field: "video"
+  extended_max_samples: 8
+  video_dims: [512, 512, 89]
+  frame_rate: 25.0
+  inference_steps: 2
+  interval: 5
+  skip_initial_validation: true
+  generate_audio: true
+  metrics: [id_similarity, fid, fvd, sync_c]
+  metric_prefix: "test"
+  extended_metric_prefix: "validation"
+  plain_prompt_is_transcript: true
+  id_python: "/private/software/conda/envs/ovi/bin/python"
+  id_model_root: "/private/codes/exp/boxian_workspace/models/benchmark/insightface"
+  id_model_name: "buffalo_l"
+  id_sample_frames: 8
+  id_cpu: true
+  benchmark_root: "/private/codes/exp/boxian_workspace/codes/benchmark"
+  avbench_python: "/private/software/conda/envs/avbench/bin/python"
+  vocal_sync_python: "/private/software/conda/envs/vocal_sync/bin/python"
+  syncnet_root: "/private/codes/joint_gen/complex_motion_train/syncnet_python"
+  metric_device: "cuda:0"
+  syncnet_gpus: "0"
+  fid_frames: 4
+  fvd_frames: 16
+  metric_timeout_seconds: 3600
+  metric_failure_policy: warn
+
+checkpoints:
+  interval: null
+  keep_last_n: 1
+  precision: "bfloat16"
+  no_resume: true
+  save_training_state: "minimal"
+
+flow_matching:
+  timestep_sampling_mode: "shifted_logit_normal"
+  timestep_sampling_params: {}
+
+hub: {push_to_hub: false, hub_model_id: null}
+wandb: {enabled: false}
+
+seed: 43
+output_dir: "outputs/smoke_seamless_omni_route_a_ltx23_fsdp_2n16g_512_30step_val5"
+
+cluster:
+  master_port: 29741
+  nproc_per_node: 8
+  nodes:
+    # Allocation labels: node12/20474, node8/20341, node11/20470,
+    # node17/20494, node16/20344. Inter-node SSH uses the internal port 22.
+    - {name: js-public, host: 172.29.252.24, ssh_user: root, ssh_port: 22, role: master}
+    - {name: tk-1, host: 172.29.104.194, ssh_user: root, ssh_port: 22, role: slave}
+    - {name: avgen-public, host: 172.29.189.120, ssh_user: root, ssh_port: 22, role: slave}
+    - {name: avgen-2, host: 172.29.15.126, ssh_user: root, ssh_port: 22, role: slave}
+    - {name: avgen-1, host: 172.29.112.43, ssh_user: root, ssh_port: 22, role: slave}
