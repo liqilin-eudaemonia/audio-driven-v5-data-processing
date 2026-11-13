@@ -1,0 +1,51 @@
+{
+  "schema": "p2-matrix16-v1",
+  "id": "guided_av_event_s2",
+  "text_condition": "guided",
+  "loss": "av_event",
+  "stage": 2,
+  "data_config": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_train50h_postprocessed_reselected_20261027/config.json",
+  "plan_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_plan_conditions_train50h_verbatim_20261027",
+  "teacher_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_matrix16_teacher50h_20261027",
+  "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_matrix16_training_20261027/guided_av_event_s2",
+  "parent_experiment": "guided_av_event_s1",
+  "loss_weights": {
+    "av": 1.0,
+    "event": 0.05,
+    "video_feature": 0.1,
+    "audio_feature": 0.1
+  },
+  "qwen_lora": {
+    "enabled": true,
+    "rank": 8,
+    "alpha": 8,
+    "learning_rate": 1e-05,
+    "targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ],
+    "gradient_checkpointing": true
+  },
+  "text_lora": {
+    "enabled": true,
+    "rank": 8,
+    "alpha": 8,
+    "learning_rate": 1e-05
+  },
+  "training": {
+    "seed": 20261023,
+    "global_batch": 24,
+    "steps": null,
+    "save_every": 100,
+    "warmup_steps": 50,
+    "connector_lr": 3e-05,
+    "feature_lr": 3e-05,
+    "event_lr": 0.0001,
+    "clip_norm": 1.0,
+    "weight_decay": 0.0,
+    "gradient_checkpointing": "all",
+    "tensorboard": true
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "at": 1793942893.413141,
+  "scope": "read-only assessment; production sampler unchanged",
+  "completed_samples": 14,
+  "sampling_s": 876.0652509520296,
+  "decode_export_s": 85.76750226905278,
+  "decode_export_fraction": 0.08917091041225819,
+  "historical_batch_benchmark": "experiments/p2_inference_batch_benchmark_20261102_v3/SUMMARY.json",
+  "priority_candidates": [
+    {
+      "name": "Per-clip fixed Whisper K/V and fixed positional embedding caches",
+      "status": "code inspection only; needs same-seed full30-step latent parity and timing benchmark",
+      "guard": "Only invariant tensors; text context with timestep-dependent AdaLN is not eligible"
+    },
+    {
+      "name": "Profile actual SDPA kernels before backend tuning",
+      "status": "PytorchAttention uses torch SDPA; flash/memory-efficient/math are all enabled; actual kernel not profiled"
+    },
+    {
+      "name": "Overlap CPU video encoding with following GPU work",
+      "status": "unimplemented; cannot remove GPU VAE decode cost; bounded by measured decode/export fraction"
+    },
+    {
+      "name": "CFG and same-length sample batching",
+      "status": "historical older non-Whisper model measured 3.1%-12.9% sampling reduction with non-bitwise outputs; not validated/adopted for current Whisper model"
+    },
+    {
+      "name": "Regional torch.compile",
+      "status": "untested; variable lengths and cold compilation cost must be included"
+    }
+  ]
+}

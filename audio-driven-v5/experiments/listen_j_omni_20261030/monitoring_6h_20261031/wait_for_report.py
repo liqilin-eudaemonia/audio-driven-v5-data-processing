@@ -1,0 +1,66 @@
+"""Read-only live wait for a scheduled report; surface anomalies for inspection."""
+import argparse,json,time
+from pathlib import Path
+
+def inspection_issues(latest, now):
+    problems={}
+    for node, item in latest['nodes'].items():
+        notes={k:item[k] for k in ['observation_error','supervisor_error','blocked_gpus','actions'] if item.get(k)}
+        if item.get('watchdog_alive') is False:
+            notes['watchdog_observation']=item.get('watchdog_observation') or {'alive':False}
+        workers=[]
+        for worker in item.get('workers',[]):
+            reasons=[]
+            if not worker.get('alive'):reasons.append('worker_missing')
+            if worker.get('last_error'):reasons.append('worker_error')
+            if worker.get('heartbeat_age_s',0)>90:reasons.append('heartbeat_stale')
+            if (worker.get('matching_heartbeat') and worker.get('progress_age_s',0)>180
+                    and worker.get('gpu_util',100)<=5
+                    and worker.get('stage') not in ('loading_model','waiting','stopped','complete')):
+                reasons.append('low_gpu_without_recent_output_requires_inspection')
+            if reasons:workers.append(dict(gpu=worker.get('gpu'),pid=worker.get('pid'),reasons=reasons,state=worker))
+        if workers:notes['workers']=workers
+        quality=item.get('visual_quality')
+        if quality:
+            state=quality.get('state') or {}
+            if (not quality.get('watchdog_alive') or not quality.get('controller_alive')
+                    or state.get('failed_sources') or state.get('execution_errors_this_process')
+                    or now-state.get('heartbeat',now)>120):
+                notes['visual_quality']=quality
+        if notes:problems[node]=notes
+    return problems
+
+p=argparse.ArgumentParser();p.add_argument('--slot',type=int,choices=range(21),required=True);a=p.parse_args()
+folder=Path(__file__).resolve().parent
+def read(path):return json.loads(path.read_text())
+state=read(folder/'state.json');pid=state['pid'];ticks=state['start_ticks'];next_update=0
+print('LIVE_WAIT',pid,'REPORT',a.slot,'UTC',time.strftime('%H:%M:%S',time.gmtime()),flush=True)
+while True:
+    # At the scheduled end the guardian exits normally. Its durable receipt
+    # closes this wait only; live production still requires a separate audit.
+    completed=folder/'complete.json';report=folder/f'report-{a.slot:02d}.json'
+    if completed.exists() and report.exists():
+        end=read(completed);terminal=read(folder/'state.json')
+        if (time.time()>=end['end'] and end['at']>=end['end']
+                and terminal.get('stage')=='complete' and a.slot in end['report_slots']):
+            print('WINDOW_CLOSED_REPORT_READY',a.slot,json.dumps({k:v for k,v in read(report).items() if k!='nodes'}),flush=True);break
+    proc=Path(f'/proc/{pid}/stat')
+    if not proc.exists():raise RuntimeError('Guardian PID missing; inspect before recovery')
+    identity=proc.read_text().split(') ')[1].split()
+    if identity[0]=='Z' or identity[19]!=ticks:raise RuntimeError('Guardian identity no longer live')
+    state=read(folder/'state.json');now=time.time()
+    if state['pid']!=pid or state['start_ticks']!=ticks:raise RuntimeError('Guardian changed; revalidate new identity')
+    if now-state['heartbeat']>180:raise RuntimeError('Guardian heartbeat stale; inspect before recovery')
+    latest=read(folder/'latest.json')
+    if latest.get('visual_quality_refill',{}).get('error'):raise RuntimeError('Visual quality refill error: '+latest['visual_quality_refill']['error'])
+    if latest.get('failed_sources'):raise RuntimeError('Failed source queue requires inspection')
+    problems=inspection_issues(latest,now)
+    if problems:
+        print('INSPECT',json.dumps(problems),flush=True);break
+    if now>=next_update:
+        print('HEALTH',time.strftime('%H:%M:%S',time.gmtime(now)),'resolved',latest.get('resolved_clips'),'live',[sum(x.get('alive',False) for x in v.get('workers',[])) for v in latest['nodes'].values()],'latest_age',round(now-latest['at']),flush=True)
+        next_update=now+60
+    report=folder/f'report-{a.slot:02d}.json'
+    if report.exists():
+        print('REPORT_READY',a.slot,json.dumps({k:v for k,v in read(report).items() if k!='nodes'}),flush=True);break
+    time.sleep(10)

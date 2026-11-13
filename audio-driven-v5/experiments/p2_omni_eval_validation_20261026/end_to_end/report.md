@@ -1,0 +1,236 @@
+# OmniResponse reference metric evaluation
+
+Status: complete
+Samples per seed: 2; seeds: [137]
+
+FVD-32; 25 fps, stride 1, deterministic paired window.
+FD is supplied-feature distance, not Inception FID. UTMOS/SyncNet use listener audio.
+Full-set scores are null for incomplete coverage; supported subsets and exact IDs remain in JSON.
+
+## Seed 137
+
+```json
+{
+  "fvd": {
+    "full_value": -0.0001508162577633304,
+    "supported_subset_value": -0.0001508162577633304,
+    "coverage": {
+      "planned": 2,
+      "eligible": 2,
+      "succeeded": 2,
+      "inapplicable": 0,
+      "failed": 0,
+      "succeeded_ids": [
+        {
+          "sample_id": "naturalistic_V03_S0529_I00000425_local_2ea466956937",
+          "sample_seed": 137
+        },
+        {
+          "sample_id": "naturalistic_V03_S1654_I00000436_local_d1d5b3866745",
+          "sample_seed": 137
+        }
+      ],
+      "inapplicable_ids": [],
+      "failed_ids": []
+    },
+    "reason": null,
+    "name": "FVD-32"
+  },
+  "fd": {
+    "full_value": 5.329070518200751e-15,
+    "supported_subset_value": 5.329070518200751e-15,
+    "coverage": {
+      "planned": 2,
+      "eligible": 2,
+      "succeeded": 2,
+      "inapplicable": 0,
+      "failed": 0,
+      "succeeded_ids": [
+        {
+          "sample_id": "naturalistic_V03_S0529_I00000425_local_2ea466956937",
+          "sample_seed": 137
+        },
+        {
+          "sample_id": "naturalistic_V03_S1654_I00000436_local_d1d5b3866745",
+          "sample_seed": 137
+        }
+      ],
+      "inapplicable_ids": [],
+      "failed_ids": []
+    },
+    "reason": null,
+    "name": "FD",
+    "frame_counts": {
+      "gt": 6,
+      "generated": 6
+    },
+    "unit": "all supplied frames pooled, sample covariance"
+  },
+  "utmos": {
+    "gt": {
+      "full_value": 2.410279870033264,
+      "supported_subset_value": 2.410279870033264,
+      "coverage": {
+        "planned": 2,
+        "eligible": 2,
+        "succeeded": 2,
+        "inapplicable": 0,
+        "failed": 0,
+        "succeeded_ids": [
+          {
+            "sample_id": "naturalistic_V03_S0529_I00000425_local_2ea466956937",
+            "sample_seed": 137
+          },
+          {
+            "sample_id": "naturalistic_V03_S1654_I00000436_local_d1d5b3866745",
+            "sample_seed": 137
+          }
+        ],
+        "inapplicable_ids": [],
+        "failed_ids": []
+      }
+    },
+    "generated": {
+      "full_value": 2.410279870033264,
+      "supported_subset_value": 2.410279870033264,
+      "coverage": {
+        "planned": 2,
+        "eligible": 2,
+        "succeeded": 2,
+        "inapplicable": 0,
+        "failed": 0,
+        "succeeded_ids": [
+          {
+            "sample_id": "naturalistic_V03_S0529_I00000425_local_2ea466956937",
+            "sample_seed": 137
+          },
+          {
+            "sample_id": "naturalistic_V03_S1654_I00000436_local_d1d5b3866745",
+            "sample_seed": 137
+          }
+        ],
+        "inapplicable_ids": [],
+        "failed_ids": []
+      }
+    }
+  },
+  "sync": {
+    "gt": {
+      "full_value": {
+        "lse_d": 9.500898361206055,
+        "lse_c": 3.4387102127075195
+      },
+      "supported_subset_value": {
+        "lse_d": 9.500898361206055,
+        "lse_c": 3.4387102127075195
+      },
+      "coverage": {
+        "planned": 2,
+        "eligible": 2,
+        "succeeded": 2,
+        "inapplicable": 0,
+        "failed": 0,
+        "succeeded_ids": [
+          {
+            "sample_id": "naturalistic_V03_S0529_I00000425_local_2ea466956937",
+            "sample_seed": 137
+          },
+          {
+            "sample_id": "naturalistic_V03_S1654_I00000436_local_d1d5b3866745",
+            "sample_seed": 137
+          }
+        ],
+        "inapplicable_ids": [],
+        "failed_ids": []
+      },
+      "unit": "equal weight per supported face track",
+      "tracks": 2,
+      "low_support_tracks": 0,
+      "clip_equal_mean": {
+        "lse_d": 9.500898361206055,
+        "lse_c": 3.4387102127075195
+      }
+    },
+    "generated": {
+      "full_value": {
+        "lse_d": 9.500898361206055,
+        "lse_c": 3.4387102127075195
+      },
+      "supported_subset_value": {
+        "lse_d": 9.500898361206055,
+        "lse_c": 3.4387102127075195
+      },
+      "coverage": {
+        "planned": 2,
+        "eligible": 2,
+        "succeeded": 2,
+        "inapplicable": 0,
+        "failed": 0,
+        "succeeded_ids": [
+          {
+            "sample_id": "naturalistic_V03_S0529_I00000425_local_2ea466956937",
+            "sample_seed": 137
+          },
+          {
+            "sample_id": "naturalistic_V03_S1654_I00000436_local_d1d5b3866745",
+            "sample_seed": 137
+          }
+        ],
+        "inapplicable_ids": [],
+        "failed_ids": []
+      },
+      "unit": "equal weight per supported face track",
+      "tracks": 2,
+      "low_support_tracks": 0,
+      "clip_equal_mean": {
+        "lse_d": 9.500898361206055,
+        "lse_c": 3.4387102127075195
+      }
+    }
+  },
+  "text": {
+    "full_value": {
+      "meteor": 0.9921875,
+      "rouge_l": 1.0,
+      "bertscore_p": 1.000000238418579,
+      "bertscore_r": 1.000000238418579,
+      "bertscore_f1": 1.000000238418579,
+      "generated_distinct1": 0.5,
+      "generated_distinct2": 0.5,
+      "gt_distinct1": 0.5,
+      "gt_distinct2": 0.5
+    },
+    "supported_subset_value": {
+      "meteor": 0.9921875,
+      "rouge_l": 1.0,
+      "bertscore_p": 1.000000238418579,
+      "bertscore_r": 1.000000238418579,
+      "bertscore_f1": 1.000000238418579,
+      "generated_distinct1": 0.5,
+      "generated_distinct2": 0.5,
+      "gt_distinct1": 0.5,
+      "gt_distinct2": 0.5
+    },
+    "coverage": {
+      "planned": 2,
+      "eligible": 2,
+      "succeeded": 2,
+      "inapplicable": 0,
+      "failed": 0,
+      "succeeded_ids": [
+        {
+          "sample_id": "naturalistic_V03_S0529_I00000425_local_2ea466956937",
+          "sample_seed": 137
+        },
+        {
+          "sample_id": "naturalistic_V03_S1654_I00000436_local_d1d5b3866745",
+          "sample_seed": 137
+        }
+      ],
+      "inapplicable_ids": [],
+      "failed_ids": []
+    },
+    "unit": "pair mean; Distinct is corpus-level on the stated supported set"
+  }
+}
+```

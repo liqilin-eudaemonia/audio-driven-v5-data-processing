@@ -1,0 +1,2643 @@
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+Audiovisual Backchannel Generation During Listening
+Anonymous CVPR submission
+Abstract
+【摘要待写】按中文稿约定，待主张、正式实验和结果稳定后
+001
+撰写摘要。当前标题只用于识别任务，尚非最终标题。本版
+002
+为英文正文与中文作者备注并存的工作稿；表中的TBD 表
+003
+示尚未填写，不代表零分；图中示意素材不作为实验结果。
+004
+1. Introduction
+005
+Natural conversation requires both speaking and lis-
+006
+tening. While one participant holds the conversational
+007
+floor, the listener conveys attention and engagement
+008
+through facial expressions, head movements, and brief
+009
+vocal acknowledgments [13, 17]. These backchannels
+010
+support the ongoing utterance without taking over the
+011
+conversation. Visual reactions may occur with or with-
+012
+out vocal feedback, and quiet listening is also appropri-
+013
+ate. Digital humans therefore need to produce appro-
+014
+priate listening behavior as well as fluent spoken re-
+015
+sponses: realistic faces and voices alone do not estab-
+016
+lish whether feedback fits the conversational context.
+017
+Speech-driven
+talking-head
+methods
+such
+as
+018
+OmniHuman-1.5
+[16]
+synthesize
+visual
+behavior
+019
+from the target person’s supplied speech. Listening-
+020
+generation methods, including ViCo [27], Learning to
+021
+Listen [13], and GLARE [11], instead generate visual
+022
+reactions to another speaker without synthesizing
+023
+the listener’s audio.
+Interactive methods such as
+024
+INFP [12] and DyStream [8] model speaking and
+025
+listening from both participants’ audio tracks, with
+026
+the target person’s vocal behavior supplied as an
+027
+input.
+OmniResponse [18] and OmniPersona [17]
+028
+further generate audiovisual conversational responses,
+029
+including listener feedback.
+Building on these ad-
+030
+vances, we focus on listening feedback as the primary
+031
+target of learning and evaluation, and investigate how
+032
+listening-specific conditioning, supervision, and data
+033
+can support its visual and vocal expression.
+034
+We study audiovisual backchannel generation from
+035
+the current speaker audio and a reference image of the
+036
+listener (Fig. 1). This setting supports interaction with
+037
+a visible digital avatar without requiring the user to
+038
+enable a camera, and accommodates initial or stan-
+039
+dalone exchanges with no prior dialogue history. The
+040
+listener’s audio is generated rather than supplied: the
+041
+model must produce visual reactions, brief vocal feed-
+042
+back, and quiet listening while the speaker retains the
+043
+floor.
+044
+Learning this behavior presents two related chal-
+045
+lenges.
+First, the input speech belongs to the other
+046
+participant: it provides semantic and acoustic cues,
+047
+but does not prescribe the listener’s articulation or re-
+048
+action. These cues must be mapped to conditions suit-
+049
+able for generating the listener’s audio and video. Sec-
+050
+ond, feedback can be brief, subtle, and interspersed
+051
+with quiet listening. A media-generation objective su-
+052
+pervises the audiovisual output as a whole, but does
+053
+not explicitly specify which feedback categories should
+054
+occur.
+This motivates event supervision that makes
+055
+feedback behavior a direct target of learning.
+056
+Our framework addresses these challenges through
+057
+direct speaker-audio conditioning and supervision of
+058
+both conditioning representations and feedback events.
+059
+Speaker-audio cross-attention supplies acoustic infor-
+060
+mation to the generator, while target audiovisual fea-
+061
+ture supervision trains the conditioning mapping to
+062
+retain information relevant to the listener’s response.
+063
+Clip-level event supervision complements the media-
+064
+generation objective by encouraging the corresponding
+065
+feedback categories to occur. This auxiliary objective
+066
+supervises category presence over the clip without im-
+067
+posing exact event timestamps.
+068
+To support listening-focused learning,
+we con-
+069
+struct paired audiovisual data from Seamless conver-
+070
+sations [25], updating speaker–listener roles as turns
+071
+change while retaining brief vocal backchannels as lis-
+072
+tening feedback.
+We use extracted visual and vocal
+073
+cues to guide Qwen3-Omni [21] in producing ordered
+074
+reaction descriptions, linking speaker audio with lis-
+075
+tener audiovisual media and annotations of their feed-
+076
+back.
+077
+We formulate a listening-focused evaluation design
+078
+that considers audiovisual quality, feedback-category
+079
+agreement, contextual appropriateness and engage-
+080
+ment, and audiovisual coordination. A speaker utter-
+081
+ance can admit multiple reasonable reactions [13, 23],
+082
+so agreement with one recorded response cannot fully
+083
+1
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+Audiovisual backchannels while listening
+Current speaker audio + listener first frame →listener video and audio
+(a) Inputs
+Current speaker audio
+“I finally passed my exam!
+I’m so happy about it.”
+Listener first frame
+No dialogue history
+No target listener audio
+(b) Feedback during the same speaker turn
+Speaker
+Speaker holds the conversational floor
+Visual listening
+Video output
+Nods and facial
+expressions
+attend
+nod
+smile
+smile
+Our task: audiovisual listening
+Listener video
+attend
+nod
+smile
+laugh
+Listener audio
+brief “mm-hm”
+laughter
+Generate
+Illustrative output scopes, not measured results. Quiet attentive listening is also valid.
+Figure 1. F1: Audiovisual backchannels during listening (draft). Given current speaker audio and the listener’s first
+frame, the task is to generate listener video and audio while the speaker holds the floor. Quiet listening is also valid. The
+rows illustrate visual and audiovisual output scopes, not measured comparisons between methods. Portraits, utterances,
+and waveforms are schematic.
+determine feedback quality. Clip-level category agree-
+084
+ment measures whether the reference feedback cate-
+085
+gories are expressed without requiring temporal overlap
+086
+with reference events. Contextual evaluation considers
+087
+whether a response fits the utterance and preserves the
+088
+listening role, including reasonable alternatives to the
+089
+reference; audiovisual coordination concerns the rela-
+090
+tion between generated sounds and movements.
+To-
+091
+gether, these dimensions separate media quality from
+092
+the listening behavior it conveys.
+093
+Our contributions are as follows:
+094
+• We introduce an audiovisual backchannel genera-
+095
+tion framework conditioned on current speaker au-
+096
+dio and a listener reference image. It combines di-
+097
+rect acoustic conditioning, target audiovisual fea-
+098
+ture supervision, and clip-level event supervision for
+099
+listening feedback.
+100
+• (如果写数据贡献，需要一些体现贡献的数字：xxh，
+101
+xxpairs，xxtypes⋯)We construct listening-focused
+102
+audiovisual data through role-aware clip pairing
+103
+and cue-assisted feedback annotation, associating
+104
+speaker audio with listener audiovisual media and
+105
+ordered descriptions of visual and vocal behavior.
+106
+• We formulate a listening-focused evaluation de-
+107
+sign that complements audiovisual quality with
+108
+feedback-category agreement, contextual appropri-
+109
+ateness and engagement, and audiovisual coordina-
+110
+tion, accommodating reasonable variation in listener
+111
+responses.
+112
+2. Related Work
+113
+2.1. Audiovisual Conversation and Response Gen-
+114
+eration
+115
+Listening-generation methods synthesize facial expres-
+116
+sions and head movements from a speaker’s com-
+117
+munication signals.
+ViCo [27] introduces respon-
+118
+sive listening-head generation and paired data, using
+119
+speaker audiovisual signals and a preset attitude to
+120
+generate listener motion. Learning to Listen [13] mod-
+121
+els listener motion as a nondeterministic distribution,
+122
+allowing multiple responses to the same input. Subse-
+123
+quent work explores diffusion-based diverse generation,
+124
+emotion control, and text-based customization through
+125
+MFR-Net [15], ELP [9], and CustomListener [5], re-
+126
+spectively. DiffListener [6] and DiTaiListener [7] fur-
+127
+ther develop expressive listening-video generation.
+128
+Beyond visual quality, ReactFace [23] studies on-
+129
+line generation of multiple appropriate facial reactions,
+130
+considering appropriateness, diversity, and synchrony.
+131
+2
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+GLARE [11] represents reactions as events with cate-
+132
+gories and temporal intervals, combining prosodic con-
+133
+ditioning, temporal reaction supervision, and event
+134
+evaluation. These visual listening methods provide a
+135
+basis for behavior modeling, but do not generate the
+136
+listener’s own audio. Our task includes brief acknowl-
+137
+edgments and laughter together with the corresponding
+138
+video, while retaining silent listening as a valid output.
+139
+Interactive-avatar methods also differ in whether the
+140
+target audio is supplied or generated. INFP [12] and
+141
+DyStream [8] use both participants’ audio tracks to
+142
+generate avatar videos that include speaking and lis-
+143
+tening. ARIG [2] additionally models interaction us-
+144
+ing both participants’ audiovisual signals and dialogue
+145
+states.
+These methods incorporate role changes and
+146
+listening into generation, but receive the target per-
+147
+son’s audio as a condition. Our model must generate
+148
+both listener audio and video from the other person’s
+149
+current speech and a listener reference frame.
+150
+OmniResponse [18] is closer to this setting:
+it
+151
+uses speaker facial information, transcripts, and dia-
+152
+logue history to generate aligned text and facial re-
+153
+sponses, with TempoVoice synthesizing audio for vo-
+154
+cal responses. OmniPersona [17] encodes multimodal
+155
+conversation history into linguistic and non-linguistic
+156
+conditions and jointly generates audio and video, in-
+157
+cluding listening backchannels and identity consistency
+158
+across turns. Audiovisual listening responses therefore
+159
+already have a research basis. Our focus is feedback
+160
+during the other person’s turn from a short current au-
+161
+dio segment and a listener first frame, without dialogue
+162
+history, speaker video, a target listener audio track, or
+163
+a reference voice. We address this setting through di-
+164
+rect audio conditioning, target feature supervision, and
+165
+clip-level event supervision, rather than introducing a
+166
+multi-turn memory task.
+167
+2.2. MLLM-Based Cascaded Generation
+168
+【中文待补：作者已确认的新结构】本小节尚无写定正文，先
+169
+保留中文。后续结合OmniPersona 对理解与生成框架的介
+170
+绍，核实“MLLM 理解／规划→文本或隐表征→生成器”
+171
+的代表工作、接口与条件，再写文献介绍。不能把所有条件
+172
+接口统称为同一种级联；Qwen→OVI 系统对照也不等于先
+173
+生成音频再驱动视频。这里不新增“联合生成优于级联”的
+174
+主张，暂不补造文献或技术关系。
+175
+2.3. Conversation Data and Feedback Evaluation
+176
+Existing datasets cover different aspects of dyadic in-
+177
+teraction. ViCo [27] provides listening-generation sam-
+178
+ples.
+RealTalk [24] contains natural dyadic conver-
+179
+sations with transcripts and active-speaker annota-
+180
+tions, while Seamless Interaction [25] provides large-
+181
+scale face-to-face interaction data. SpeakerVid-5M [26]
+182
+organizes dialogue, listening, and multi-turn branches;
+183
+its listening branch pairs speaker audio with silent lis-
+184
+tener video. ResponseNet, introduced with OmniRe-
+185
+sponse [18], provides synchronized videos of both par-
+186
+ticipants, multichannel audio, transcripts, and facial
+187
+behavior annotations. GLARE [11] adds visual reac-
+188
+tion categories and temporal intervals. These resources
+189
+already provide paired media and several types of be-
+190
+havior annotation. Their support for our task depends
+191
+on clip organization, role definitions, and coverage of
+192
+vocal feedback.
+We further organize Seamless into
+193
+speaker-held-turn clips with aligned listener audiovi-
+194
+sual media, and use timestamped visual and vocal cues
+195
+to obtain ordered reaction descriptions.
+196
+Feedback evaluation has also moved beyond visual
+197
+quality. REACT2023 [22] and ReactFace [23] consider
+198
+multiple appropriate reactions. GLARE evaluates cat-
+199
+egory matches with temporal overlap. OmniResponse
+200
+and SpeakerVid-5M assess multimodal response qual-
+201
+ity and audiovisual synchronization, while OmniPer-
+202
+sona also evaluates the appropriateness of listening ex-
+203
+pressions. Building on these dimensions, our evaluation
+204
+design separates clip-level event-category agreement,
+205
+contextual appropriateness and engagement, and coor-
+206
+dination within generated audiovisual feedback. Clip-
+207
+level agreement does not require alignment with one
+208
+reference’s event times, but cannot by itself establish
+209
+contextual appropriateness. The three dimensions ad-
+210
+dress short, intermittent feedback that may have mul-
+211
+tiple reasonable realizations.
+212
+【引用与审阅】本节为中文相关工作草稿的英文整理，仍待作
+213
+者审阅。GLARE 和OmniPersona 沿用提供稿件，不推断作
+214
+者或录用信息；正式BibTeX 按引用清单补齐。
+215
+3. Method
+216
+3.1. Task Deﬁnition and Overview
+217
+Task definition.
+Given the current speaker audio
+218
+as and the listener’s first frame Il, we generate listener
+219
+video Vl and audio al over the corresponding interval.
+220
+We focus on feedback while the speaker holds the con-
+221
+versational floor, including facial reactions, head move-
+222
+ments, and brief vocal acknowledgments. Quiet listen-
+223
+ing is also valid. The input does not uniquely determine
+224
+the listener’s reaction or its timing, and an observed
+225
+response is one possible realization. At inference, the
+226
+model receives no dialogue history, speaker video, tar-
+227
+get listener audio, or reference reaction labels.
+228
+【统计待补】应用面向一两句当前话语；训练与测试的实际片
+229
+段长度及句数分布仍需报告，不能把应用设定直接写成已统
+230
+计确认的数据分布。
+231
+Training uses paired listener audiovisual media, an
+232
+ordered reaction description d∗, and clip-level behav-
+233
+3
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+(a) Audio-conditioned joint generation
+Frozen
+Trainable
+Speaker audio
+as
+Listener
+First frame Il
+Whisper
+speaker encoder
+Audio adapter
+LN + projection
+1
+Direct acoustic features
+Qwen2.5-Omni
+guided encoding
+Connector
+A/V conditions
+Uv, Ua
+2
+H
+Response description d
+Train: annotated description
+Test: predicted by Qwen from (as, Il)
+Gemma
+LTX · repeated blocks
+Speaker cross-attention
+Video / audio branches
+Joint A/V denoising
+Frozen base + adapters / LoRA
+Final hidden Zv, Za
+3
+First-frame condition
+A/V noise
+Listener video Vl
+Listener audio al
+Joint audiovisual output
+Media shown schematically
+2
+(b) Feature supervision
+Training only
+3
+(c) Clip-level event supervision
+Training only
+Uv, Ua
+Feature decoders
+Flow matching (A/V)
+GT A/V
+Qwen A/V teachers
+Frozen A/V towers
+Feature loss
+Lfeat
+v + Lfeat
+a
+Fv, Fa
+Supervises the condition mapping; Qwen remains frozen.
+Zv, Za
+Last LTX block
+Clip pooling
+Per modality · valid tokens
+Event heads
+Video / audio
+Clip labels + masks
+Event loss LEvent
+Masked, weighted BCE
+Reference frame and padding excluded
+Category presence, without timestamp targets.
+L = LAV + 0.05 LEvent + 0.025 Lfeat
+v + 0.025 Lfeat
+a
+Model flow
+Supervision targets
+Figure 2. F3: Generation framework and training supervision (draft). A connector maps guided Qwen representa-
+tions to video and audio conditions, which are appended to Gemma text conditions. An independent Whisper path supplies
+speaker-audio features to both LTX streams. Feature supervision trains the condition mapping with frozen target-media
+features; clip-level Event supervision reads the final LTX block. Training uses annotated descriptions, whereas inference
+predicts and re-encodes descriptions from the permitted inputs. Both auxiliary objectives are used only during training.
+Portraits and waveforms are schematic.
+ior labels with validity masks. These descriptions and
+234
+labels are derived from the target media during data
+235
+construction (Sec. 4); they are supervision, not addi-
+236
+tional inputs required from the user.
+237
+Generation conditions.
+Our framework combines
+238
+a description-conditioned representation of the in-
+239
+tended
+response
+with
+direct
+acoustic
+information
+240
+from the speaker (Fig. 2).
+A frozen Qwen2.5-Omni
+241
+model [19] encodes the speaker audio, listener image,
+242
+and a reaction description d into multilayer hidden
+243
+states H. A trainable connector Cθ produces separate
+244
+video and audio conditions, while Gemma [10] encodes
+245
+the same description.
+For modality m ∈{v, a}, we
+246
+write
+247
+(Uv, Ua) = Cθ(H),
+cm = [Gm(d); Um],
+(1)
+248
+where Gm(d) is the processed Gemma context for that
+249
+stream and brackets denote token concatenation. The
+250
+joint LTX generator [14] uses cv, ca, the reference
+251
+frame, and the speaker-audio features introduced be-
+252
+low to generate both listener modalities.
+253
+The connector normalizes and projects each selected
+254
+Qwen layer into a shared memory, adding learned layer
+255
+embeddings before concatenation.
+Video and audio
+256
+queries are initialized from feature-grid coordinates and
+257
+modality embeddings. Each fusion block applies cross-
+258
+attention to the Qwen memory, self-attention across
+259
+the combined query sequence, and a feed-forward net-
+260
+work. Separate output projections produce Uv and Ua
+261
+in the dimensions required by the two LTX context
+262
+streams. This provides a trainable interface between
+263
+frozen understanding and generation models. The final
+264
+projection topology follows Bernini [4]; the coordinate-
+265
+query fusion defines how information is gathered from
+266
+the selected Qwen layers.
+267
+During training, d = d∗is the annotated descrip-
+268
+tion of the target response. It is appended as assistant
+269
+4
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+guidance after Qwen’s multimodal input prefix, and
+270
+the resulting sequence supplies H. During inference,
+271
+Qwen first predicts ˆd from as, Il, and the task instruc-
+272
+tion; we then re-encode this description to obtain H
+273
+and Gm( ˆd). The description is thus an internal con-
+274
+dition. Direct acoustic conditioning supplements this
+275
+representation, while Feature and Event supervision re-
+276
+spectively target the condition mapping and generated
+277
+feedback behavior.
+278
+3.2. Direct Speaker-Audio Conditioning
+279
+A reaction description summarizes intended behavior,
+280
+but does not explicitly preserve every local acoustic
+281
+cue in the speaker’s utterance. We therefore provide
+282
+a separate path from speaker audio to the generator.
+283
+A frozen Whisper-large-v3 encoder [28] extracts a tem-
+284
+poral feature sequence; a trainable LayerNorm and lin-
+285
+ear adapter map it to speaker context S. Independent
+286
+cross-attention branches inject S into the video and
+287
+audio streams of every LTX block:
+288
+hb,m ←hb,m + CAb,m(hb,m, S),
+m ∈{v, a},
+(2)
+289
+where b indexes a block. Generation features provide
+290
+queries, and speaker features provide keys and values.
+291
+These branches supplement the existing attention to
+292
+cm in Eq. (1).
+293
+Speaker keys and generation queries use temporal
+294
+rotary positions defined on a common time origin in
+295
+seconds. Padding is masked, and leading and internal
+296
+speaker silence are retained.
+The additional output
+297
+projections are initialized to zero, preserving the orig-
+298
+inal path at initialization. The adapter and attention
+299
+branches learn through the generation and Event ob-
+300
+jectives; there is no separate Whisper loss. The model
+301
+can attend to the supplied audio segment as a whole
+302
+and does not impose streaming causality.
+303
+3.3. Target Audiovisual Feature Supervision
+304
+The connector must transform general multimodal rep-
+305
+resentations into conditions useful for listener genera-
+306
+tion. To supervise this mapping, we extract target fea-
+307
+tures Fv and Fa from real listener video and processed
+308
+audio using frozen Qwen visual and audio encoders.
+309
+The queries that produce Um are organized to corre-
+310
+spond to these teacher-feature positions. An auxiliary
+311
+decoder Dϕm for each modality learns to recover tar-
+312
+get features conditioned on Um, following the AdaLN-
+313
+modulated feature-decoder design of Bernini [4].
+314
+For each valid feature position, we sample Gaussian
+315
+noise ϵ and a noise level σ ∼U(0, 1), forming xσ,m =
+316
+(1 −σ)Fm + σϵ. The decoder predicts the flow velocity
+317
+toward noise, with objective
+318
+Lm
+Feature = Eσ,ϵ
+hDϕm(xσ,m, σ, Um) −(ϵ −Fm)
+2
+Ωm
+i
+.
+(3)
+319
+Here the squared norm averages over channels and po-
+320
+sitions in Ωm, where both the teacher feature and con-
+321
+dition are valid; the training loss is also averaged over
+322
+samples. Silence is a valid audio target and is not ex-
+323
+cluded solely because no vocalization occurs.
+324
+Because the decoders consume the same Um used by
+325
+LTX, their gradients encourage the connector to retain
+326
+information relevant to the target listener media. This
+327
+is a conditional feature-reconstruction objective, not
+328
+a direct regression between Qwen hidden states and
+329
+teacher features. The connector and auxiliary decoders
+330
+are trainable; the Qwen backbone and teacher encoders
+331
+remain frozen.
+Neither target features nor auxiliary
+332
+decoding is required at inference.
+333
+3.4. Clip-Level Event Supervision
+334
+The continuous audiovisual objective does not explic-
+335
+itly specify which feedback categories should occur. We
+336
+therefore attach visual and audio event heads to the
+337
+generation representations of LTX. In each training
+338
+forward pass, we read hidden states Zv and Za from
+339
+the final Transformer block, before output normaliza-
+340
+tion and projection.
+Video states are averaged spa-
+341
+tially within each valid time position and then tempo-
+342
+rally; audio states are averaged over their valid tempo-
+343
+ral positions. Pooling excludes reference-frame tokens,
+344
+padding, and positions outside the actual generation
+345
+support.
+Separate LayerNorm–MLP heads map the
+346
+pooled representations to clip-level category logits.
+347
+The targets are derived from reaction descriptions
+348
+with the evidence checks described in Sec. 4.2.
+For
+349
+sample i and class c, yic ∈{0, 1} denotes category
+350
+presence, Mic indicates a valid target, and wic controls
+351
+its weight. Accepted positives have weight 1; unmen-
+352
+tioned categories receive weak-negative weight 0.1 only
+353
+when the description passes the completeness checks.
+354
+Uncertain or conflicting entries are masked.
+We use
+355
+class-weighted binary cross-entropy:
+356
+LEvent =
+1
+|Ceff|
+X
+c∈Ceff
+P
+i Micwic BCEαc(sic, yic)
+P
+i Mic
+,
+(4)
+357
+where sic is a logit, αc is a positive-class weight de-
+358
+rived from training statistics, and Ceff contains enabled
+359
+classes with valid targets in the training batch. Nor-
+360
+malization uses the number of valid samples rather
+361
+than their weight sum, preserving the reduced influ-
+362
+ence of weak negatives.
+363
+This objective supervises whether a category occurs
+364
+within the clip, without imposing event start or end
+365
+5
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+times. It accommodates variation in feedback timing
+366
+while the audiovisual objective continues to supervise
+367
+the paired media. Event heads read hidden states at
+368
+the sampled flow noise level, so training requires no
+369
+additional full video sampling or decoding. Their gra-
+370
+dients pass through the trainable LTX branches to the
+371
+connector. The heads are not executed at inference;
+372
+their predictions are not used to score generated videos.
+373
+The training behavior vocabulary and the evaluation
+374
+categories are defined separately.
+375
+3.5. Training and Inference
+376
+Joint objective.
+The native audiovisual objective
+377
+trains LTX to jointly predict video and audio flow ve-
+378
+locities.
+Let xm
+0
+be a target latent encoded by the
+379
+frozen modality VAE. At a sampled noise level τ, we
+380
+form xm
+τ = (1−τ)xm
+0 +τϵm at generated positions. The
+381
+reference-frame latent stays clean and fixed. Writing
+382
+the joint generator’s output for stream m as vm
+Θ , the
+383
+loss is
+384
+LAV = E
+"X
+m
+vm
+Θ (xv
+τ, xa
+τ, τ; K) −(ϵm −xm
+0 )
+2
+Λm
+#
+,
+(5)
+385
+where K collects the reference-frame, Qwen/Gemma,
+386
+and Whisper conditions.
+Λm is the valid generation
+387
+mask, excluding fixed reference positions and padding;
+388
+the norm is a mean over valid positions and chan-
+389
+nels, and the expectation includes training samples and
+390
+noise.
+391
+The complete model uses
+392
+L = LAV + 0.05LEvent
++ 0.025Lv
+Feature + 0.025La
+Feature.
+(6)
+393
+We train the connector, Whisper adapter and atten-
+394
+tion branches, auxiliary feature decoders, event heads,
+395
+and LoRA adapters in LTX’s native video and audio
+396
+text cross-attention.
+The Qwen, Gemma, Whisper,
+397
+and VAE encoders, target-feature teachers, and pre-
+398
+trained LTX backbone weights remain frozen. Feature
+399
+supervision acts on the condition mapping; Event su-
+400
+pervision reaches that mapping through the generation
+401
+network.
+402
+Inference.
+Given as and Il, Qwen predicts ˆd and
+403
+re-encodes it to construct the guided hidden states;
+404
+Gemma encodes the same description.
+The connec-
+405
+tor produces Uv and Ua, while Whisper supplies di-
+406
+rect speaker features. LTX jointly samples video and
+407
+audio latents from noise, keeping the reference-frame
+408
+latent fixed, and decodes the listener response. Both
+409
+classifier-free guidance branches retain the Qwen and
+410
+Whisper conditions; the negative branch uses empty
+411
+Gemma text.
+No target listener media, annotated
+412
+descriptions, teacher features, or event labels are ac-
+413
+cessed. Model versions and sampling settings are spec-
+414
+ified in Sec. 5.1.
+415
+4. Listening Data Construction
+416
+4.1. Role-Aware Pair Construction
+417
+Source and conversational roles.
+We construct
+418
+paired listening data from Seamless conversations [25].
+419
+The source recordings contain alternating speaking
+420
+turns, whereas our task requires identifying the current
+421
+speaker, the corresponding listener, and their feedback
+422
+during the same interval. We associate speaker audio,
+423
+a listener reference frame, and aligned listener audio-
+424
+visual targets, and add natural-language descriptions
+425
+of visual and vocal reactions. Figure 3 summarizes the
+426
+process.
+427
+We use transcripts, word timings, speech activity,
+428
+and acoustic pauses to determine local roles and can-
+429
+didate boundaries. When the listener takes over the
+430
+conversational floor, we switch the roles and continue
+431
+forming pairs, allowing both participants’ speaking
+432
+turns to contribute samples.
+Brief listener feedback
+433
+may overlap with speaker speech and does not auto-
+434
+matically indicate a turn change. Segmentation favors
+435
+complete sentence endings and avoids including a frag-
+436
+ment of the next sentence. Longer content is split at
+437
+valid boundaries. The fixed rules limit clips to 2–11.95
+438
+seconds and treat an inter-word pause longer than 5
+439
+seconds as a long-pause boundary. Candidate forma-
+440
+tion precedes audio-quality filtering and, where needed,
+441
+local recovery; cases whose recovered subsegments can-
+442
+not be confirmed as complete are retained for review.
+443
+【范围与细则】此处的语义线索指转写与句末完整性规则，不
+444
+表示调用大模型进行语义切分，也不表示每个片段覆盖一个
+445
+完整长话轮。角色判定阈值、来源构成和原始资源许可待补。
+446
+原始会话采集不归为本文贡献。
+447
+Aligned listener media.
+We screen and crop lis-
+448
+tener video and correct orientation in affected source
+449
+clips. Reaction detection and audiovisual annotation
+450
+use the same person, crop, and temporal interval. For
+451
+audio, we extract the corresponding interval from the
+452
+listener’s independent long audio track. The union of
+453
+oﬀicial word, utterance, and voice-activity intervals de-
+454
+fines the retained regions. We extend these regions by
+455
+100 ms on each side and apply 10 ms fades to reduce
+456
+boundary discontinuities and interference from other
+457
+sounds. Audio outside the retained regions is zeroed
+458
+rather than removed, preserving duration and audio-
+459
+visual alignment. Source media, crop, and processing
+460
+6
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+(a) From conversations to audiovisual listening pairs
+Aligned media →timestamped cues →ordered descriptions
+1
+Source conversations
+2
+Segment & pair
+3
+Prepare listener media
+4
+Annotate & screen
+Seamless Interaction
+Paired recordings and audio
+Speaker turn
+Paired listening interval
+Pauses + ASR punctuation
+Sentence-boundary rules
+Aligned listener A/V
+Face crop + quality screening
+Audio masking + boundary fades
+Qwen3-Omni
+Cue-assisted description
+Check cue coverage
+and audio consistency
+Annotation detail below
+(b) Cue-assisted annotation
+Illustrative example
+Listener video + audio
+Paired listener media
+Timestamped cue prompts
+Nod 0.8–1.5 s
+Brow raise 1.9–2.2 s
+“mm-hm” 2.7–3.1 s
+Detected visual + vocal cues
+Qwen3-Omni
+Observe A/V
+with cue prompts
+Ordered reaction description
+“The listener nods, then raises
+their eyebrows, and gives
+a brief ‘mm-hm’ response.”
+Action order; no numeric timestamps
+Times guide annotation; the final description retains the order of reactions.
+(c) Retained samples and derived training labels
+Speaker audio · reference frame · listener A/V · caption
+TRAIN 704,368
+TEST 7,087
+Final retained split counts
+Description
+Behavior statistics
+Qwen3-30B
+Clip labels + masks
+Resolve conflicting evidence; mask unknown categories.
+Clip-level presence, without timestamp supervision.
+All portraits, waveforms, cue intervals and example text are schematic placeholders.
+Figure 3. F2: Data construction and cue-assisted annotation (draft). Seamless conversations are segmented and
+paired before listener media processing. Listener audiovisual media and timestamped reaction cues guide Qwen3-Omni to
+produce an ordered description without numerical timestamps. Each sample links the input conditions, listener targets, and
+description. Text-based behavior extraction and conflict masking produce clip-level training labels. Example media, cue
+intervals, and descriptions are schematic; the reported resource counts differ from the AV training selection.
+metadata are retained for subsequent inspection.
+461
+【质量证据待补】100 毫秒和10 毫秒是音频保留区间的处理
+462
+参数，不是所有视频切口的统一余量。处理输入为512×512
+463
+不表示原始素材具有同等有效分辨率；净化、裁剪和角色配
+464
+对的质量需独立抽检。
+465
+4.2. Cue-Assisted Reaction Annotation
+466
+Ordered reaction descriptions.
+Direct audiovi-
+467
+sual descriptions were observed to omit some move-
+468
+ments and brief vocal reactions. We therefore extract
+469
+candidates such as nods, head shakes, brow lower-
+470
+ing, and brow raising from listener video. Within of-
+471
+ficially supported vocal intervals, ASR, oﬀicial tran-
+472
+scripts, and audio events provide vocal cues. Cue cat-
+473
+egories, start and end times, and available vocal con-
+474
+tent are supplied to Qwen3-Omni [21], together with
+475
+the listener video sampled at 8 fps using the final crop
+476
+and the processed audio. The prompt directs attention
+477
+to transient reactions and requests an ordered account
+478
+of visual and vocal behavior.
+The output is an En-
+479
+glish natural-language description that preserves reac-
+480
+tion order without numerical timestamps. The pipeline
+481
+checks cue coverage and consistency with silence, re-
+482
+tries suspected omissions, and retains unresolved re-
+483
+view flags.
+484
+These cues describe observable behavior:
+brow
+485
+movements do not directly establish an internal emo-
+486
+tional state. Their intervals are annotation prompts,
+487
+not manually verified event boundaries.
+488
+【待补证据】需通过独立核验比较有／无辅助线索的描述，分
+489
+别检查遗漏、无依据添加及顺序错误。流程设计不能直接支
+490
+持“完整性和顺序准确性已提升”的效果结论。
+491
+Clip-level
+training
+labels.
+A
+separate,
+fixed
+492
+behavior-extraction procedure uses Qwen3-30B-A3B-
+493
+Instruct-2507 [20] to extract visual and audio behav-
+494
+ior names with supporting text from the descriptions.
+495
+Accepted items provide positive evidence for clip-level
+496
+7
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+category presence. Uncertain, contradictory, or insuf-
+497
+ficiently supported items remain unknown. A category
+498
+is treated as a low-weight negative only when the de-
+499
+scription passes a completeness check and genuinely
+500
+does not mention it.
+Conflicts involving mentioned
+501
+baseline states, supplementary reaction cues, and weak
+502
+negatives are masked.
+If vocal activity is supported
+503
+but its subtype is uncertain, all audio categories are
+504
+not labeled absent.
+This step adds no temporal su-
+505
+pervision, and the automatic labels are not treated as
+506
+human ground truth.
+507
+4.3. Dataset Statistics
+508
+Each sample links the current speaker audio, the lis-
+509
+tener’s first frame, aligned listener video and audio, and
+510
+a reaction description, together with source and tempo-
+511
+ral metadata. The retained resource contains 704,368
+512
+training samples and 7,087 test samples. The AV gen-
+513
+eration model uses a separately selected training set,
+514
+specified in Sec. 5.1; these counts do not denote the
+515
+same training manifest. Data and annotation quality
+516
+checks are organized in Sec. 5.6.
+517
+【资源关系待核对】704,368 ／7,087 沿用中文D5 的全量筛
+518
+选口径；生成模型使用284,218 段AV 选集，不能自行假定
+519
+它是704,368 条中的严格子集。正式测试及校准清单、人物
+520
+隔离、行为分布和人工质量抽检待补。
+521
+5. Experiments
+522
+【本节状态】实验结构与五组消融已确认，正式结果尚未汇齐。
+523
+下面把已确定的比较问题写成英文，将执行计划、版本核对
+524
+和待做内容保留中文。表T1–T4 为筹备编号；正式排版编号
+525
+由LaTeX 生成。所有结果表仅展示结构，不预填成绩。
+526
+The experimental design addresses three questions:
+527
+how the model performs on audiovisual backchan-
+528
+nels and shared visual-listening capabilities, what each
+529
+component contributes, and how reliably the data and
+530
+evaluation capture listening behavior.
+531
+5.1. Experimental Setup
+532
+Training
+data
+and
+test
+settings.
+Generation
+533
+training uses a separately selected set of 284,218 clips
+534
+totaling approximately 500 hours. This selection in-
+535
+cludes source training data and part of the source de-
+536
+velopment split; the latter is not an independent vali-
+537
+dation set. These are the AV training counts, distinct
+538
+from the retained resource statistics in Sec. 4.3.
+539
+【测试清单待冻结】Seamless 固定200 作为同源AV 评价
+540
+候选，ResponseNet 分层随机200 作为跨来源候选，ViCo
+541
+test43 作为视觉补充。三者不自动构成新benchmark。需确
+542
+定模型选择／阈值校准／最终测试清单，核查同源对话、时
+543
+间重叠及人物身份；隔离结论按实际证据报告。D5 的最终资
+544
+源数量不等于本节正式benchmark 规模。
+545
+【抽样与泄漏】早期“48 条非零音频＋按模型表现选出的152
+546
+条”只作探索，不作无偏主测试。多次用于选模型的诊断集
+547
+需披露用途。测试保留有声／安静的自然分布，单独有声子
+548
+集按预定义规则组织。
+549
+Implementation details.
+Generation training uses
+550
+frozen Qwen2.5-Omni-3B without planning SFT, with
+551
+hidden states from layers 8, 18, 28, and 35.
+The
+552
+generator is LTX-2.3-22B, and the speaker encoder is
+553
+Whisper-large-v3. Qwen3-Omni is used separately for
+554
+data annotation. The connector has four fusion blocks
+555
+of width 1,024 with 16 attention heads; its video and
+556
+audio outputs have dimensions 4,096 and 2,048. The
+557
+auxiliary feature decoders each use 16 AdaLN resid-
+558
+ual blocks of width 1,024 to predict 2,048-dimensional
+559
+teacher features. LTX text-attention LoRA uses rank
+560
+and scaling parameter 8. Precomputed conditions, tar-
+561
+get features, and labels refer to the same selected me-
+562
+dia.
+563
+The Event heads have 16 visual and 3 audio out-
+564
+put slots. Eighteen classes meet the validity criteria
+565
+and the minimum support of 5,000 positive examples;
+566
+the mouth-closing slot is retained but excluded from
+567
+the loss. This training vocabulary contains general vi-
+568
+sual behaviors and is separate from the communicative
+569
+categories used in evaluation.
+570
+【引用与配置待补】上述结构及维度已按当前配置和实际复用
+571
+源码核对。Gemma 的正式模型版本、LTX 与Bernini 的正
+572
+式书目信息仍需补齐；源码定位见配套方法核对文档。生成
+573
+训练中的Qwen 未做规划SFT。
+574
+【采样设置待冻结】中文稿当前共享推理函数采用30 步采样，
+575
+视频／音频CFG 为3 ／7。它们是可在实验中统一调整的
+576
+参数，不是方法贡献。最终检查点、规划器及采样协议须共
+577
+同确定后填写。
+578
+【版本待冻结】当前生成训练使用base Qwen hidden；最新
+579
+LTX6000 ／6500 ＋SFT2752 评测由SFT 模型预测描述并
+580
+重新提取H，属于“训练base H、推理SFT H”的配置。若
+581
+最终主表采用该版本，须说明规划SFT 及条件切换，并在所
+582
+有对照中统一；本轮不把SFT 自动并入AV ＋Whisper ＋
+583
+Feature ＋Event 的四项设计。最终检查点、规划器和预算
+584
+仍需冻结，不同batch ／步数的终点不能直接当作等预算。
+585
+Baselines and common protocol. 【完整AV 候选】
+586
+优先安排本文A0 ／A1 及Qwen2.5-Omni→OVI 系统对
+587
+照。后者需适配允许安静和短反馈，固定模型与prompt，不
+588
+能使用真实caption、事件或listener 音轨。OmniResponse、
+589
+OmniPersona、SpeakerVid-5M 目前尚未获得可执行原生成
+590
+器，先保留文献比较，不复制原表分数到本文短pair 表。
+591
+【视觉与额外输入对照】GLARE 需重训并披露Tref 及pre-
+592
+vious motion 来源；DyStream 将self audio 置零，Avatar
+593
+Forcing 将self audio 和user 视觉置零。L2L、DualTalk 等
+594
+保留额外动作／音轨条件时单列表，纯动作结果只在同表示
+595
+空间比较；未核验renderer 前不纳入视频表。RLHG、DIM、
+596
+8
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+Table 1. T1: Data resources and retained samples (draft). Resource descriptions summarize the cited works; they do not
+imply that prior resources lack all audio or behavior annotations. The AV training selection and retained resource counts
+use different manifests.
+Resource
+Available support
+Relation to listening feedback
+ViCo [27]
+Paired listening samples and attitudes
+Visual listening generation
+RealTalk [24]
+Dyadic video, transcripts, active-speaker labels
+Conversation source
+Seamless [25]
+Dyadic audiovisual media and aligned
+annotations
+Source of our paired clips
+SpeakerVid-5M [26]
+Dialogue, listening, multi-turn branches
+Listening branch: speaker audio and silent
+listener video
+ResponseNet [18]
+Both videos, multichannel audio, transcripts,
+facial annotations
+Audiovisual response resource
+GLARE [11]
+Paired clips and timed visual reaction labels
+Visual event supervision and evaluation
+Our organization
+Paired speaker audio, listener media, ordered
+descriptions
+Listening-phase audiovisual feedback
+Resource / usage
+Clips
+Duration (hours)
+Retained resource: train
+704,368
+TBD
+Retained resource: test
+7,087
+TBD
+AV generation training selection
+284,218
+≈500
+ReactFace、ListenFormer、LFI 为资源允许时的扩展，不全
+597
+部列为必做。
+598
+【共同协议】统一片段范围、参考帧、分辨率／帧率、音量处
+599
+理、采样预算和失败处理，不用GT 挑best-of-N。OVI1.1
+600
+单次上限10 秒而本任务可达11.95 秒，需选择全部方法的
+601
+共同窗口或公开分段／拼接协议，不能只截短基线。
+602
+【原论文数值】原协议文献表与本地实测分开。BFM/L1、
+603
+EMOCA ／DECA 距离和不同含义的FD 不混排；各论
+604
+文RealTalk 划分不视为统一测试。官方权重迁移、本文重
+605
+训、第三方重实现及引用分别标注；协议不一致不计算相对
+606
+提升。FID/FVD 使用统一特征汇总，不平均分片分数。
+607
+5.2. Evaluation Protocol
+608
+We extend an evaluation framework based on OmniRe-
+609
+sponse [18] with measures for listening feedback. The
+610
+design considers media quality, visual behavior, and
+611
+vocal activity, alongside three interaction dimensions:
+612
+clip-level event-category agreement, contextual appro-
+613
+priateness and engagement, and audiovisual event co-
+614
+ordination.
+615
+【实现范围】这是本地扩展的评测框架，不表示完全复现
+616
+OmniResponse 作者原表。三组评价方向已确认；整段语义
+617
+事件与人工评价的完整执行细则仍待落实。
+618
+Clip-level event-category agreement.
+An utter-
+619
+ance often constrains the affective or attitudinal direc-
+620
+tion of a response. Smiling or shared laughter may be
+621
+natural after happy news, while a head shake can ex-
+622
+press disagreement. Even when responses have similar
+623
+intent, listeners can nod, smile, or vocalize at different
+624
+pauses, with different durations and repetition counts.
+625
+Requiring overlap with a single reference’s event in-
+626
+tervals may therefore penalize an appropriate category
+627
+expressed at a different time.
+628
+We collapse repeated instances of a category within
+629
+a clip into a presence label and compute precision, re-
+630
+call, and macro-F1 separately for visual and audio cate-
+631
+gories. The comparison does not require temporal over-
+632
+lap between generated and reference events. It mea-
+633
+sures category agreement with the observed response,
+634
+rather than event-localization accuracy.
+Affect does
+635
+not uniquely determine behavior: happy news need not
+636
+always elicit laughter. Category agreement therefore
+637
+cannot recognize every reasonable response by itself.
+638
+Allowing variation relative to reference timing also does
+639
+not make premature, prolonged, or internally uncoor-
+640
+dinated feedback acceptable. Figure 4 illustrates these
+641
+distinct questions.
+642
+【待定技术关系】最终类别表、外部检测器、阈值、未知标签处
+643
+理与核验方式未定。P/R 的汇总口径尚未写明，不自行假定
+644
+为micro 或macro；Macro-F1 沿用已确认表述。训练Event
+645
+头的类别也不直接作为最终评测类别表。
+646
+Video quality and visual behavior.
+Paired video
+647
+evaluation includes PSNR, SSIM, LPIPS, FID, FVD,
+648
+Emo-Acc, Emo-Div, and ∆Resp.
+PSNR and SSIM
+649
+measure pixel and structural similarity; LPIPS mea-
+650
+sures perceptual distance; FID and FVD compare im-
+651
+age and video feature distributions.
+Following the
+652
+definitions used by AnyTalker [1], Emo-Acc measures
+653
+agreement between predicted seven-class expression la-
+654
+9
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+Three questions about generated listening feedback
+Reference agreement, context, and internal coordination answer different questions.
+(a) Clip-level category agreement
+(b) Context and engagement
+(c) Audiovisual coordination
+Reference
+Generated
+nod
+nod
+Collapse repetition and timing
+{nod} vs. {nod}
+Separate visual / audio P, R, macro-F1
+Same category; different event times.
+Agreement is not full appropriateness.
+Current speaker audio
+Does the feedback fit this utterance?
+Does it convey natural engagement?
+Is it excessive or premature?
+Generated listener response
+Different reasonable responses are allowed.
+Quiet listening can be appropriate.
+Generated video
+Generated audio
+facial behavior / mouth movement
+brief speech / laughter / silence
+Do sound and movement agree?
+Matching category sets alone cannot
+establish coordination within the output.
+Human protocol: details pending
+Schematic intervals only. Event detectors, category lists, and human-rating details remain to be finalized.
+Figure 4. F4: Evaluation design (draft). Clip-level category agreement removes the requirement to reproduce reference
+event times. Separate judgments address appropriateness under the current utterance and coordination within generated
+audio and video. Matching categories alone cannot establish either property. Event intervals are schematic; detectors and
+human-rating details remain to be specified.
+bels on jointly valid face frames. Emo-Div counts dis-
+655
+tinct predicted expression classes per video; generated
+656
+and reference values are reported separately, without
+657
+assuming that larger values are better. ∆Resp mea-
+658
+sures the difference in average eye-and-brow movement
+659
+magnitude during listening, weighted by phase dura-
+660
+tion.
+661
+These measures provide complementary observa-
+662
+tions, not complete judgments of interaction. Emo-Acc
+663
+is frame-level reference agreement, not contextual emo-
+664
+tional correctness. ∆Resp does not directly measure
+665
+nod counts, eye contact, or semantic appropriateness.
+666
+Framewise similarity describes differences from one ref-
+667
+erence and does not exclude other valid responses.
+668
+【指标引用待补】LPIPS、FID、FVD、表情工具及其他实际
+669
+使用指标的原始论文引用需按实现核对后补齐。本版不编造
+670
+书目信息，也不依据相同指标名混用不同实现。
+671
+The framework also integrates GLARE’s R-F1,
+672
+R-tIoU, R-ATD, and R-FID [11] for supplementary
+673
+visual-reaction and temporal-alignment diagnostics.
+674
+GLARE’s R-F1 requires category and interval match-
+675
+ing, so it is distinct from our clip-level category F1.
+676
+Vocal activity, audio quality, and synchroniza-
+677
+tion.
+For brief, intermittent listener sounds, the im-
+678
+plementation distinguishes energy-based acoustic ac-
+679
+tivity from speech detected by a voice-activity detec-
+680
+tor. It supports activity-duration error, the fraction of
+681
+reference-vocal clips with an entirely missed response,
+682
+extra vocal time during reference silence, and false vo-
+683
+calization on entirely silent clips.
+Acoustic activity
+684
+may include laughter or humming, but can also include
+685
+noise; it is not itself a semantic backchannel event.
+686
+Strict and tolerant interval-matching precision, recall,
+687
+F1, and boundary errors provide additional timing di-
+688
+agnostics, separate from clip-level semantic category
+689
+agreement.
+690
+For continuous speech windows that satisfy their
+691
+input requirements, UTMOSv2 assesses audio quality
+692
+and SyncNet’s LSE-D and LSE-C assess synchroniza-
+693
+tion between mouth motion and generated sound. Very
+694
+short acknowledgments, non-speech vocalizations, and
+695
+silent clips may not support these measures.
+696
+【评测执行要求】对不可测项报告N/A 和有效覆盖率，不通
+697
+过重复或拼接短回应获得分数。这类样本仍保留声音活动与
+698
+行为评价。UTMOSv2 和SyncNet 的正式引用、适用窗口及
+699
+最终报告项按实际实现补齐。
+700
+Contextual appropriateness and audiovisual co-
+701
+ordination.
+The design considers whether feedback
+702
+fits the current speaker audio, is natural without being
+703
+excessive, and conveys listening engagement.
+It also
+704
+considers whether generated sounds and movements
+705
+form a coordinated response, such as laughter accom-
+706
+panying a smiling face. Different reasonable responses
+707
+and natural quiet listening are allowed. The human-
+708
+assessment design is described in Sec. 5.4.
+709
+【人工评价待完成】这两组初步采用人工评价，具体评分形式
+710
+未定。后续分别设置语境适当性、参与感／自然度及视听协
+711
+调维度，不能将问卷工具就绪写成已收集人工结果。
+712
+10
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+【保留的中文执行要求】评价针对最终生成的音视频进行，不
+713
+以训练辅助头的分类结果替代生成效果。各项分数同时报告
+714
+有效样本或窗口覆盖率；未知标签、检测失败与真正无事件
+715
+分开处理，不将不可测项填为零或满分。
+716
+【已有执行与待补】视频八项及声音活动已有双200 结果；最
+717
+新6000 步结果中UTMOSv2 因参考语音过短而无有效窗
+718
+口。SyncNet 与GLARE 指标已接入工具，但该轮未运行。
+719
+整段语义事件指标与人工评价待实施。
+720
+5.3. Quantitative Comparisons
+721
+Audiovisual backchannel generation.
+The full-
+722
+task comparison concerns listener audio, visual reac-
+723
+tions, and their coordination (Tab. 2). It uses current
+724
+speaker audio and a listener first frame as inputs and
+725
+does not treat supplied listener audio as generated au-
+726
+dio.
+727
+【比较所能支持的结论】已知listener 音轨的动画对照只评
+728
+价驱动画面；独立OVI 的共享预测文本对照评价生成器，
+729
+Qwen→OVI 端到端对照评价系统，两者均不替代三组件消
+730
+融。不同训练来源的迁移结果不能解释为共同训练下的架构
+731
+因果优势。
+732
+【定量结果待写】完成同协议比较后，先写主表支持的最重要
+733
+发现，再说明对应的媒体质量、反馈类别和声音诊断证据；如
+734
+指标有取舍，明确写出。当前不预设本文优于基线。
+735
+Shared visual-listening capabilities.
+The visual
+736
+comparison concerns capabilities shared with video-
+737
+only listening methods (Tab. 3). Methods that require
+738
+additional inputs or produce only motion are consid-
+739
+ered separately; their results do not establish perfor-
+740
+mance on the full audiovisual task.
+741
+5.4. Qualitative Results and Human Evaluation
+742
+Qualitative comparisons.
+【样例计划】图F5 先放可
+743
+替换布局。后续按预先说明的规则选择合理安静倾听、动作
+744
+与短声共同表达、遗漏或不适当失败三类。每例保留speaker
+745
+原音频、listener 首帧、一个真实参考、各方法帧序列及各自
+746
+音轨；同一时刻展示不代表必须与GT 同时反应。动作标签
+747
+说明人工／自动来源。完整视频待插入，不能只看波形判断
+748
+类别与音质。
+749
+Human evaluation.
+【人工评价计划】在相同当前
+750
+speaker 音频与listener 首帧条件下，匿名随机排序并由多位
+751
+评分者判断适当性、参与感／自然度与声画协调（Tab. 4）。
+752
+画面／声音技术质量可分开评分。参考回应不是唯一正确答
+753
+案，合理安静允许存在；无发声样本的相关协调项按协议记
+754
+N/A 并报告覆盖。人工仍需检查反应抢先、拖长或内部矛盾，
+755
+不要求复现唯一GT 时刻。
+756
+【统计计划】使用配对设计，按来源对话处理片段相关性，报
+757
+告置信区间与有效样本。单次生成seed 如实注明；样本
+758
+bootstrap 不替代训练多seed 的不确定性。评分人数、量表
+759
+／A-B 形式及一致性统计待确定，不能预设自动指标与人评
+760
+高度相关。
+761
+5.5. Ablation Studies
+762
+Table 5 defines five configurations: a base model, the
+763
+full model, and three variants that each remove one
+764
+component. W denotes the additional Whisper cross-
+765
+attention path, F denotes the two feature-supervision
+766
+objectives, and E denotes clip-level event supervi-
+767
+sion on LTX hidden states. All configurations retain
+768
+Qwen/Gemma conditions and the AV objective. Thus,
+769
+the base model still receives speaker information and
+770
+is not an unadapted LTX model.
+771
+The W comparison asks whether direct acoustic in-
+772
+formation helps beyond the original Qwen conditions.
+773
+The F comparison concerns the quality of generated
+774
+media under target-feature supervision. The E com-
+775
+parison concerns omitted feedback categories and in-
+776
+appropriate extra activations.
+These are questions
+777
+for evaluation, not established gains. Five configura-
+778
+tions assess each component’s conditional contribution
+779
+within the full system and the overall change from the
+780
+base; they do not isolate all component interactions or
+781
+establish additive gains.
+782
+【受控条件与证据】固定数据、标签、初始化、规划器、训练样
+783
+本展示量和采样；可预生成同一预测描述供五组共用。训练
+784
+仍用标注描述，测试用预测描述；GT 描述对照另标oracle。
+785
+W 不能只用画质证明语义／韵律利用，F 不能只用teacher
+786
+重建损失证明最终媒体改善，E 须同时看P/R/F1、误触发
+787
+和合理安静倾听。
+788
+【历史结果与扩展】旧U-Event 的6000 ／8000 和新LTX6000
+789
+＋SFT2752 结果均不能代替这五组正式同条件结果。监督
+790
+位置、整段／时序、两路Feature 拆分和权重网格暂列可选；
+791
+只有新增相应独立主张时再安排对照。
+792
+5.6. Data and Evaluation Validation
+793
+Data and annotation quality.
+【资源与媒体抽检计
+794
+划】统计来源、角色、音轨、片段长度、人脸质量、有声／安
+795
+静比例、逐类支持与共现。代表性随机抽检覆盖边界完整性、
+796
+角色对应、音轨污染／过度截除和脸部可用性；稀有层过采
+797
+样需按真实分布加权。资源分支关系放附录，正文保持最终
+798
+规模简洁。
+799
+【配对标注核验计划】固定同批片段、Qwen3-Omni 版本、采
+800
+样设置与输出要求，比较仅音视频与加入带时间线索的匿名
+801
+描述（Tab. 6）。独立人工核验遗漏、无依据添加、顺序与发
+802
+声内容；同时报告正确性和完整性。已有24 条有声试点只能
+803
+说明观察来源。若要声称数据处理提升生成效果，另需固定
+804
+模型、规模和预算的训练对照。
+805
+Event-evaluator reliability. 【事件评测器核验】在真
+806
+实和生成媒体上分别抽样核验外部检测器，覆盖有声／无声、
+807
+常见／稀有类及失败例；报告逐类质量、支持数和覆盖。训练
+808
+弱负例不直接当测试负真值，未知／失败不当正确安静；不
+809
+能用训练Event 头自评。
+810
+【本小节作用】这里核验数据与测量工具是否可信；生成效果
+811
+由主对比和消融回答，用户感受由前述人工评价回答。完成
+812
+11
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+Table 2. T2a: Audiovisual comparison layout. All scores are unfilled. Inputs are current speaker audio and the listener’s
+first frame; no target listener audio is supplied. The Qwen–OVI row is a candidate system comparison pending adaptation.
+n denotes the applicable sample or window count; exact metric coverage is to be reported separately.
+Visual quality
+Audio diagnostics / quality
+Method
+FID↓
+FVD↓
+LPIPS↓
+Miss↓
+(%)
+False↓
+(%)
+UTMOS↑
+n
+A0: Base
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+A1: Full
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+Qwen→OVI
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+Visual events
+Audio events
+Method
+P↑
+R↑
+mF1↑
+nv
+P↑
+R↑
+mF1↑
+na
+A0: Base
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+A1: Full
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+Qwen→OVI
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+【表头与条件待冻结】Miss 对应参考有声片段的整段漏回应比例，False 对应完全静音片段上的误发声比例；这两项是参考一致
+性诊断，不直接判断合理性。P/R 汇总口径未定，mF1 指Macro-F1。训练来源、检查点、输入适配、短声指标有效覆盖和逐
+类支持数待补；无有效音质窗口时填N/A。不同测试集分别填同结构面板，不混合排名。
+Table 3.
+T2b: Visual listening comparison layout.
+Adapted conditions are disclosed separately.
+These methods have
+different training sources; the comparison does not isolate architecture under common training. Audio-generation measures
+are not applicable to video-only methods. All scores remain unfilled for the final protocol.
+Method
+Adaptation / condition
+FID↓
+FVD↓
+LPIPS↓
+Visual
+mF1↑
+Audio
+generation
+n
+A1: Full
+as, Il
+TBD
+TBD
+TBD
+TBD
+see T2a
+TBD
+GLARE [11]
+Tref / motion context:
+待核对
+TBD
+TBD
+TBD
+TBD
+N/A
+TBD
+DyStream [8]
+Other audio = as; self audio = 0
+TBD
+TBD
+TBD
+TBD
+N/A
+TBD
+Avatar Forcing [3]
+User audio = as; user visual and self audio
+= 0
+TBD
+TBD
+TBD
+TBD
+N/A
+TBD
+【已有与待做】DyStream、Avatar Forcing 已有ViCo43 视觉结果，但本文对应行是历史联合8000 模型。不能填到当前正式模
+型名下。GLARE 仍需重训和条件适配；其他数据集上的统一生成、正式训练来源与条件表待补。
+核验后报告具体发现，详细错误清单和逐类结果可放补充材
+813
+料。
+814
+【可选扩展与范围】Whisper 置零／错配、GT 描述oracle、多
+815
+seed、时长／发声／脸部质量分层和完整推理开销仅为可选
+816
+诊断。错配可能产生条件冲突，不能单独证明理解；多样性
+817
+需同时看适当性，不选best-of-N。推理开销包括描述、重编
+818
+码、各编码器、生成与解码，不将片段吞吐叫流式延迟。本
+819
+阶段不增加多轮历史、persona 保持、全身或实时流式主张。
+820
+【已有证据状态，按中文稿快照】ViCo43 已完成历史联合8000、
+821
+DyStream 和Avatar Forcing 自动比较，人工评分为0；双
+822
+200 LTX6000 ＋SFT2752 有视频与活动结果，UTMOSv2
+823
+无有效窗口，SyncNet ／GLARE 未运行；基础AV 训练已
+824
+启动，不能称五组完成。上述记录仅作筹备依据，当前不填
+825
+正式结果表。
+826
+6. Conclusion
+827
+【结论待写】正式结果尚未汇齐。完成主对比、五组消融、数
+828
+据质量及评价核验后，再根据实际证据写结论；当前不新增
+829
+性能、泛化或交互体验提升的结论。
+830
+Limitations and future work.
+【局限段落待写】结
+831
+果确定后，用一个短段落结合失败例说明适用边界。当前设
+832
+定只使用当前语音与首帧；自动标注、外部事件检测及单一
+833
+参考评价的局限需结合核验结果说明。这里不新增多轮历史、
+834
+人物长期一致性或实时流式实验要求。
+835
+【作者自查】贡献：保留数据、模型和评价三条方向，效果证
+836
+据待补。写作：已区分标注／生成模型、训练／推理描述和
+837
+两类事件协议。实验：五组已规划，成绩留空。评价：外部检
+838
+测、人工规范和覆盖待落实。方法：冻结基座及梯度路径已
+839
+说明，版本与细节待核对。完整逐项核对见review/含义与证
+840
+据核对.md。
+841
+12
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+Qualitative comparison: layout only
+Replace empty slots with actual synchronized media. No model outputs or performance claims are shown.
+Quiet listening
+Speaker audio + first frame: to insert
+Same display times across methods
+Audiovisual feedback
+Speaker audio + first frame: to insert
+Same display times across methods
+Failure analysis
+Speaker audio + first frame: to insert
+Same display times across methods
+Reference
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+A0: Base
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+A1: Full
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+A2: No direct audio
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+A3: No Feature
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+A4: No Event
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+frame
+frame
+frame
+own audio / verified reaction label: to insert
+Use one observed reference, five controlled variants, and complete playable clips; retain failures.
+Blank boxes and dashed lines are placeholders, not silent outputs or measured waveforms.
+Figure 5. F5: Qualitative comparison layout only (draft). Three planned cases cover quiet listening, audiovisual
+feedback, and failure analysis. Rows reserve space for a reference response and the five ablation configurations. Every frame
+and audio slot is empty: this figure contains no generated result or claimed performance difference.
+Table 4. T4: Human-evaluation layout. Dimensions are agreed; the rating scale, sampling, and uncertainty estimator are
+not finalized. Video-only methods are assessed only on applicable dimensions. No human scores have been filled.
+Method / comparison
+Contextual
+appropriateness
+Engagement /
+naturalness
+Audiovisual
+coordination
+Valid
+samples
+Uncertainty
+A0: Base
+TBD
+TBD
+TBD
+TBD
+TBD
+A1: Full
+TBD
+TBD
+TBD
+TBD
+TBD
+Qwen→OVI
+TBD
+TBD
+TBD
+TBD
+TBD
+GLARE
+TBD
+TBD
+N/A
+TBD
+TBD
+DyStream
+TBD
+TBD
+N/A
+TBD
+TBD
+Avatar Forcing
+TBD
+TBD
+N/A
+TBD
+TBD
+【人工协议待确定】正式名单随基线完成情况调整。需要补每条评分人数、评分者总数、一致性与置信区间。若使用A/B 偏好
+则保留平局，若使用等级量表则补评分锚点。视觉方法与AV 方法只在共同适用维度和明确展示条件下比较；安静样本不能自
+动获得声画协调满分。
+13
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+Table 5. T3: Five confirmed ablation configurations (result layout). W is the additional Whisper cross-attention path; F
+is the pair of feature objectives; E is clip-level event supervision on LTX hidden states. Every row retains Qwen/Gemma
+conditioning and AV training. Empty results do not imply an improvement.
+Configuration
+W
+F
+E
+FID↓
+FVD↓
+Visual
+mF1↑
+Audio
+mF1↑
+Miss↓
+(%)
+False↓
+(%)
+A0: Base
+−
+−
+−
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+A1: Full
+✓
+✓
+✓
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+A2: Without direct audio
+−
+✓
+✓
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+A3: Without Feature
+✓
+−
+✓
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+A4: Without Event
+✓
+✓
+−
+TBD
+TBD
+TBD
+TBD
+TBD
+TBD
+【正式填写要求】表中只固定五组结构，分数留空。P/R、逐类支持、适用音质与人评见配套细表，不以单个F1 概括全部效果。
+各组固定规划器、训练数据、初始化、预算和采样；旧U-Event 结果及SFT 规划器变体不能直接填入。
+Table 6. 辅助标注质量表草案（待实施，可移至附录）。固定相同片段，对匿名描述进行独立人工核验；所有数值待填。
+标注设置
+样本数
+事件遗漏↓
+无依据添加↓
+顺序错误↓
+发声描述错误↓
+仅音视频
+TBD
+TBD
+TBD
+TBD
+TBD
+音视频＋带时间反应线索
+TBD
+TBD
+TBD
+TBD
+TBD
+【统计口径待补】各项分母、判定标准和分层抽样方式需先定义。检测线索不是人工真值；更长描述不直接表示更准确。媒体质
+量抽检另记录角色／切分合格率、音轨问题和脸部可用性。
+14
+
+CVPR
+CVPR
+CVPR 2027 Submission. CONFIDENTIAL REVIEW COPY. DO NOT DISTRIBUTE.
+【引用占位】以下参考文献仅用已知工作名称标识引用对象，不
+842
+是正式书目信息。请按CITATIONS.md 下载原始BibTeX，
+843
+替换references.bib 中同名键；不依据文件名补作者、年份或
+844
+录用会议。
+845
+References
+846
+[1] AnyTalker.
+Bibliographic placeholder; replace with
+847
+verified BibTeX. 9
+848
+[2] ARIG. Bibliographic placeholder; replace with verified
+849
+BibTeX. 3
+850
+[3] Avatar Forcing.
+Bibliographic placeholder; replace
+851
+with verified BibTeX. 12
+852
+[4] Bernini.
+Bibliographic placeholder; feature decoder
+853
+and projection code attribution verified locally; replace
+854
+with verified BibTeX. 4, 5
+855
+[5] CustomListener.
+Bibliographic placeholder; replace
+856
+with verified BibTeX. 2
+857
+[6] DiffListener. Bibliographic placeholder; replace with
+858
+verified BibTeX. 2
+859
+[7] DiTaiListener. Bibliographic placeholder; replace with
+860
+verified BibTeX. 2
+861
+[8] DyStream.
+Bibliographic placeholder; replace with
+862
+verified BibTeX. 1, 3, 12
+863
+[9] Emotional Listener Portrait (ELP).
+Bibliographic
+864
+placeholder; replace with verified BibTeX. 2
+865
+[10] Gemma (exact model reference pending).
+Biblio-
+866
+graphic placeholder; replace with verified BibTeX. 4
+867
+[11] GLARE. Bibliographic placeholder; replace with veri-
+868
+fied BibTeX. 1, 3, 9, 10, 12
+869
+[12] INFP. Bibliographic placeholder; replace with verified
+870
+BibTeX. 1, 3
+871
+[13] Learning to Listen. Bibliographic placeholder; replace
+872
+with verified BibTeX. 1, 2
+873
+[14] LTX (exact model reference pending). Bibliographic
+874
+placeholder; replace with verified BibTeX. 4
+875
+[15] MFR-Net. Bibliographic placeholder; replace with ver-
+876
+ified BibTeX. 2
+877
+[16] OmniHuman-1.5, . Bibliographic placeholder; replace
+878
+with verified BibTeX. 1
+879
+[17] OmniPersona, .
+Bibliographic placeholder; replace
+880
+with verified BibTeX. 1, 3
+881
+[18] OmniResponse / ResponseNet, . Bibliographic place-
+882
+holder; replace with verified BibTeX. 1, 3, 9
+883
+[19] Qwen2.5-Omni, .
+Bibliographic placeholder; replace
+884
+with verified BibTeX. 4
+885
+[20] Qwen3, . Bibliographic placeholder; replace with veri-
+886
+fied BibTeX. 7
+887
+[21] Qwen3-Omni, .
+Bibliographic placeholder; replace
+888
+with verified BibTeX. 1, 7
+889
+[22] REACT2023, . Bibliographic placeholder; replace with
+890
+verified BibTeX. 3
+891
+[23] ReactFace, . Bibliographic placeholder; replace with
+892
+verified BibTeX. 1, 2, 3
+893
+[24] RealTalk:
+Affective Faces for Goal-Driven Dyadic
+894
+Communication, . Bibliographic placeholder; replace
+895
+with verified BibTeX. 3, 9
+896
+[25] Seamless Interaction.
+Bibliographic placeholder; re-
+897
+place with verified BibTeX. 1, 3, 6, 9
+898
+[26] SpeakerVid-5M.
+Bibliographic placeholder; replace
+899
+with verified BibTeX. 3, 9
+900
+[27] ViCo
+/
+Responsive
+Listening
+Head
+Generation
+901
+(RLHG). Bibliographic placeholder; replace with ver-
+902
+ified BibTeX. 1, 2, 3, 9
+903
+[28] Whisper. Bibliographic placeholder; replace with ver-
+904
+ified BibTeX. 5
+905
+15

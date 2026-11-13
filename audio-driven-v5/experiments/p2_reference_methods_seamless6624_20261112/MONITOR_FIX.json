@@ -1,0 +1,29 @@
+{
+  "at": 1794534663.13191,
+  "cause": "Stale GPU7 background lease survived foreground-only/idle period; resumed job was falsely evicted after about44 seconds",
+  "evidence": {
+    "resumed_at": "2026-11-13T01:44:52Z",
+    "false_expiry_at": "2026-11-13T01:45:36Z"
+  },
+  "fix": "Clear old lease after foreground-only/long-idle periods, maintain actual quiet handoff interval, start a fresh lease on resume",
+  "allowed_gpus": [
+    7
+  ],
+  "disabled_gpus": [
+    4
+  ],
+  "tests": {
+    "passed": true,
+    "checks": [
+      "Expired lease cleared after long idle gap",
+      "New worker survives44s instead of false lease expiry",
+      "Short quiet gap enforces handoff without carrying old lease into next launch",
+      "Foreground-only period clears prior background clock",
+      "GPU4 rejected before initializing CUDA"
+    ],
+    "code_sha256": "b37bae078a6db184c0b29926e826e0d5ea5b958bbcfca312dae8feaf1c3aa4ee",
+    "at": 1794534570.1654398
+  },
+  "same_fix_in_followup": true,
+  "completed_outputs_retained": true
+}

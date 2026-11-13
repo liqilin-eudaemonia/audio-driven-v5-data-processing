@@ -1,0 +1,19 @@
+--- before/src/p2_event_presence/prompts.py
++++ src/p2_event_presence/prompts.py
+@@ -2,7 +2,7 @@
+ import json
+ from .contracts import CLASSES
+ 
+-VERSION = 'annotation-pipeline-presence-visual4-audio3-20261108-v1'
++VERSION = 'annotation-pipeline-presence-visual4-audio3-20261112-v2'
+ 
+ DEFINITIONS = {
+     'nodding': 'Visible up/down nod-like head movement; not just a stationary tilted head or a one-way look downward. Do not infer agreement.',
+@@ -42,6 +42,7 @@
+         base += 'You are given video WITHOUT audible sound. Classify only visible behavior; no inference about audible laughter, speech or vocalization. If the target listener is ambiguous among multiple people, use unknown rather than borrowing another person\'s behavior. Set long_speech_observed=false.\n'
+         if candidates:
+             base += 'Independent annotation-pipeline movement candidates below may be WRONG or incomplete. Verify in video; empty candidates are not absence, intervals are not repetition counts.\n'
++            base += 'All cue times are relative to this video window. Smile blendshape summaries, when supplied, are fallible facial measurements, not probabilities or binary labels. Inspect the video near their peaks; no fixed score threshold establishes smiling. Null values mean missing measurements, not absence. Face coverage refers to the stated scope.\n'
+             base += json.dumps(candidates, ensure_ascii=False) + '\n'
+     else:
+         base += 'You are given AUDIO ONLY. Do not infer visible smiles, nods, or mouth movements. A clearly silent waveform contains none of the three sounds. Set long_speech_observed=true only for audible sustained longer speech. Short/long speech ambiguity should make brief_verbal_response unknown. Do not impose an unstated seconds/word-count cutoff.\n'

@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ViCo43 SFT2752 · 首批预览</title><style>
+body{background:#111827;color:#e5e7eb;font:15px/1.7 system-ui;margin:0;padding:20px}main{max-width:1400px;margin:auto}h1{font-size:24px}.note{background:#3e3220;padding:15px;border-radius:8px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}video{width:100%;aspect-ratio:1;background:black}.card{background:#1f2937;padding:10px}button,select{background:#374151;color:white;padding:8px;margin:6px 2px;border:1px solid #64748b;max-width:100%}table{border-collapse:collapse}td,th{padding:6px 15px;border-bottom:1px solid #475569}pre{white-space:pre-wrap;overflow-wrap:anywhere}input{width:90%}#status{color:#fde68a}</style>
+<main><p><a href="./">查看完整43条最新结果</a>；下方保留首批9条历史预览。</p><h1>ViCo43：固定联合8000，原始Qwen vs SFT2752</h1>
+<p class="note" id="notice"></p><p>同一输入、Whisper、seed137／Euler30／CFG3和7。只替换规划器及其描述、H和Gemma。原生512×512／25fps；GT和speaker为共同256px预览。训练使用base H，本次SFT推理使用SFT H。</p>
+<div id="metrics"></div><select id="clip"></select><select id="audio"><option value="speaker">speaker上下文</option><option value="base">原始Qwen版生成声音</option><option value="sft">SFT2752版生成声音</option><option value="mute">静音</option></select>
+<div><button id="play">同步播放</button><button id="pause">暂停</button></div><input type="range" id="seek" min="0" max="1" step=".01" value="0"><p id="status"></p>
+<div class="grid"><div class="card">Speaker<video id="speaker" muted playsinline></video></div><div class="card">Listener GT<video id="gt" muted playsinline></video></div><div class="card">联合8000＋原始Qwen<video id="base" muted playsinline></video></div><div class="card">联合8000＋SFT2752<video id="sft" muted playsinline></video></div></div>
+<audio id="sound"></audio><h3>本片段画质</h3><pre id="perclip"></pre><details><summary>两版Qwen预测的反应计划（不是真值）</summary><pre id="planning"></pre></details></main>
+<script>
+const $=x=>document.getElementById(x),names=['speaker','gt','base','sft'];let D,index=0,ready=false,playing=false;
+function pause(){playing=false;names.forEach(n=>$(n).pause());$('sound').pause()}
+function sound(){const a=$('sound'),mode=$('audio').value,c=D.cases[index];a.pause();if(mode==='mute')return;a.src=c[mode+'_audio'];a.currentTime=$('speaker').currentTime;if(playing)a.play().catch(fail)}
+function fail(e){$('status').textContent=e.message;console.error(e)}
+async function show(i){pause();ready=false;index=i;const c=D.cases[i];for(const n of names){$(n).src=c[n];$(n).load()}
+$('seek').max=c.duration;$('seek').value=0;$('planning').textContent=JSON.stringify(c.planning,null,2);$('perclip').textContent=JSON.stringify(c.image.values,null,2);sound();
+await Promise.all(names.map(n=>new Promise((resolve,reject)=>{$(n).addEventListener('loadedmetadata',resolve,{once:true});$(n).addEventListener('error',()=>reject(Error(n+' loading failed')),{once:true})})));ready=true;$('status').textContent=(i+1)+'/'+D.cases.length+' · '+c.id+' · '+c.duration.toFixed(3)+'s'}
+$('clip').onchange=()=>show(+$('clip').value).catch(fail);$('audio').onchange=sound;$('pause').onclick=pause;
+$('play').onclick=async()=>{if(!ready)return;playing=true;await Promise.all(names.map(n=>$(n).play()));if($('audio').value!=='mute')await $('sound').play()};
+$('seek').oninput=()=>{names.forEach(n=>$(n).currentTime=+$('seek').value);$('sound').currentTime=+$('seek').value};
+setInterval(()=>{if(!ready)return;const t=$('speaker').currentTime;$('seek').value=t;if(playing){names.slice(1).forEach(n=>{if(Math.abs($(n).currentTime-t)>.15)$(n).currentTime=t});if($('audio').value!=='mute'&&Math.abs($('sound').currentTime-t)>.15)$('sound').currentTime=t;if($('speaker').ended)pause()}},100);
+window.reviewDebug=()=>({ready,index,playing,count:D?.cases.length,times:names.map(n=>$(n).currentTime),errors:names.filter(n=>$(n).error)});
+fetch('pilot_data.json').then(r=>r.json()).then(async d=>{D=d;$('notice').textContent='仅首批已完成 '+d.cases.length+'/43 条，优先长片段。不是完整或随机测试集，暂不能排名。完整生成、动作和FID／CSIM／CPBD仍在处理中。';$('clip').innerHTML=d.cases.map((c,i)=>'<option value="'+i+'">'+(i+1)+' · '+c.id+'</option>').join('');$('metrics').innerHTML='<table><tr><th>这批相同片段</th><th>PSNR ↑</th><th>SSIM ↑</th></tr>'+['base','sft'].map(n=>'<tr><td>'+({base:'原始Qwen',sft:'SFT2752'}[n])+'</td><td>'+d.summary[n].psnr.toFixed(5)+'</td><td>'+d.summary[n].ssim.toFixed(5)+'</td></tr>').join('')+'</table>';await show(0)}).catch(fail);
+</script>

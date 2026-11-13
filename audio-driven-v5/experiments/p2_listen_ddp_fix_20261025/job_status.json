@@ -1,0 +1,228 @@
+{
+  "started": 1792932793.8190384,
+  "updated": 1792933581.1723576,
+  "jobs": {
+    "E0": {
+      "state": "passed",
+      "pid": 1003604,
+      "gpus": [
+        4
+      ],
+      "command": [
+        "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+        "/private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_listen.py",
+        "train",
+        "--config",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/config.json",
+        "--train-seed",
+        "20261027",
+        "--s0",
+        "--steps",
+        "7",
+        "--arm",
+        "E0"
+      ],
+      "started": 1792932797.421539,
+      "exit_code": 0,
+      "ended": 1792933132.6579401
+    },
+    "E1_first5": {
+      "state": "passed",
+      "pid": 1003705,
+      "gpus": [
+        5
+      ],
+      "command": [
+        "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+        "/private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_listen.py",
+        "train",
+        "--config",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/config.json",
+        "--train-seed",
+        "20261027",
+        "--s0",
+        "--steps",
+        "7",
+        "--arm",
+        "E1",
+        "--stop-after",
+        "5"
+      ],
+      "started": 1792932797.423172,
+      "exit_code": 0,
+      "ended": 1792933040.450113
+    },
+    "E1_resume": {
+      "state": "passed",
+      "pid": 2165271,
+      "gpus": [
+        5
+      ],
+      "command": [
+        "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+        "/private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_listen.py",
+        "train",
+        "--config",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/config.json",
+        "--train-seed",
+        "20261027",
+        "--s0",
+        "--steps",
+        "7",
+        "--arm",
+        "E1",
+        "--resume",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/runs/s0_20261027/E1/step_000005.pt"
+      ],
+      "started": 1792933042.0246,
+      "exit_code": 0,
+      "ended": 1792933205.4537299
+    },
+    "E1_ddp": {
+      "state": "passed",
+      "pid": 2702434,
+      "gpus": [
+        4,
+        6
+      ],
+      "command": [
+        "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+        "-m",
+        "torch.distributed.run",
+        "--standalone",
+        "--nproc-per-node=2",
+        "/private/liqi_workspace/project_code/audio-driven-v5/scripts/train_p2_listen_distributed.py",
+        "--config",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/ddp/config.json",
+        "--arm",
+        "E1",
+        "--train-seed",
+        "20261027",
+        "--s0",
+        "--steps",
+        "7"
+      ],
+      "started": 1792933134.1501322,
+      "exit_code": 0,
+      "ended": 1792933357.0190105
+    },
+    "replay": {
+      "state": "passed",
+      "pid": 3022838,
+      "gpus": [
+        5
+      ],
+      "command": [
+        "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+        "/private/liqi_workspace/project_code/audio-driven-v5/scripts/check_p2_listen_gpu_replay.py",
+        "--checkpoint",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/runs/s0_20261027/E1/step_000006.pt",
+        "--expected",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/runs/s0_20261027/E1/step_000007.pt",
+        "--output",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/replay.json"
+      ],
+      "started": 1792933207.290712,
+      "exit_code": 0,
+      "ended": 1792933369.5979793
+    },
+    "E0_ddp": {
+      "state": "passed",
+      "pid": 3772330,
+      "gpus": [
+        4,
+        6
+      ],
+      "command": [
+        "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+        "-m",
+        "torch.distributed.run",
+        "--standalone",
+        "--nproc-per-node=2",
+        "/private/liqi_workspace/project_code/audio-driven-v5/scripts/train_p2_listen_distributed.py",
+        "--config",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/ddp/config.json",
+        "--arm",
+        "E0",
+        "--train-seed",
+        "20261027",
+        "--s0",
+        "--steps",
+        "7"
+      ],
+      "started": 1792933359.3469949,
+      "exit_code": 0,
+      "ended": 1792933579.9729993
+    },
+    "generate": {
+      "state": "passed",
+      "pid": 3850235,
+      "gpus": [
+        5
+      ],
+      "command": [
+        "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+        "/private/liqi_workspace/project_code/audio-driven-v5/scripts/check_p2_listen_source_only.py",
+        "--config",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/config.json",
+        "--observation",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/generation_observation.json",
+        "--checkpoint",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/runs/s0_20261027/E1/step_000007.pt",
+        "--output",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_ddp_fix_20261025/generated_source_only",
+        "--deny",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_debug50_fullraw_20261025/media/naturalistic_V02_S3394_I00000303_local_f0a7c70ff4da/video.mp4",
+        "--deny",
+        "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_debug50_fullraw_20261025/media/naturalistic_V02_S3394_I00000303_local_f0a7c70ff4da/listener.wav"
+      ],
+      "started": 1792933370.9292388,
+      "exit_code": 0,
+      "ended": 1792933474.8685155
+    }
+  },
+  "gpus": {
+    "0": {
+      "total": 143771,
+      "used": 108137,
+      "utilization": 100
+    },
+    "1": {
+      "total": 143771,
+      "used": 110457,
+      "utilization": 99
+    },
+    "2": {
+      "total": 143771,
+      "used": 109991,
+      "utilization": 100
+    },
+    "3": {
+      "total": 143771,
+      "used": 111119,
+      "utilization": 100
+    },
+    "4": {
+      "total": 143771,
+      "used": 82656,
+      "utilization": 99
+    },
+    "5": {
+      "total": 143771,
+      "used": 84028,
+      "utilization": 37
+    },
+    "6": {
+      "total": 143771,
+      "used": 84238,
+      "utilization": 46
+    },
+    "7": {
+      "total": 143771,
+      "used": 143018,
+      "utilization": 100
+    }
+  },
+  "finished": true,
+  "passed": true
+}

@@ -1,0 +1,125 @@
+{
+  "purpose": "Initial exploratory evaluation subset; original full586 default is unchanged.",
+  "selection_rule": "Keep all 48 exactly nonzero GT listener tracks; add the top 152 exactly-zero tracks by the existing four-checkpoint mean visual composite.",
+  "ranking_method": {
+    "arms": [
+      "av_event_6000",
+      "av_event_8927",
+      "av_only_6000",
+      "av_only_8927"
+    ],
+    "metric_directions": {
+      "psnr": 1,
+      "ssim": 1,
+      "lpips": -1,
+      "emo_acc": 1,
+      "delta_resp": -1
+    },
+    "metric_weights": {
+      "psnr": 0.2,
+      "ssim": 0.2,
+      "lpips": 0.2,
+      "emo_acc": 0.2,
+      "delta_resp": 0.2
+    },
+    "formula": "average raw metric across 4 arms per pair; convert each oriented metric to tie-aware percentile 100*(average_rank-1)/(586-1); average five percentiles; tie-break by ID",
+    "scope": "exploratory visual composite, not an official metric or frozen evaluation subset",
+    "excluded_metrics": {
+      "fid_fvd": "distribution metrics, no per-pair value",
+      "emo_div": "generated class count has no standalone higher-is-better relationship to GT",
+      "utmos": "all unavailable"
+    },
+    "aggregation_note": "Ranking uses pair-level means; comparison metrics below reproduce original frame/duration weighted aggregation, then average 4 arms.",
+    "motion_proxy_note": "GT eyebrow/eye landmark step motion on common valid support, averaged over arms; not manual gesture labels.",
+    "emotion_proxy_note": "DeepFace machine labels; not manual emotion ground truth."
+  },
+  "pairs": 200,
+  "gt_nonzero": 48,
+  "gt_zero": 152,
+  "source_count": 90,
+  "total_minutes": 23.997265883333334,
+  "mean_duration_s": 7.199179765,
+  "gt_acoustic_pairs": 34,
+  "gt_speech_pairs": 25,
+  "asr_groups": {
+    "official_word_time": 164,
+    "local_word_time": 36
+  },
+  "overlap_with_previous_visual_top200": 165,
+  "last_selected_zero_global_rank": 161,
+  "reused_generations": 800,
+  "new_generations": 0,
+  "per_arm_per_pair_metric_aggregates": {
+    "av_event_6000": {
+      "psnr": 20.037513116977532,
+      "ssim": 0.7222746788183174,
+      "lpips": 0.2197016410037246,
+      "emo_acc": 0.6858829409944541,
+      "delta_resp": 0.1550349287443506,
+      "emo_div_gt": 3.14,
+      "emo_div_generated": 2.83
+    },
+    "av_event_8927": {
+      "psnr": 19.54418462078207,
+      "ssim": 0.7126096957184705,
+      "lpips": 0.23428587369016476,
+      "emo_acc": 0.689017423593259,
+      "delta_resp": 0.1770956985567871,
+      "emo_div_gt": 3.14,
+      "emo_div_generated": 2.97
+    },
+    "av_only_6000": {
+      "psnr": 19.76051225657673,
+      "ssim": 0.7167070421515679,
+      "lpips": 0.2278723279996001,
+      "emo_acc": 0.6753803299764303,
+      "delta_resp": 0.17049227063694922,
+      "emo_div_gt": 3.14,
+      "emo_div_generated": 2.995
+    },
+    "av_only_8927": {
+      "psnr": 19.126021750293287,
+      "ssim": 0.7048388655529483,
+      "lpips": 0.25228878728698684,
+      "emo_acc": 0.6777028797370365,
+      "delta_resp": 0.2284097454070754,
+      "emo_div_gt": 3.135,
+      "emo_div_generated": 3.095
+    }
+  },
+  "aggregation_note": "Original frame/duration weighted aggregation. FID/FVD are not recomputed for this subset; no full586 distribution score is substituted. UTMOS remains unavailable.",
+  "reuse": {
+    "av_event_6000": {
+      "pairs": 200,
+      "original_visual_scores": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_testsets_4ckpt_24gpu_20261102/metrics/av_event_6000/responsenet/pairs.jsonl",
+      "original_audio_scores": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_testsets_4ckpt_24gpu_20261102/metrics/av_event_6000/responsenet/audio_pairs.jsonl",
+      "generation_map": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/responsenet_initial200_20261102/maps/av_event_6000.jsonl",
+      "bound_metric_manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/responsenet_initial200_20261102/metric_manifests/av_event_6000.jsonl"
+    },
+    "av_event_8927": {
+      "pairs": 200,
+      "original_visual_scores": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_testsets_4ckpt_24gpu_20261102/metrics/av_event_8927/responsenet/pairs.jsonl",
+      "original_audio_scores": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_testsets_4ckpt_24gpu_20261102/metrics/av_event_8927/responsenet/audio_pairs.jsonl",
+      "generation_map": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/responsenet_initial200_20261102/maps/av_event_8927.jsonl",
+      "bound_metric_manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/responsenet_initial200_20261102/metric_manifests/av_event_8927.jsonl"
+    },
+    "av_only_6000": {
+      "pairs": 200,
+      "original_visual_scores": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_testsets_4ckpt_24gpu_20261102/metrics/av_only_6000/responsenet/pairs.jsonl",
+      "original_audio_scores": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_testsets_4ckpt_24gpu_20261102/metrics/av_only_6000/responsenet/audio_pairs.jsonl",
+      "generation_map": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/responsenet_initial200_20261102/maps/av_only_6000.jsonl",
+      "bound_metric_manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/responsenet_initial200_20261102/metric_manifests/av_only_6000.jsonl"
+    },
+    "av_only_8927": {
+      "pairs": 200,
+      "original_visual_scores": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_testsets_4ckpt_24gpu_20261102/metrics/av_only_8927/responsenet/pairs.jsonl",
+      "original_audio_scores": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_testsets_4ckpt_24gpu_20261102/metrics/av_only_8927/responsenet/audio_pairs.jsonl",
+      "generation_map": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/responsenet_initial200_20261102/maps/av_only_8927.jsonl",
+      "bound_metric_manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/responsenet_initial200_20261102/metric_manifests/av_only_8927.jsonl"
+    }
+  },
+  "caveats": [
+    "Nonzero audio is not manually verified speech or backchannel.",
+    "The 152 zero-track pairs are selected by evaluated model performance; this is not an unbiased test set or the natural full586 distribution."
+  ]
+}

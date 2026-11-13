@@ -1,0 +1,16 @@
+from pathlib import Path
+import json,subprocess
+import cv2,numpy as np,torch,face_alignment
+from reconstruct_glare_crop_math import boxes_for_face
+ROOT=Path(__file__).resolve().parents[1];W=ROOT/'evaluation/glare_pair_review/crop_reconstruction';loc=json.loads((W/'realtalk_localization.json').read_text());a,b=loc['best']['start'],loc['best']['end'];ref=json.loads((W/'realtalk_crop_inferred.json').read_text());path='/private/liqi_workspace/realtalk_inspection/-1wCGAxqT_4.avi'
+buf=subprocess.check_output(['ffmpeg','-loglevel','error','-ss',str(a),'-i',path,'-frames:v','1','-f','image2pipe','-vcodec','png','-threads','2','pipe:1']);frame=cv2.cvtColor(cv2.imdecode(np.frombuffer(buf,np.uint8),cv2.IMREAD_COLOR),cv2.COLOR_BGR2RGB)
+fa=face_alignment.FaceAlignment(face_alignment.LandmarksType.TWO_D,device='cuda',flip_input=False);mult=360/frame.shape[0];small=cv2.resize(frame,(0,0),fx=mult,fy=mult,interpolation=cv2.INTER_AREA);raw=fa.face_detector.detect_from_image(small);boxes=sorted(sorted([r for r in raw if r[4]>=.5],key=lambda r:(r[2]-r[0])*(r[3]-r[1]),reverse=True)[:2],key=lambda r:r[0]);assert len(boxes)==2
+first_buf=subprocess.check_output(['ffmpeg','-loglevel','error','-i',path,'-frames:v','1','-f','image2pipe','-vcodec','png','-threads','2','pipe:1']);first=cv2.cvtColor(cv2.imdecode(np.frombuffer(first_buf,np.uint8),cv2.IMREAD_COLOR),cv2.COLOR_BGR2RGB)
+first_raw=fa.face_detector.detect_from_image(cv2.resize(first,(0,0),fx=mult,fy=mult,interpolation=cv2.INTER_AREA));first_boxes=sorted(sorted([r for r in first_raw if r[4]>=.5],key=lambda r:(r[2]-r[0])*(r[3]-r[1]),reverse=True)[:2],key=lambda r:r[0]);assert len(first_boxes)==2
+for i,box in enumerate(boxes):
+ mapped=[float(v/mult) for v in box[:4]]+[float(box[4])];candidates={k+'_resize360':v for k,v in boxes_for_face(mapped).items()};person=f'p{i}'
+ first_mapped=[float(v/mult) for v in first_boxes[i][:4]]+[float(first_boxes[i][4])];candidates.update({'source_first_'+k+'_resize360':v for k,v in boxes_for_face(first_mapped).items()})
+ if person==loc['best']['person']:candidates['published_landmark_fit']=ref['box_xyxy']
+ else:candidates={k:v for k,v in candidates.items() if k.startswith('source_first_')}
+ record={'status':'reconstructed','source_id':f'realtalk_-1wCGAxqT_4_{person}','scope':'listener constrained by published 147-frame landmarks; speaker uses first valid whole-source face frame to avoid identity ambiguity in three-panel montage','clip_start':a,'clip_end':b,'first_valid_frame':0,'first_valid_source_time':a if person==loc['best']['person'] else 0,'source_first_face_box_xyxy':first_mapped[:4],'source_size':[1280,720],'source_fps':25,'face_box_xyxy':mapped[:4],'face_alignment_version':face_alignment.__version__,'detector':'SFD on 360px-high frame; two largest faces, left-to-right identity p0/p1','candidates':candidates,'selected':'published_landmark_fit' if 'published_landmark_fit' in candidates else 'source_first_square_1p5_resize360','scale':1.5,'output_size':[512,512],'boundary':'black padding outside source','localization_evidence':loc,'published_landmark_fit':ref if person==loc['best']['person'] else None,'note':'Inferred crop/time/role reconstruction; not an author-released manifest.'}
+ (W/(record['source_id']+f'_{a:.3f}_segment.json')).write_text(json.dumps(record,indent=2));print(person,candidates,flush=True)

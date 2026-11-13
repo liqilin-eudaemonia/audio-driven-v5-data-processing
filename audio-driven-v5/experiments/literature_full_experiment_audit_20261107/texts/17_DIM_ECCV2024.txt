@@ -1,0 +1,1127 @@
+               DIM: Dyadic Interaction Modeling for Social
+                             Behavior Generation
+
+
+                      Minh Tran∗    , Di Chang∗    , Maksim Siniukov, and Mohammad Soleymani
+
+                                      University of Southern California, Institute for Creative Technologies
+                                               https://boese0601.github.io/dim/
+                                                     soleymani@ict.usc.edu
+2024
+                               Abstract. Human-human communication is like a delicate dance where
+                                          listeners and speakers concurrently interact to maintain conversationalJul                            dynamics. Hence, an effective model for generating listener nonverbal be-
+                                     haviors requires understanding the dyadic context and interaction. In this
+                                    paper, we present an effective framework for creating 3D facial motions in17
+                                   dyadic interactions. Existing work consider a listener as a reactive agent
+                                  with reflexive behaviors to the speaker’s voice and facial motions. The
+                                    heart of our framework is Dyadic Interaction Modeling (DIM), a pre-
+                                      training approach that jointly models speakers’ and listeners’ motions
+                                  through masking and contrastive learning to learn representations that
+                                   capture the dyadic context. To enable the generation of non-deterministic[cs.CV]                               behaviors, we encode both listener and speaker motions into discrete la-
+                                      tent representations, through VQ-VAE. The pre-trained model is further
+                                      fine-tuned for motion generation. Extensive experiments demonstrate the
+                                       superiority of our framework in generating listener motions, establish-
+                                     ing a new state-of-the-art according to the quantitative measures cap-
+                                     turing the diversity and realism of generated motions. Qualitative re-
+                                         sults demonstrate the superior capabilities of the proposed approach in
+                                    generating diverse and realistic expressions, eye blinks and head ges-
+                                        tures. The code is available at https://github.com/Boese0601/Dyadic-
+                                 Interaction-Modeling.
+
+                            Keywords: Behavior Generation· Self-supervised Learning · Facial Mo-
+                                       tions
+
+
+                  1  IntroductionarXiv:2403.09069v3
+                   Human nonverbal communication is like a dance. In human-human interaction,
+                      we concurrently encode and decode verbal and nonverbal messages, constantly
+                           attending to and reacting to our counterparts to maintain the flow of the con-
+                            versation and engage in effective turn-taking [18]. Hence, a socially intelligent
+                          agent needs to learn the interactive nature of nonverbal communication to create
+                         a seamless and compelling experience. In this paper, we present a method that
+                           goes beyond a reactive agent that only considers speakers’ motions and voice
+
+                                   * equal contribution2     M. Tran et al.
+
+
+
+                                 Dyadic
+                                       Interaction
+                                Modeling
+
+
+                                            Pretrained
+
+
+                                 DIM-Listener
+
+
+        Input Speaker Motion/ Audio                                                        Output Listener Motion
+
+
+Fig. 1: We propose Dyadic Interaction Modeling, a pre-training strategy that jointly
+models speakers’ and listeners’ motions and learns representations that capture the
+dyadic context. We then utilize the pre-trained weights and feed multimodal inputs
+from the speaker into DIM-Listener. DIM-Listener is capable of generating pho-
+torealistic videos for the listener’s motion.
+
+
+
+by learning the listener-speaker dyadic context through self-supervised masked
+pre-training on a large dataset of human-human dyadic interactions, i.e., CAN-
+DOR [57]. As illustrated in Figure 1, We aim to generate a listener’s lifelike
+and plausible head and facial movements in response to a speaker’s motions
+and voice in a manner that resembles the contextualized bi-directional nature of
+human-human communication. Generating listener reactions has a wide range
+of applications, including in human-computer interaction [44,81,82], virtual re-
+ality [36,42], the metaverse [6,8,67], and media forensics [30,61–63]. Given the
+ability of DIM to model dyading interactions, it is also able to produce realistic
+speaker motions.
+   Despite considerable progress, existing methods are limited, particularly in
+capturing real-life conversation dynamics, and difficult to generalize across lis-
+teners. Relevant work focused on either generating speakers’ or listeners’ move-
+ments. Speaker motion generation [9,11,20,34,59,64,65,70,74] primarily focuses
+on producing videos where lip movements are synchronized with speech, a.k.a.,
+lip syncing. Listener motion generation, on the other hand, automatically in-
+terprets the speaker’s voice and nonverbal behaviors to generate the listener’s
+nonverbal responses. Traditionally, listener motion generation have not fully ad-
+dressed the intricacies of dyadic interactions, which involve more than simple re-
+actions to the speaker’s utterances including a multifaceted, concurrent exchange
+of signals and emotions  [50,66,84]. They were also sometimes tuned to specific
+listeners and unable to generalize to others [50]. Earlier work used heuristics and
+simple machine learning models to generate a limited set of reactions, e.g., head
+nods [28]. The Responsive Listening Head Generation (RLHG) [84] approach
+mimics the regression techniques found in Speaker Generation [11], leading to
+a reduction in the unpredictability of responses and a smoothing over of lis-                                          Dyadic Interaction Modeling      3
+
+
+tener motions. Ng et al.  [50] proposed Learning2Listen (L2L) to mitigate this
+issue through a motion categorization strategy. In L2L, a codebook is learned
+through a VQ-VAE [48] that can be used to generate plausible and smooth
+behaviors. Emotional Listener Portrait (ELP) [66] utilizes an Adaptive Space
+Encoder to map the discretized features combined with emotion to the listener’s
+motion parameters. Similarly, Speaker motion generation techniques [22,59,78]
+have struggled to incorporate the feedback present in actual dyadic interactions.
+These shortcomings underscore a critical gap in the simulation of naturalistic hu-
+man interactions, highlighting the need for a more holistic and dyadic modeling
+approach.
+   To address these challenges, we introduce Dyadic Interaction Modeling (DIM),
+an innovative pretraining strategy designed to enhance a model’s capacity to si-
+multaneously encode a unified representation from both speaker and listener
+behaviors. This strategy draws inspiration from the recognition of the impor-
+tance of bidirectional communication in interaction modeling, as demonstrated
+by Nojavanasghari et al. [52], and Eskimez et al. [20], who explored aspects of
+interactive emotion recognition and speech-driven facial animation, respectively.
+Moreover, the concept of integrating audiovisual information into a cohesive rep-
+resentation, as explored by Karras et al. [37] and Zhou et al. [85], forms a foun-
+dational pillar for our approach, suggesting that a holistic and contextualized
+consideration of both audio and visual cues can significantly enhance animation
+quality.
+   Leveraging self-supervised contrastive learning and focusing on the recon-
+struction of masked-hidden units, DIM captures the intricate exchanges charac-
+teristic of human dyadic conversations. This approach is inspired by the success
+of self-supervised learning techniques in capturing complex data patterns, as
+evidenced by the works of Chen et al. [12] and Gong et al. [27], which have
+demonstrated significant advancements in data understanding without explicit
+labeling.
+  DIM framework learns dyadic context for generating realistic motions. This
+framework enables the generation of detailed and lifelike facial expressions and
+head motions, marking a significant advancement in listener (DIM-Listener)
+and speaker (DIM-Speaker) motion generation. Our method not only generates
+listener behaviors from speaker audio-visual inputs but could also adeptly pro-
+duce speaker facial motions from speaker speech (DIM-Speaker), showcasing the
+framework’s ability to model the bidirectional nature of human interactions.
+   Our main contributions can be summarized as follows:
+
+
+ – We introduce Dyadic Interaction Modeling (DIM), a pre-training strategy
+    that enhances the model’s ability to encode a unified representation from
+   both speaker and listener behaviors through self-supervised contrastive learn-
+    ing, focusing on the reconstruction of masked-hidden units.
+ – Leveraging DIM, we develop DIM-Listener, a practical framework for lis-
+    tener motion generation in speaker-listener conversation with detailed and
+     realistic facial expressions and head motions.4     M. Tran et al.
+
+
+ – DIM is further leveraged to generate speaker facial behaviors from speaker
+    speech (DIM-Speaker).
+ – Extensive experiments and visualizations on motion generation demonstrate
+    superior performance and effectiveness of our method.
+
+
+2  Related Work
+
+2.1  Speech-driven Speaker Generation
+
+There is a wide body of work on automatic facial motion generation [4,7,25,38–
+41,54,68,73,76,77,87]. A large number of studies focus on 2D facial animation [9,
+10, 14, 17, 21, 34, 56, 74, 80, 83]. Traditional procedural techniques [19, 46, 72, 79]
+rely on a framework of explicit rules for simulating the movements of a talking
+mouth, such as the use of dominance functions [46] for delineating speech control
+parameters.
+   These procedural strategies offer precise control over mouth movement ac-
+curacy but are labor-intensive due to the extensive manual tuning required.
+In contrast, data-driven methods [5, 15, 33, 37, 45, 55, 59, 69, 71] present an al-
+ternative, proposing various techniques to generate 3D facial animations with
+less manual intervention. Among these, Karras et al. [37] propose an end-to-
+end network with linear predictive coding to generate audio and novel latent
+codes with facial expression variations. In Zhou et al. [86], the proposed net-
+work predicts viseme curves by integrating phoneme groups, landmarks, and
+audio signals. VOCA [15] offers speaker-independent animation capturing di-
+verse speaking styles, though it primarily affects the lower face. More recently,
+MeshTalk [59] has made strides in disentangling audio-correlated and uncor-
+related facial motions through a categorical latent space. Innovations continue
+with FaceFormer [22] and CodeTalker [78], which leverage long-term audio con-
+text via transformer-based models and augment them with a VQ-VAE motion
+prior for autoregressive motion synthesis, respectively.
+
+
+2.2  Speaker-driven Listener Generation
+
+Compared to Speaker Generation, Listener Generation pays more attention to
+the feedback of the listener’s motion to the speaker. Ahuja et al.  [1] focus on
+the non-verbal body behaviors generation,  [3] and Greenwood et al. [29] study
+synchronized conversational agent motion in dyadic conversation adapt speech.
+Recent methods focus on generating 3D facial motions with additional inputs
+from the listener, such as text [13] or speech [35, 36]. Song et al. [66] proposed
+ELP which learns the non-verbal listener motion in a dynamic communication.
+RealTalk [26] retrieves possible videos of the listener’s face with a large language
+model. The most similar work to our approach is that of Learning2Listen [50],
+which regresses the discrete listener head motion with VQ-VAE [53]. However,
+L2L model is unidirectional and does not consider the dyadic context. Unlike
+this work, the L2L [50] fixes the pre-trained VQ-Decoder to decode continu-
+ous signals from discrete motion predictions, we integrate the VQ-Decoder into                                          Dyadic Interaction Modeling      5
+
+
+motion prediction and optimize both discrete units (discrete latent codes) and
+continuous motions.
+
+
+3  Method
+
+This section provides an overview of the proposed framework DIM-Listener.
+We first delve into the facial motion representation EMOCA [16], as discussed
+in Section 3.1. Subsequently, we revisit VQ-VAE [53], one of the core compo-
+nents in DIM-Listener, in Section 3.2. We further detail our novel pre-training
+strategy, Dyadic Interaction Modeling, designed to foster the model’s proficiency
+in developing a unified representation for both speakers and listeners in dyadic
+conversations. This is followed by an explanation of the fine-tuning stage for
+DIM-Listener, presented in Section 3.3. We finally describe the rendering net-
+work [58], transforming the estimated motions into realistic videos in Section. 3.4.
+
+
+3.1  Facial Motion Representation
+
+Following [51], we utilize EMOCA [16], a 3D morphable model (3DMM), param-
+eters as the representation for facial motions. EMOCA disentangles face shape,
+expression and head pose in three sets of parameters, allowing for capturing and
+expressing person-independent behaviors. Compared to DECA [24] used in pre-
+vious work [49], EMOCA can better capture facial expressions and head poses.
+Following prior work [51, 66], we extract camera, shape, expression and pose
+codes from the speakers and listeners frame by frame. Note that only expression
+code and pose code are used for representing human facial motions while camera
+code and shape code are only used for face mesh visualization purposes.
+
+
+3.2  Learning discrete Speaker-Listener motions
+
+Formally, we train two separate VQ-VAE models, denoted as V Q(s) and V Q(l),
+to handle speaker and listener motions, respectively. For clarity, we present only
+the broad overview of the VQ-VAE workflow for encoding and reconstructing
+listener motions. In particular, the encoder Enc(l)V Q processes the listener motions
+l1:T to produce the continuous latent representation z(l)cont = Enc(l)V Q(l1:T ). The
+latent representation is then quantized to z(l) using the nearest vector from the
+shared codebook C. The reconstruction of the listener motion is then given by:
+ˆl1:T = Dec(l)V Q(z(l)).
+   V Q(l)’s training objective incorporates both reconstruction and codebook
+losses. The reconstruction loss Lrecon aims to minimize the difference between
+the original and reconstructed motions:
+
+
+
+                                athca                                               \m  l  {L}_ { recon }^{(l)}=l_{1:\hat{l}_{1:(1)6     M. Tran et al.
+
+
+
+                       z1 (s)   z2(s)  z3 (s)  z4 (s)                                                                                                      Reconstruction loss
+                                                                             Cross-entropy loss
+
+
+                     VQ-Enc
+                       speaker            Mask                                      a1               j1 (L)
+      s1
+                                                                                         x1 (S)          a2         [M]
+
+                                                                                                                                                                                                                                                           (S)                                                                                                                                                                                    z’2                                                                                                  a3                                                                                                                  VQ-Dec                                                                                                                                                                                                                            s’2                                                                                                                                                            j3 (L)       Joint                                                 speaker                 x3 (S)                                                                                               decoder                                                                                                                                                                                                                                                            (S)                                                                                                                                 speaker Speaker   s2s3                                         Encoder                                                                                                                                                                                    z’4                                                                                            [M]                                                                                                  a4                                                                                                                                                                                                                            s’4
+      s4       Continuous speaker motion
+                                                                                       Joint               split
+                                                                       Encoder                     Shared
+                                                                                                                                                                                                (S)          weights       l1       Continuous listener motion                                                                                                                                             concatenate                      a1              j1
+                                                                                         Contrastive
+       l2                                          Encoder
+                                                                                                                                                                                                                                                                    (L)         listener               l’4                                                           listener                 x1 (L)          a3               j3 (S)      decoder                  z’4 Listener   l3                                                                                            loss           a2         [M]       Joint                      z’2 (L)       VQ-Dec               l’2
+       l4                 VQ-Enc           Mask                          x3 (L)          a4         [M]
+                             listener
+
+
+                                                                               Cross-entropy loss
+                       z1 (L)  z2 (L)  z3 (L)  z4 (L)                                                                                                                                          Reconstruction loss
+
+
+Fig. 2: Dyadic Interaction Modeling learns a unified speaker-listener representa-
+tion from dyadic interactions. 1) The framework takes both the ground-truth speaker
+motion s and the listener motion l as input. 2) VQ-Encoders of speaker and listener
+then encode the motions to discrete units (discrete latent codes) z(s) and z(l). 3) The
+masked speaker’s and listener’s motions are further encoded and concatenated so that
+a unified representation is learned with contrastive loss. 4) Then, the split unified rep-
+resentation and speaker audio feature a are decoded into discrete unit predictions z′(s)
+and z′(l) supervised by cross-entropy loss. 5) Finally, the generated speaker motions s′
+and listener motions l′ are decoded from these discrete unit predictions to optimize the
+reconstruction loss.
+
+
+where ∥· ∥2 denotes the squared Euclidean norm. The codebook loss Lcodebook,
+comprising the commitment loss and the codebook utilization loss, is defined as:
+
+
+                     \m
+               athcal                    { L }_{codeboo k} ^ {(l)} =  \| sg[E(l_ { 1: T}) ] - z^{(l)}\betasg[z^{(l)}]E(l_{1:(2)
+with sg[·] denoting the stop-gradient operator, and β is a hyperparameter that
+balances the commitment of the encoded vectors to the codebook. The overall
+loss combines these components:
+
+
+                   \                                            mat h cal{L_{V Q }}^{(l)} =  \mathcal{L}_{recon}^{(l)}\gamma\mathcal{L}_{codebook}^{(l)},                     (3)
+
+where γ is a weighting factor for the codebook loss.
+   Following L2L [50] and ELP [66], which leverage discrete motions to model
+the complex interplay in human interactions and animate listener motion from
+speaker audiovisual inputs, we use VQ-VAE [53] to learn discrete motion code-
+books for both speaker and listener behaviors, and use the learned codebooks
+to generate discrete latent codes for our Dyadic Interaction Modeling process.
+
+
+3.3  Dyadic Interaction Modeling
+
+Notations. We denote the input speaker motions as s1:T , the input speaker
+audio features as a1:T , the input listener motion as l1:T , the encoders (and quan-                                          Dyadic Interaction Modeling      7
+
+
+tization modules) of the VQ-VAE models trained for speaker motions and lis-
+tener motions as Enc(s)V Q and Enc(l)V Q, respectively. We refer to the decoder of
+the VQ-VAE models trained for speaker motions and listener motions as Dec(s)V Q
+and Dec(l)V Q, respectively.
+   The overall pipeline is illustrated in Figure 2. Given s1:T and l1:T , DIM-
+Listener first generates z(s) and z(l) as the discrete motion sequences produced
+by the learned motion codebooks: z(s) = Enc(s)V Q(s1:T ) and z(l) = Enc(l)V Q(l1:T ),
+and uses these sequences as the discrete latent codes to later train the network.
+It is important to note that both Enc(s)V Q and Enc(l)V Q are frozen to produce
+consistent discrete latent codes. Then, we independently mask p% of random
+frames for both speakers and listeners, i.e.,
+
+          \begi n   {align e d}  s_{ m a sked}=M a sk_p(s+ E _s + E^P  _s)\;;\;l_{masked}=Mask_p(l+E_l+E^P_l)(4)
+
+where Es and El denote the learnable speaker and listener embeddings and EPs
+and EPl  denote the sinusoidal positional embeddings. s and l are speaker motions
+and the listener motions from ground truth.
+We then feed smasked and lmasked to independent role-specific Transformer en-
+coders Enc(s) and Enc(l) to produce x(s)masked and x(l)masked. To further enhance
+Enc(s) and Enc(l) to extract robust features for speaker and listener inputs, we
+propose using contrastive learning to match speaker-listener pairs. We use the
+contrastive loss for the task
+
+               e                   ed} \math    c alL { }_c
+       \ b  in{align                {1}      \S                          [      c{exp(x^{(s)}_ix^{(l)}_i)}{\Sigma\;\;}exp(x^{(s)}_ix^{(l)}_k/\tau)+exp(x^{(s)}_ix^{(l)}_i/\tau)}](5)         g                                              = -\ frac  {    N }i gma   _{i=1}^N l og\ fra
+
+where x(s)i  and x(l)i  are the temporally mean-pooled feature representations of
+the ith sample of x(s)masked and x(l)masked, respectively.
+We further concatenated x(s)masked and x(l)masked along the feature dimension and
+forward the fused feature into a joint Transformer encoder to produce j(s−l)masked
+and later split j(s−l)masked back into separate speaker and listener features, i.e.,
+
+
+             \be
+         gin                {a l igned} [j^{ ( s)}_{masked} \ ;  ; \; j^{(l)}_{masked } ]=j^{(s-l)}_{masked}=Enc^{(joint)}([x^{(s)}_{masked}\;;\;x^{(l)}_{masked}])(6)
+
+For the masked frames reconstruction task, we pad j(s)masked and j(l)masked with
+trainable mask tokens at the masked positions as j(s) and j(l). We further add
+learnable speaker and listener embeddings, along with sinusoidal positional em-
+beddings, to j(s) and j(l) before concatenating them with extracted audio fea-
+tures for predicting the masked discrete motions via a joint Decoder.
+
+                           \be g in {aligned}  z'^ { (s) } =De  c ^{(j oi
+                                                                              (7)
+                          nt)}( [ j^{(l)}+E^D_l+E^ p _l \ ; ;  \; a _{1:T}])\\z'^{(l)}=Dec^{(joint)}([j^{(s)}+E^D_s+E^p_s\;;\;a_{1:T}])8     M. Tran et al.
+
+
+
+
+
+                                                          Speaker Audio
+
+                                                                                                                          Listener Video
+                                   Encoder                                                            Joint                                                                          Joint                                                                                                    Render                                                                                 VQ-Dec           Speaker Video                                    speaker                                                Encoder                                                          Decoder                                                                                                             listener
+       EMOCA                                                          z’1:T (L)                       Predicted listener motion             Listener  Speaker
+                                                                                                        Reconstruct loss
+                                                              Cross-entropy loss
+
+              s1:T                DIM-Listener          z 1:T (L)         VQ-Enclistener
+     Continuous speaker motion                                                                                              l1:T
+                                                                                                     Continuous listener motion
+
+
+Fig. 3: For fine-tuning the model on listener motion generation, speaker input is not
+masked, and the listener input is entirely masked. We train the framework with the
+same cross-entropy loss and reconstruction loss from Dyadic Interaction Modeling while
+keeping the weights of listener VQ-Encoder fixed.
+
+
+The predicted discrete motions z′(s) and z′(l) are then forwarded into Dec(s)V Q
+and Dec(l)V Q for final continuous motion predictions.
+
+             \ begin{ aligned}     \t i lde}{s=Dec^{(s)}_{VQ}(z'^{(s)})\\;;\;{l}=Dec^{(l)}_{VQ}(z'^{(l)})(8)
+
+   For reconstruction, we train our network on both a cross-entropy loss on the
+discrete motions and a reconstruction loss
+
+                          \b n  {al i gned}  t\ma hcalL  { } ^ {(s) } _{rec}                       egi
+                                                                              (9)
+            =igm\S a  _{t \ in M}  g-lo p {(z^ ( s )}_t   |z'^{(s)}_t)s_t||_2^2{L}^{(l)}_{rec}=(z^{(l)}_tz'^{(l)}_t)l_t||_2^2
+
+where M denotes the masked position during the masking process. Our final loss
+is defined as
+                          \mat h cal  {L}= \ lambda _1+(\mathcal{L}^{(s)}_{rec}+{L}^{(l)}_{rec})                    (10)
+
+where λ1 and λ2 are hyperparameters.
+  We then fine-tune the model for listener motion generation with initialized
+weights from Dyadic Interaction Modeling, as shown in Figure 3. During the fine-
+tuning phase where s1:T and a1:T are available but l1:T is the target prediction,
+we do not mask s1:T  (i.e., ps = 0%) while mask entirely the listener input (i.e.,
+pl = 100%). The VQ-Encoders are frozen while the remaining weights are fine-
+tuned with the reconstruction loss of the listener motions L(l)rec.
+
+
+3.4  Photorealistic Render
+
+To visualize the real-human listener video from the predicted expression and
+pose EMOCA parameters, we re-train PIRenderer, a motion-to-video rendering
+network [58]. Collecting long-term person-specific portrait videos to train high-
+quality person-specific models is challenging and out of the scope of this work.
+Hence, we collect listener-speaker pairs and train a separate rendering network on                                          Dyadic Interaction Modeling      9
+
+
+pairs with the same speaker-listener identities. We feed the first frame of each
+video as the reference portrait image, together with the EMOCA parameters
+extracted from the later frames, into the renderer and train it with an image
+reconstruction loss. In this way, we use the predicted EMOCA motion prediction
+to drive the reference portrait and generate a vivid photorealistic video, as shown
+in the right side of Figure 3.
+
+
+4  Experiments
+
+4.1  Experimental Settings
+
+Listener Behavior Generation. We evaluate the speaker-driven listener mo-
+tion generation of DIM-Listener on ViCo [84] and LM_Listener [51] dataset.ViCo [84]
+consists of 483 video sequences featuring 50 unique listeners. The dataset that
+was proposed in LM_Listener [51] is an extended version of the dataset intro-
+duced in Learning2Listen [50] (L2L), which contains 2366 training segments, 222
+validation segments, and 543 test segments of a single listener (Trevor Noah).
+Speaker Behavior Generation. We evaluate the speech-driven speaker mo-
+tion generation on BiWi [23]. BiWi [23] comprises affective speech recordings
+and the associated high-resolution, dynamic 3D facial geometry data. It fea-
+tures recordings from 14 participants who were instructed to read 40 sentences
+in English, recorded at a frame rate of 25 frames per second. On average, each
+recorded sequence is approximately 4.67 seconds.
+Dyadic Interaction Modeling is performed on CANDOR [57] dataset. It con-
+sists of a collection of 1,656 conversations in English. With a total duration of
+over 850 hours, this large corpus includes more than 7 million words, encom-
+passing rich audio, video, and speech transcripts. It enables detailed moment-to-
+moment analysis of vocal and facial expressions as well as semantic and conver-
+sational contexts. CANDOR provides speech diarization and alignment, which
+was used for speaker/listener designation at the utterance level. The dataset also
+provides separate speech tracks, so there is no overlapping speech.
+Implementation Details For the pre-training stage, we use an Adam opti-
+mizer with a learning rate of 1e−5 and train the model on CANDOR [57] for
+100 epochs. We use a masking ratio p = 75%, which is determined with hyper-
+parameter tuning with respect to the pre-training validation reconstruction loss.
+We use HuBERT [32] as our audio feature extractor. We use the same archi-
+tectures for the Transformer encoders and decoders of DIM-Listener and VQ-
+VAE, which consists of a transformer with 8 hidden layers, 8 attention heads and
+an intermediate size of 768. For pre-processing of CANDOR, we use the provided
+transcript with the dataset to extract utterance-level samples of speaker-listener
+behaviors. For pre-processing of ViCo [2] and LM_Listener [51], we follow the
+pre-processing guidelines and train-test splits from prior works [2, 50, 66] for
+fair comparisons. For all experiments, we extract EMOCA [16], an expressive
+3DMMs parameter set, from visual data and adopt it as facial representation
+for all methods and re-train them for the sake of fair comparison. We follow
+previous work [50,66,84] and adopt expression code (Exp) and pose code (Pose)10    M. Tran et al.
+
+
+of EMOCA [16] parameters as the description of the speaker and listener’s mo-
+tions. We use HuBERT [32] to extract audio features. Since HuBERT is already
+a robust pre-trained speech encoder, we do not use the audio features in our en-
+coders and directly feed them into our model’s decoder. For the implementation
+source code of our method, please see supplementary materials.
+Baselines We compare the performance of DIM-Listener on Listener Gener-
+ation with random and nearest neighbor baselines in addition to the following
+state-of-the-art methods.
+
+ – RLHG [84] is a regression method. We use their released official code for a
+     fair comparison.
+ – L2L [50] utilizes a discrete codebook to synthesize motion patterns. We use
+    their released official code for a fair comparison.
+ – ELP [66] extracts speaker-style features and emotion vectors. Due to the
+    unavailability of the source code, we re-implement the baseline following the
+    paper. We provide our re-implementation in the supplementary materials.
+
+   The random and nearest neighbor baselines are also widely reported in pre-
+vious work [50,66,84], which include:
+
+ – We randomly select the facial and head motion parameters in the training
+    data, and inject random small perturbations into the normal distribution.
+ – We use the smoothed speaker’s motion as the listener’s motion.
+ – For arbitrary input speaker motion or audio input, we find its nearest neigh-
+   bor from the training set and use its corresponding listener motion as output.
+
+Metrics We re-implement all baselines and train them with EMOCA 3DMM
+as output motion representation. We then evaluate them using the metrics re-
+ported in LM_Listener [51] and ELP [66], namely the Frechet Distance (FD),
+Paired FD (P-FD) for synchrony , Mean Squared Error (MSE), SI for Diversity
+(SID), Variance (Var), and Residual Pearson Correlation Coefficient (rPCC).
+We provide more details about the used metrics in the supplementary materials.
+
+
+4.2  Benchmark Performances
+
+Quantitative Results. We retrain RLHG [84], L2L [50] and ELP [66] on the
+ViCo dataset [84]. Since the Dyadic Interaction Modeling of our pipeline is con-
+ducted on CANDOR [57], we also pre-train L2L [50], a recent state-of-the-art
+method, which adopts a similar approach using VQ-VAE [53] in the model, on
+CANDOR [57], for fair comparison. Table 1 shows the quantitative comparison
+of Listener Generation on ViCo [84]. Based on the metrics presented in Table 1,
+it is clear that our proposed DIM-Listener outperforms existing methods by a
+significant margin. Our method is about 1.5 times better than the current state-
+of-the-art method L2L [50] in terms of the most important metrics FD and P-FD
+of expressions in the Listener Generation task. The performance gain of L2L af-
+ter being trained on CANDOR [57] remains limited compared to the gain of our
+method, which shows that the effectiveness of Dyadic Interaction Modeling is as                                          Dyadic Interaction Modeling     11
+
+
+Table 1: Quantitative Comparison of Listener Generation on ViCo [84] Dataset. †
+denotes the corresponding method has been pre-trained on the CANDOR [57] dataset.
+∗denotes the method didn’t release any code, and we re-implement it from scratch on
+our own.
+
+
+              FD↓    P-FD↓   MSE↓    SID     Var   rPCC↓
+ Method
+             Exp Pose Exp Pose Exp Pose Exp Pose Exp Pose Exp Pose
+
+ Random          72.88  0.12  75.82  0.12  2.05  0.03  4.68  3.83  1.49  0.02  0.09  0.17
+ Nearest Audio    65.77  0.10  68.84  0.10  1.77  0.03  4.81  3.93  1.49  0.02  0.07  0.11
+ Nearest Motion   42.41 0.06 45.33 0.06 1.27  0.02  4.62  3.74  1.49  0.02  0.08  0.12
+ ELP∗[66]        47.17  0.08  47.48  0.08  0.98  0.02  1.76  1.66  1.49  0.02  0.09 0.01
+ RLHG [84]       39.02  0.07  40.18  0.07  0.86 0.01 3.62  3.17  1.52  0.02  0.08  0.02
+ L2L [50]          33.93 0.06 35.88 0.06 0.93 0.01 2.77  2.66  0.83  0.02 0.06 0.08
+ L2L† [50]         31.03 0.06 33.02 0.06 0.87 0.01 3.53  3.05  0.83  0.02 0.06 0.09
+ GT                       -       -       -       -      -      -   5.03  4.07  0.93  0.01    -      -
+ DIM-Listener † 23.88 0.06 24.39 0.06 0.70 0.01 3.71  2.35  1.53  0.02 0.06 0.03
+
+
+
+Table  2: Quantitative Comparison of Listener Generation on LM_Listener  [51]
+Dataset. † denotes the corresponding method has been pre-trained on the CAN-
+DOR [57] dataset. ∗denotes the method didn’t release any code, and we re-implement
+it from scratch on our own.
+
+
+              FD↓    P-FD↓   MSE↓    SID     Var   rPCC↓
+ Method
+             Exp Pose Exp Pose Exp Pose Exp Pose Exp Pose Exp Pose
+
+ Random          63.37  0.10  67.14  0.10  2.14  0.03  4.06  3.49  1.57  0.01  0.08  0.06
+ Mirror            69.25  0.16  87.11  0.19  1.95  0.03  4.06  3.54  1.51  0.01  0.74  0.86
+ Nearest Motion   56.00  0.07  58.94  0.08  2.04  0.02  3.94  3.46  1.62  0.01  0.13  0.13
+ ELP∗[66]        22.06 0.01 22.09 0.01 0.45 0.01 5.07  3.64  0.49  0.01  0.09  0.04
+ RLHG [84]       30.50  0.02  31.74  0.02  0.69 0.01 3.84  3.65  0.94  0.01  0.09  0.03
+ L2L [50]          23.56  0.02  23.94  0.02  0.75 0.01 3.50  3.00  0.58  0.01  0.12  0.04
+ L2L† [50]         21.63  0.02  22.03  0.02  0.73 0.01 3.50  3.00  0.67  0.01  0.14  0.03
+ GT                       -       -       -       -      -      -   4.97  3.69  0.78  0.01    -      -
+ DIM-Listener † 12.49 0.01 12.95 0.02 0.29 0.01 4.53  2.93  0.94  0.01 0.04 0.02
+
+
+
+
+a result of our novel framework rather than additional data. In measuring mo-
+tion diversity (Var, SID), DIM-Listener generates diverse listener reactions to
+the speaker. We expect that listeners’ movements will showcase a greater range
+of diversity when the FD and MSE are kept to a minimum. As demonstrated in
+Table 1, it is evident that even when FD and MSE are performing well (close to
+ground truth), DIM-Listener remains highly effective in both the Var and SID,
+which benefits from our proposed Dyadic Interaction Modeling between speak-
+ers and listeners. The RPCC measures the motion synchronization between the
+speaker and the listener, and it can be found that our method achieves compet-
+itive performance.12    M. Tran et al.
+
+
+
+Speaker
+
+
+ RLHG
+
+
+   ELP
+
+
+   L2L
+
+
+    Ours
+
+
+   GT
+
+
+Fig. 4: Comparison with L2L [50](pre-trained on CANDOR [57]), ELP  [66], and
+RLHG [2]. Our method can generate diverse head movements while maintaining fa-
+cial expressions that better align with speakers’ sentiments.
+
+
+
+  We also retrain RLHG [84], L2L [50] and our model on LM_Listener [51]
+dataset. Table. 2 demonstrates the quantitative comparison. We can observe that
+FD and P-FD of expressions of DIM-Listener is about two times better than
+L2L [50] and three times better than RLHG [84]. We also achieve state-of-the-art
+in all metrics evaluating the data distribution distances or accuracy between gen-
+eration and ground-truth while maintaining the ability to generate more diverse
+motions.
+Qualitative Results. We first com-
+pare with the photorealistic results of
+RLHG [84] and L2L [50] in Figure 4.
+We  feed the EMOCA  [16] 3DMM  Table   3:  Ablation  Analysis  of  Lis-
+predictions and the listener appear-  tener  Generation  on  ViCo   [84]  and
+ance into PIRenderer [58] and render  LM_Listener [51] Datasets. VQ represents
+                                         the VQ-VAEs for speakers and listeners,the corresponding images frame by
+                            DIM represents Dyadic Interaction Model-
+frame. Since there is no guideline or
+                                          ing on CANDOR [57], Dec(l)V Q representssource code on the renderer’s settings                                          unfreezing listener’s VQ decoder, Lc rep-
+in L2L [50], we use PIRenderer [75]                                            resents contrastive loss, and S-L represents
+official code for training and genera-  the two-branch  architecture that  jointly
+tion. We fine-tune a unique renderer  models speaker and listener behaviors.
+for each speaker-listener pair and ren-                         ViCo    LM_Listener
+der the listener image sequence us-  VQ DIM Dec(l)V Q Lc S-L MSE↓FD↓MSE↓FD↓
+ing the same  fine-tuned weight  of   ✓ ✓  ✓ ✓✓  0.62 24.15 0.27 12.94
+each pair for  all approaches. Com-    ✗  ✓    ✗ ✓✓   0.92  42.52  0.66  33.07
+                             ✓  ✗   ✓ ✓✓   0.75  33.84  0.60  27.43
+pared to RLHG [84], L2L [50], and   ✓ ✓    ✗ ✓✓   0.81  39.63  0.69  31.93
+ELP  [66]:  1)  our method demon-   ✓ ✓  ✓   ✗ ✓   0.65  28.47  0.32  17.92
+strates more expressive behaviors that   ✓ ✓  ✓   ✗  ✗   0.72  30.92  0.47  21.27
+synchronize with speakers’ and target                                          Dyadic Interaction Modeling     13
+
+
+
+
+                        7 11 194 213                                                                              Happy(Image)                                                                                                                                                                                                                                                                                                                                                                          Blink(Image)
+                                                                       Happy(Mesh)                                                                                                                                                                                                                                                                                                                                            Blink(Mesh)
+                                                                               Angry(Image)                                                                                                                                                                                                                                                                                                                                                                         Shake(Image)
+                                                                        Angry(Mesh)                                                                                                                                                                                                                                                                                                                                           Shake(Mesh)
+   Speaker       Generated Face Mesh and Image of Listener    Speaker     Generated Face Mesh and Image of Listener
+
+Fig. 5: DIM-Listener can generate diverse listener emotions (e.g. Happy and Angry)
+and facial behaviors (e.g. Eyes Blinking and Head Shaking).
+
+
+listeners’ sentiments (first example),
+2) our method can generate diverse head movements compared to other methods
+(second example). We also demonstrate our method’s ability to model emotions
+and facial behaviors of our model in Figure 5. In particular, we show that DIM-
+Listener can generate multiple types of social signals such as smiles, head
+shaking and blinks. These suggest the benefits of Dyadic Interaction Modeling
+of DIM-Listener on the large-scale CANDOR [57] dataset with more diverse
+dyadic behaviors.
+
+
+4.3  Ablation Analysis
+Table 3 illustrates the contribution of each component to DIM-Listener. Ini-
+tially, we note that VQ-VAE stands out as the most crucial module in our frame-
+work. Furthermore, our observation that directly predicting listener’s motions
+as continuous signals yields less diverse motions aligns with prior research in
+L2L [50] and ELP [66]. As expected, Dyadic Interaction Modeling on large-
+scale dyadic behaviors significantly enhances performance for both ViCo and
+LM_Listener datasets. In contrast to the pre-training approach in L2L [50]
+   that fixes the VQ-Decoder to decode continuous signals from discrete mo-
+tion predictions, integrating the VQ-Decoder into the listener motion prediction
+model notably enhances performance, ranking as the second most important
+component in DIM-Listener. While Lc ranks as the least important compo-
+nent, it still contributes significantly to performance by encouraging role-specific
+encoders to extract meaningful information from input signals relevant not only
+to the current person but also the conversational partner. Finally, we demon-
+strate the benefits of jointly modeling both speaker and listener behaviors with
+S −L, which aligns with existing literature indicating that speaker and listener
+behaviors correlate and mutually influence each other. we also provide modality
+ablation as well as online listener behavior generation results in the supplemen-
+tary material.14    M. Tran et al.
+
+
+
+
+                                        Joint      VQ-Dec
+                 Speaker Audio    Decoder    speaker
+                                                                                          z1:T (S)             s1:T
+                    DIM-Speaker                       Continuous speaker motion
+
+
+
+Fig. 6: For Speech-Driven Speaker Generation, we fine-tune the pre-trained weights of
+the joint decoder and speaker VQ-Decoder from DIM. The generated speaker’s motion
+from DIM-Speaker is optimized by the same cross-entropy and reconstruction loss as
+DIM-Listener.
+
+
+
+4.4  Speaker Generation
+
+As mentioned in the previous sections,
+since we introduce a dyadic frame-
+work capturing contextualized inter-
+actions among  listeners and speak-  Table  4:  Quantitative  Comparison  of
+ers,  our  approach  can  also  an-  Speech-Driven  Speaker  Generation  on
+imate  speaker  motion  from  the  BiWi [23] Dataset.
+speaker’s speech input. We name  it                 LVE↓ FDD↓
+DIM-Speaker, and the fine-tuning      Method       (×10−4) (×10−4)
+pipeline  is shown in Figure  6. For       MeshTalk [59]     6.14     2.53
+this task, we compared the results to       FaceFormer [22]   5.40     1.37
+several state-of-the-arts methods, e.g.       CodeTalker [78]   5.93     2.42
+                                   DIM-Speaker   3.86    0.98MeshTalk [59], FaceFormer [22] and
+CodeTalker [78] on BiWi [23] dataset.
+  We  retrain  these methods and
+compare the output motion parameters in the FLAME point cloud space, which
+consists of 5023 vertices converted from EMOCA 3DMMs. We follow the past
+work and adopt Lip Vertex Error (LVE), which measures the discrepancy in
+lip movement for a generated sequence compared to the ground truth by calcu-
+lating the maximum Euclidean (L2) distance error for the lip vertices in each
+frame, averaged over all frames, and upper-face dynamics deviation(FDD), which
+evaluates the variation of facial dynamics for a motion sequence, as evaluation
+metrics.
+   As shown in Table. 4, we outperform previous methods in this evaluation
+space, which demonstrated the effectiveness of our framework for the Speaker
+Generation task.
+
+
+5  Conclusion
+
+In this study, we introduced Dyadic Interaction Modeling, a novel self-supervised
+pre-training strategy designed to improve the model’s capability to effectly en-
+code representations from both speaker and listener motions via large-scale                                          Dyadic Interaction Modeling     15
+
+
+dyadic data. Our comprehensive experiments and detailed visualizations demon-
+strate the capability of DIM-Listener and DIM-Speaker in generating accu-
+rate and realistic motions for both listeners and speakers.
+
+
+Acknowledgement
+
+This work is supported by the National Science Foundation under Grant No.
+2211550. The work was also sponsored by the Army Research Office and was
+accomplished under Cooperative Agreement Number W911NF-20-2-0053. The
+views and conclusions contained in this document are those of the authors and
+should not be interpreted as representing the official policies, either expressed
+or implied, of the Army Research Office or the U.S. Government. The U.S.
+Government is authorized to reproduce and distribute reprints for Government
+purposes notwithstanding any copyright notation herein.
+
+
+References
+
+ 1. Ahuja, C., Ma, S., Morency, L.P., Sheikh, Y.: To react or not to react: End-to-
+    end visual pose forecasting for personalized avatar during dyadic conversations.
+     In: 2019 International conference on multimodal interaction. pp. 74–84 (2019)
+ 2. Avidan, S., Brostow, G., Cissé, M., Farinella, G.M., Hassner, T. (eds.): Computer
+    Vision – ECCV 2022. Springer (2022). https://doi.org/10.1007/978-3-031-
+    19769-7
+ 3. Bohus, D., Horvitz, E.: Facilitating multiparty dialog with gaze, gesture, and
+    speech. In: International Conference on Multimodal Interfaces and the Workshop
+   on Machine Learning for Multimodal Interaction. pp. 1–8 (2010)
+ 4. Cao, C., Wu, H., Weng, Y., Shao, T., Zhou, K.: Real-time facial animation with
+    image-based dynamic avatars. ACM Transactions on Graphics 35(4) (2016)
+ 5. Cao, Y., Tien, W.C., Faloutsos, P., Pighin, F.: Expressive speech-driven facial
+    animation. ACM Transactions on Graphics 24(4), 1283–1302 (2005)
+ 6. Cerekovic, A., Aran, O., Gatica-Perez, D.: Rapport with virtual agents: What
+   do human social cues and personality explain? IEEE Transactions on Affective
+   Computing 8(3), 382–395 (2016)
+ 7. Chang, Z., Hu, W., Yang, Q., Zheng, S.: Hierarchical semantic perceptual listener
+    head video generation: A high-performance pipeline. In: Proceedings of the 31st
+  ACM International Conference on Multimedia. pp. 9581–9585 (2023)
+ 8. Chen, L., Cao, C., De la Torre, F., Saragih, J., Xu, C., Sheikh, Y.: High-fidelity face
+    tracking for ar/vr via deep lighting adaptation. In: Proceedings of the IEEE/CVF
+    conference on computer vision and pattern recognition. pp. 13059–13069 (2021)
+ 9. Chen, L., Cui, G., Liu, C., Li, Z., Kou, Z., Xu, Y., Xu, C.: Talking-head genera-
+    tion with rhythmic head motion. In: Proceedings of the European Conference on
+   Computer Vision. pp. 35–51. Springer (2020)
+10. Chen, L., Li, Z., Maddox, R.K., Duan, Z., Xu, C.: Lip movements generation at
+    a glance. In: Proceedings of the European Conference on Computer Vision. pp.
+    520–535 (2018)
+11. Chen, L., Maddox, R.K., Duan, Z., Xu, C.: Hierarchical cross-modal talking face
+    generation with dynamic pixel-wise loss. In: Proceedings of the IEEE Conference
+   on Computer Vision and Pattern Recognition. pp. 7832–7841 (2019)16    M. Tran et al.
+
+
+12. Chen, T., Kornblith, S., Norouzi, M., Hinton, G.: A simple framework for con-
+    trastive learning of visual representations. In: International conference on machine
+    learning. pp. 1597–1607. PMLR (2020)
+13. Chu, H., Li, D., Fidler, S.: A face-to-face neural conversation model. In: Proceedings
+     of the IEEE Conference on Computer Vision and Pattern Recognition. pp. 7113–
+    7121 (2018)
+14. Chung, J.S., Zisserman, A.: Out of time: automated lip sync in the wild. In: Asian
+    Conference on Computer Vision. pp. 251–263. Springer (2016)
+15. Cudeiro, D., Bolkart, T., Laidlaw, C., Ranjan, A., Black, M.J.: Capture, learning,
+   and synthesis of 3d speaking styles. In: Proceedings of the IEEE Conference on
+   Computer Vision and Pattern Recognition. pp. 10101–10111 (2019)
+16. Danecek, R., Black, M.J., Bolkart, T.: EMOCA: Emotion driven monocular face
+    capture and animation. In: Conference on Computer Vision and Pattern Recogni-
+    tion (CVPR). pp. 20311–20322 (2022)
+17. Das, D., Biswas, S., Sinha, S., Bhowmick, B.: Speech-driven facial animation using
+    cascaded gans for learning of motion and texture. In: European Conference on
+   Computer Vision. pp. 408–424. Springer (2020)
+18. DeVito, J.A.: Interpersonal communication book, The, 13/E. Pearson, London, UK
+    (2013)
+19. Edwards, P., Landreth, C., Fiume, E., Singh, K.: Jali: an animator-centric viseme
+   model for expressive lip synchronization. ACM Transactions on Graphics) 35(4),
+    1–11 (2016)
+20. Eskimez, S.E., Zhang, Y., Duan, Z.: Speech driven talking face generation from a
+    single image and an emotion condition. IEEE Transactions on Multimedia (2021)
+21. Fan, B., Wang, L., Soong, F.K., Xie, L.: Photo-real talking head with deep bidi-
+    rectional lstm. In: IEEE International Conference on Acoustics, Speech and Signal
+    Processing. pp. 4884–4888. IEEE (2015)
+22. Fan, Y., Lin, Z., Saito, J., Wang, W., Komura, T.: Faceformer: Speech-driven 3d
+     facial animation with transformers. In: Proceedings of the IEEE/CVF Conference
+   on Computer Vision and Pattern Recognition. pp. 18770–18780 (2022)
+23. Fanelli, G., Gall, J., Romsdorfer, H., Weise, T., Van Gool, L.: A 3-d audio-visual
+    corpus of affective communication. IEEE Transactions on Multimedia 12(6), 591–
+    598 (2010)
+24. Feng, Y., Feng, H., Black, M.J., Bolkart, T.: Learning an animatable detailed
+   3D face model from in-the-wild images. ACM Transactions on Graphics, (Proc.
+   SIGGRAPH) 40(8) (2021), https://doi.org/10.1145/3450626.3459936
+25. Fried, O., Tewari, A., Zollhöfer, M., Finkelstein, A., Shechtman, E., Goldman, D.B.,
+    Genova, K., Jin, Z., Theobalt, C., Agrawala, M.: Text-based editing of talking-head
+    video. ACM Transactions on Graphics 38(4), 1–14 (2019)
+26. Geng, S., Teotia, R., Tendulkar, P., Menon, S., Vondrick, C.: Affective faces for
+    goal-driven dyadic communication. arXiv preprint arXiv:2301.10939 (2023)
+27. Gong, Y., Rouditchenko, A., Liu, A.H., Harwath, D., Karlinsky, L., Kuehne,
+    H.,  Glass,  J.:  Contrastive  audio-visual masked autoencoder. arXiv  preprint
+    arXiv:2210.07839 (2022)
+28. Gratch, J., Wang, N., Gerten, J., Fast, E., Duffy, R.: Creating rapport with virtual
+    agents. In: Intelligent Virtual Agents (IVA). pp. 125–138. Springer Berlin Heidel-
+    berg, Berlin, Heidelberg (2007)
+29. Greenwood, D., Laycock, S., Matthews, I.: Predicting head pose in dyadic con-
+    versation. In: International Conference on Intelligent Virtual Agents. pp. 160–169.
+    Springer (2017)                                          Dyadic Interaction Modeling     17
+
+
+30. He, Y., Gan, B., Chen, S., Zhou, Y., Yin, G., Song, L., Sheng, L., Shao, J., Liu,
+     Z.: Forgerynet: A versatile benchmark for comprehensive forgery analysis. In: Pro-
+    ceedings of the IEEE/CVF conference on computer vision and pattern recognition.
+    pp. 4360–4369 (2021)
+31. Heusel, M., Ramsauer, H., Unterthiner, T., Nessler, B., Hochreiter, S.: Gans trained
+   by a two time-scale update rule converge to a local nash equilibrium. arXiv preprint
+    arXiv:1706.08500 (2017)
+32. Hsu, W.N., Bolte, B., Tsai, Y.H.H., Lakhotia, K., Salakhutdinov, R., Mohamed,
+    A.: Hubert: Self-supervised speech representation learning by masked prediction of
+    hidden units. IEEE/ACM Transactions on Audio, Speech, and Language Process-
+    ing 29, 3451–3460 (2021)
+33. Hussen Abdelaziz, A., Theobald, B.J., Dixon, P., Knothe, R., Apostoloff, N., Ka-
+    jareker, S.: Modality dropout for improved performance-driven talking faces. In:
+    Proceedings of the 2020 International Conference on Multimodal Interaction. pp.
+    378–386 (2020)
+34.  Ji, X., Zhou, H., Wang, K., Wu, W., Loy, C.C., Cao, X., Xu, F.: Audio-driven
+    emotional video portraits. In: Proceedings of the IEEE Conference on Computer
+    Vision and Pattern Recognition. pp. 14080–14089 (2021)
+35. Jonell, P., Kucherenko, T., Ekstedt, E., Beskow, J.: Learning non-verbal behavior
+     for a social robot from youtube videos. In: ICDL-EpiRob Workshop on Naturalistic
+    Non-Verbal and Affective Human-Robot Interactions, Oslo, Norway, August 19,
+    2019 (2019)
+36. Jonell, P., Kucherenko, T., Henter, G.E., Beskow, J.: Let’s face it: Probabilistic
+    multi-modal interlocutor-aware generation of facial gestures in dyadic settings.
+     In: Proceedings of the 20th ACM International Conference on Intelligent Virtual
+    Agents. pp. 1–8 (2020)
+37. Karras, T., Aila, T., Laine, S., Herva, A., Lehtinen, J.: Audio-driven facial ani-
+    mation by joint end-to-end learning of pose and emotion. ACM Transactions on
+    Graphics 36(4), 1–12 (2017)
+38. Kim, H., Garrido, P., Tewari, A., Xu, W., Thies, J., Niessner, M., Pérez, P.,
+    Richardt, C., Zollhöfer, M., Theobalt, C.: Deep video portraits. ACM Transac-
+    tions on Graphics 37(4), 1–14 (2018)
+39. Kucherenko, T., Nagy, R., Yoon, Y., Woo, J., Nikolov, T., Tsakov, M., Henter,
+    G.E.: The genea challenge 2023: A large-scale evaluation of gesture generation
+    models in monadic and dyadic settings. In: Proceedings of the 25th International
+    Conference on Multimodal Interaction. pp. 792–801 (2023)
+40. Lahiri, A., Kwatra, V., Frueh, C., Lewis, J., Bregler, C.: Lipsync3d: Data-efficient
+    learning of personalized 3d talking faces from video using pose and lighting normal-
+     ization. In: Proceedings of the IEEE Conference on Computer Vision and Pattern
+    Recognition. pp. 2755–2764 (2021)
+41. Li, H., Yu, J., Ye, Y., Bregler, C.: Realtime facial animation with on-the-fly cor-
+     rectives. ACM Transactions on Graphics 32(4), 42–1 (2013)
+42. Li, R., Yang, S., Ross, D.A., Kanazawa, A.: Ai choreographer: Music conditioned
+   3d dance generation with aist++. In: Proceedings of the IEEE/CVF International
+    Conference on Computer Vision. pp. 13401–13412 (2021)
+43. Li, T., Bolkart, T., Black, M.J., Li, H., Romero, J.: Learning a model of facial shape
+   and expression from 4D scans. ACM Transactions on Graphics, (Proc. SIGGRAPH
+    Asia) 36(6) (2017), https://doi.org/10.1145/3130800.3130813
+44. Liu, X., Wu, Q., Zhou, H., Du, Y., Wu, W., Lin, D., Liu, Z.: Audio-driven co-speech
+    gesture video generation. arXiv preprint arXiv:2212.02350 (2022)18    M. Tran et al.
+
+
+45. Liu, Y., Xu, F., Chai, J., Tong, X., Wang, L., Huo, Q.: Video-audio driven real-time
+     facial animation. ACM Transactions on Graphics 34(6), 1–10 (2015)
+46. Massaro, D., Cohen, M., Tabain, M., Beskow, J., Clark, R.: Animated speech: re-
+    search progress and applications. Audiovisual Speech Processing p. 309–345 (2012)
+47. Messinger, D.S., Mahoor, M.H., Chow, S.M., Cohn, J.F.: Automated measurement
+     of facial expression in infant–mother interaction: A pilot study. Infancy 14(3), 285–
+    305 (2009)
+48. Mirsamadi, S., Barsoum, E., Zhang, C.: Automatic speech emotion recognition
+    using recurrent neural networks with local attention. In: 2017 IEEE International
+    conference on acoustics, speech and signal processing (ICASSP). pp. 2227–2231.
+   IEEE (2017)
+49. Ng, E.: Learning2listen, https://evonneng.github.io/learning2listen/
+50. Ng, E., Joo, H., Hu, L., Li, H., Darrell, T., Kanazawa, A., Ginosar, S.: Learning
+    to listen: Modeling non-deterministic dyadic facial motion. In: Proceedings of the
+   IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 20395–
+    20405 (2022)
+51. Ng, E., Subramanian, S., Klein, D., Kanazawa, A., Darrell, T., Ginosar, S.: Can
+    language models learn to listen? In: Proceedings of the International Conference
+   on Computer Vision (ICCV) (2023)
+52. Nojavanasghari, B., Huang, Y., Khan, S.: Interactive generative adversarial net-
+    works  for  facial expression generation  in dyadic  interactions. arXiv preprint
+    arXiv:1801.09092 (2018)
+53. van den Oord, A., Vinyals, O., Kavukcuoglu, K.: Neural discrete representation
+    learning. In: Proceedings of the 31st International Conference on Neural Informa-
+    tion Processing Systems. pp. 6309–6318 (2017)
+54. Palmero, C., Barquero, G., Junior, J.C.J., Clapés, A., Núnez, J., Curto, D., Smeure-
+    anu, S., Selva, J., Zhang, Z., Saeteros, D., et al.: Chalearn lap challenges on self-
+    reported personality recognition and non-verbal behavior forecasting during social
+    dyadic interactions: Dataset, design, and results. In: Understanding Social Behav-
+     ior in Dyadic and Small Group Interactions. pp. 4–52. PMLR (2022)
+55. Pham, H.X., Wang, Y., Pavlovic, V.: End-to-end learning for 3d facial animation
+    from speech. In: Proceedings of the ACM International Conference on Multimodal
+    Interaction. pp. 361–365 (2018)
+56. Prajwal, K., Mukhopadhyay, R., Namboodiri, V.P., Jawahar, C.: A lip sync expert
+     is all you need for speech to lip generation in the wild. In: Proceedings of the 28th
+  ACM International Conference on Multimedia. pp. 484–492 (2020)
+57. Reece, A., Cooney, G., Bull, P., Chung, C., Dawson, B., Fitzpatrick, C., Glazer,
+    T., Knox, D., Liebscher, A., Marin, S.: The candor corpus: Insights from a large
+    multimodal dataset of naturalistic conversation. Science Advances 9(13), eadf3197
+    (2023)
+58. Ren, Y., Li, G., Chen, Y., Li, T.H., Liu, S.: Pirenderer: Controllable portrait im-
+    age generation via semantic neural rendering. In: Proceedings of the IEEE/CVF
+    International Conference on Computer Vision. pp. 13759–13768 (2021)
+59. Richard, A., Zollhöfer, M., Wen, Y., de la Torre, F., Sheikh, Y.: Meshtalk: 3d face
+    animation from speech using cross-modality disentanglement. In: Proceedings of
+    the IEEE International Conference on Computer Vision. pp. 1173–1182 (2021)
+60. Riehle, M., Kempkensteffen, J., Lincoln, T.M.: Quantifying facial expression syn-
+    chrony in face-to-face dyadic interactions: Temporal dynamics of simultaneously
+    recorded facial emg signals. Journal of Nonverbal Behavior 41, 85–102 (2017)                                          Dyadic Interaction Modeling     19
+
+
+61. Rössler, A., Cozzolino, D., Verdoliva, L., Riess, C., Thies, J., Nießner, M.: Face-
+     forensics: A large-scale video dataset for forgery detection in human faces. arXiv
+    preprint arXiv:1803.09179 (2018)
+62. Song, L., Fang, Z., Li, X., Dong, X., Jin, Z., Chen, Y., Lyu, S.: Adaptive Face
+    Forgery Detection in Cross Domain. In: Avidan,  S., Brostow, G., Cissé, M.,
+    Farinella, G.M., Hassner, T. (eds.) Computer Vision – ECCV 2022. pp. 467–484.
+    Lecture Notes in Computer Science, Springer Nature Switzerland, Cham (2022).
+    https://doi.org/10.1007/978-3-031-19830-4_27
+63. Song, L., Li, X., Fang, Z., Jin, Z., Chen, Y., Xu, C.: Face forgery detection via
+    symmetric transformer. In: Proceedings of the 30th ACM International Conference
+   on Multimedia. pp. 4102–4111 (2022)
+64. Song, L., Liu, B., Yin, G., Dong, X., Zhang, Y., Bai, J.X.: Tacr-net: Editing on
+    deep video and voice portraits. In: Proceedings of the 29th ACM International
+    Conference on Multimedia. pp. 478–486 (2021)
+65. Song, L., Liu, B., Yu, N.: Talking face video generation with editable expression.
+     In: Image and Graphics: 11th International Conference, ICIG 2021, Haikou, China,
+   August 6–8, 2021, Proceedings, Part III 11. pp. 753–764. Springer (2021)
+66. Song, L., Yin, G., Jin, Z., Dong, X., Xu, C.: Emotional listener portrait: Realis-
+     tic listener motion simulation in conversation. In: 2023 IEEE/CVF International
+    Conference on Computer Vision (ICCV). pp. 20782–20792. IEEE (2023)
+67. Song, L., Yin, G., Liu, B., Zhang, Y., Yu, N.: Fsft-net: face transfer video generation
+    with few-shot views. In: 2021 IEEE International Conference on Image Processing
+    (ICIP). pp. 3582–3586. IEEE (2021)
+68. Song, S., Spitale, M., Luo, C., Barquero, G., Palmero, C., Escalera, S., Valstar, M.,
+    Baur, T., Ringeval, F., André, E., et al.: React2023: The first multiple appropriate
+     facial reaction generation challenge. In: Proceedings of the 31st ACM International
+    Conference on Multimedia. pp. 9620–9624 (2023)
+69. Stan, S., Haque, K.I., Yumak, Z.: Facediffuser: Speech-driven 3d facial animation
+    synthesis using diffusion. In: Proceedings of the 16th ACM SIGGRAPH Conference
+   on Motion, Interaction and Games. pp. 1–11 (2023)
+70. Suwajanakorn, S., Seitz, S.M., Kemelmacher-Shlizerman, I.: Synthesizing obama:
+    learning lip sync from audio. ACM Transactions on Graphics 36(4), 1–13 (2017)
+71. Taylor, S., Kim, T., Yue, Y., Mahler, M., Krahe, J., Rodriguez, A.G., Hodgins, J.,
+    Matthews, I.: A deep learning approach for generalized speech animation. ACM
+    Transactions on Graphics 36(4), 1–11 (2017)
+72. Taylor, S.L., Mahler, M., Theobald, B.J., Matthews, I.: Dynamic units of visual
+    speech. In: Proceedings of the ACM SIGGRAPH/Eurographics conference on Com-
+    puter Animation. pp. 275–284 (2012)
+73. Thies, J., Elgharib, M., Tewari, A., Theobalt, C., Nießner, M.: Neural voice pup-
+    petry: Audio-driven facial reenactment. In: Proceedings of European Conference
+   on Computer Vision. pp. 716–731. Springer (2020)
+74. Vougioukas, K., Petridis, S., Pantic, M.: Realistic speech-driven facial animation
+    with gans. International Journal of Computer Vision 128(5), 1398–1413 (2020)
+75. Wang, T.C., Liu, M.Y., Zhu, J.Y., Liu, G., Tao, A., Kautz, J., Catanzaro, B.:
+    Video-to-video synthesis. arXiv preprint arXiv:1808.06601 (2018)
+76. Weise, T., Bouaziz, S., Li, H., Pauly, M.: Realtime performance-based facial ani-
+    mation. ACM Transactions on Graphics 30(4), 1–10 (2011)
+77. Woo, J., Fares, M., Pelachaud, C., Achard, C.: Amii: Adaptive multimodal inter-
+    personal and intra-personal model for adapted behavior synthesis. arXiv preprint
+    arXiv:2305.11310 (2023)20    M. Tran et al.
+
+
+78. Xing, J., Xia, M., Zhang, Y., Cun, X., Wang, J., Wong, T.T.: Codetalker: Speech-
+    driven 3d facial animation with discrete motion prior. In: Proceedings of the
+   IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 12780–
+    12790 (2023)
+79. Xu, Y., Feng, A.W., Marsella, S., Shapiro, A.: A practical and configurable lip sync
+   method for games. In: Proceedings of Motion on Games. pp. 131–140 (2013)
+80. Yi, R., Ye, Z., Zhang, J., Bao, H., Liu, Y.J.: Audio-driven talking face video gener-
+    ation with learning-based personalized head pose. arXiv preprint arXiv:2002.10137
+    (2020)
+81. Yu, J., Chen, C.W.: From talking head to singing head: a significant enhance-
+   ment for more natural human computer interaction. In: 2017 IEEE International
+    Conference on Multimedia and Expo (ICME). pp. 511–516. IEEE (2017)
+82. Zhang, Z., Li, L., Ding, Y., Fan, C.: Flow-guided one-shot talking face generation
+    with a high-resolution audio-visual dataset. In: Proceedings of the IEEE/CVF
+    Conference on Computer Vision and Pattern Recognition. pp. 3661–3670 (2021)
+83. Zhou, H., Sun, Y., Wu, W., Loy, C.C., Wang, X., Liu, Z.: Pose-controllable talking
+    face generation by implicitly modularized audio-visual representation. In: Proceed-
+    ings of the IEEE Conference on Computer Vision and Pattern Recognition. pp.
+    4176–4186 (2021)
+84. Zhou, M., Bai, Y., Zhang, W., Yao, T., Zhao, T., Mei, T.: Responsive listening
+    head generation: a benchmark dataset and baseline. In: European Conference on
+   Computer Vision. pp. 124–142. Springer (2022)
+85. Zhou, Y., Han, X., Shechtman,  E., Echevarria,  J., Kalogerakis,  E.,  Li, D.:
+    Makelttalk: speaker-aware talking-head animation. ACM Transactions on Graphics
+   (TOG) 39(6), 1–15 (2020)
+86. Zhou, Y., Xu, Z., Landreth, C., Kalogerakis, E., Maji, S., Singh, K.: Visemenet:
+    Audio-driven animator-centric speech animation. ACM Transactions on Graphics
+    37(4), 1–10 (2018)
+87. Zollhöfer, M., Thies, J., Garrido, P., Bradley, D., Beeler, T., Pérez, P., Stamminger,
+    M., Nießner, M., Theobalt, C.: State of the art on monocular 3d face reconstruction,
+    tracking, and applications. In: Computer Graphics Forum. pp. 523–550 (2018)   Supplementary materials for DIM: Dyadic
+     Interaction Modeling for Social Behavior
+                 Generation
+
+
+ Minh Tran∗    , Di Chang∗    , Maksim Siniukov, and Mohammad Soleymani
+
+        University of Southern California, Institute for Creative Technologies
+                          soleymani@ict.usc.edu
+
+
+
+A  Metrics for evaluation
+
+In this section, we further define our metrics in detail as a supplement to the
+main text.
+
+ – Frechet Distance (FD): Motion realism is evaluated through the distribu-
+    tional discrepancy between the generated and actual ground-truth motions.
+   This is quantified by calculating the Fréchet Distance (FD) [31] within the
+   domains of facial expressions and head poses across the entire motion se-
+    quence.
+ – Paired FD for synchrony (P-FD): Listener-speaker dynamics quality is based
+   on the distances between distributions of listener-speaker pairs. We con-
+    catenate the generated listener motions with speaker motions and calculate
+    Fréchet Distance (FD) [31].
+ – Mean Squared Error (MSE): MSE between generated and ground-truth mo-
+    tions.
+ – SI for Diversity (SID): In L2L [50], the diversity of predictions of facial and
+   head motions is assessed using k-means clustering. This approach facilitates
+    the evaluation of variation within predicted results by calculating the entropy
+    of the histogram of cluster ids within each sequence.
+ – Variance (Var): Following L2L [50], this metric measures the variance of the
+    listener motions on time series.
+ – Residual Pearson Correlation Coefficient (rPCC): The Pearson Correlation
+    Coefficient (PCC) [47, 60], evaluates the motion of the face and head on a
+    frame-by-frame basis, indicating how the listener’s movements correlate with
+    those of the speaking individuals. The L1 distance is utilized to quantify the
+    discrepancy between the generated PCC and the ground truth PCC.
+
+
+B  Modality Ablation & Online Behavior Generation
+
+We present the results of our modality ablation and online behavior generation
+experiments for DIM-Listener on ViCo in Table 1. In the modality ablation
+
+ * equal contribution22    M. Tran et al.
+
+
+       Table 1: Modality contribution & online gen. experiment on ViCo.
+
+
+                      V     A    A+V   Online Gen.
+                          Exp Pose Exp Pose Exp Pose Exp  Pose
+                 MSE 0.85 0.01 0.97 0.02  0.7 0.01 0.79  0.01
+                  FD  32.8 0.07 46.9 0.08 23.9 0.06 28.4  0.06
+
+experiments, we mask all inputs of a modality to zeros. For the online generation
+experiments, we add causal masks during the fine-tuning phase and reuse the
+pre-trained weights. The online generation results (which are slightly worse but
+still superior to prior work) are also reported in Table 1 for ViCo.
+
+
+C  Generated Listener Motions User Study
+
+We asked 50 participants from Prolific, a crowdsourcing platform, to rate the
+quality of eight generated listeners in the test set of ViCo [84] from L2L [50],
+RLHG [84], ELP [66], and our method on a scale of 0(low) to 5(high). The
+methods were anonymized and randomly ordered for each question. The result
+is available in Table 2. The average duration of the videos is 14 seconds. Criteria
+for judgment: 1) The response from the listener provides correct feedback to the
+speaker. 2) The head motions and facial expressions are diverse and smooth.
+
+
+
+
+         Table 2: User Study Results. Scale: 0-5; the higher, the better.
+
+
+ Method   Video-1 Video-2 Video-3 Video-4 Video-5 Video-6 Video-7 Video-8 Average
+
+ ELP [62]     2.12     2.16     1.98     2.02     2.00     1.88     1.80     1.88      1.98
+ RLHG [77]   2.45     2.67     2.80     2.75     2.74     2.18     2.43     2.12      2.51
+ L2L [47]      2.92     2.78     2.76     3.20     3.69     2.14     2.96     2.63      2.89
+ Ours        3.90    3.72    3.98    3.47    3.98     2.94    3.75    3.31    3.64
+
+
+
+
+D  Limitations and Future Works
+
+D.1  Rendering Network
+
+In our framework, we observed that the image quality produced by PIRen-
+derer [58] does not always meet our expectations. Specifically, the rendered im-
+ages exhibit distortions for certain individuals. Moreover, we identified a crucial
+need for individualized fine-tuning of the rendering network for each subject.
+This necessity stems from the model’s inability to effectively generalize across
+different identities, even after training. Consequently, we have adopted the strat-
+egy of training a distinct PIRenderer [58] model for every individual in our test
+set. Future research could explore the integration of a more adaptable rendering
+model into the framework, to enhance the photorealism of the generated video.                                     Title Suppressed Due to Excessive Length     23
+
+
+D.2 EMOCA/FLAME Representation
+
+As mentioned in the paper, we adopt EMOCA [16] to represent facial expres-
+sions and head pose motions, encapsulated in a compact output dimensionality
+of [56, ], specifically [50, ] for facial expressions and [6, ] for head poses. In the
+context of our speaker generation task, we demonstrate the flexibility of our
+model by converting this prediction into a FLAME [43] point cloud representa-
+tion, comprising 5023 vertices. This approach contrasts with prior models that
+employ a more detailed 3D face geometry with 23370 vertices [22,59,78]. While
+EMOCA 3DMMs offer a streamlined representation, they inherently sacrifice
+some details in capturing facial expressions and head movements. To enhance
+the fidelity of listener and speaker generation tasks in future research, we sug-
+gest exploring more nuanced and expressive representations that more accurately
+reflect facial behaviors.

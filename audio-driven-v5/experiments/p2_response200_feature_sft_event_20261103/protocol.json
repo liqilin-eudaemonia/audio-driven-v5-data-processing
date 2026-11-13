@@ -1,0 +1,101 @@
+{
+  "schema": "response200-feature-vs-sft-event-v1",
+  "created_at": 1793685210.9197326,
+  "datasets": {
+    "responsenet": {
+      "prepared": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/references",
+      "references_sha256": "53cdac3047cbf5cfa6b5cac61f2883edaa2cb0807de63f50da5bb81f08d23a7b",
+      "count": 200,
+      "face_padding": 64
+    }
+  },
+  "arms": [
+    {
+      "name": "base_feature_6000",
+      "kind": "av_feature",
+      "step": 6000,
+      "checkpoint": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_guided_av_feature_base025_20261102/duration_memorysafe_save500/step_006000.pt",
+      "planner": "unmodified_Qwen2.5-Omni-3B"
+    },
+    {
+      "name": "base_feature_8927",
+      "kind": "av_feature",
+      "step": 8927,
+      "checkpoint": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_guided_av_feature_base025_20261102/duration_memorysafe_save500/step_008927.pt",
+      "planner": "unmodified_Qwen2.5-Omni-3B"
+    },
+    {
+      "name": "sft_event_6000",
+      "kind": "av_event",
+      "step": 6000,
+      "checkpoint": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_sft_h_av_event_ready_20261102/step_006000.pt",
+      "planner": "planning_SFT_Qwen2.5-Omni-3B"
+    },
+    {
+      "name": "sft_event_8927",
+      "kind": "av_event",
+      "step": 8927,
+      "checkpoint": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_sft_h_av_event_ready_20261102/step_008927.pt",
+      "planner": "planning_SFT_Qwen2.5-Omni-3B"
+    },
+    {
+      "name": "sft_on_base_event_6000",
+      "kind": "av_event",
+      "step": 6000,
+      "checkpoint": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_guided_av_event_s1_32gpu_alternating_20261101/step_006000.pt",
+      "planner": "planning_SFT_Qwen2.5-Omni-3B",
+      "source_compatibility": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/sft_on_base_event/source_compatibility.json"
+    }
+  ],
+  "seed": 137,
+  "planner": "per_arm_training_matched_Qwen",
+  "planner_adapter": null,
+  "planner_max_new_tokens": 512,
+  "planner_retry_tokens": 1024,
+  "planner_batch": 16,
+  "text_batch": 16,
+  "generation": {
+    "steps": 30,
+    "video_cfg": 3,
+    "audio_cfg": 7
+  },
+  "workers": 32,
+  "total_samples": 200,
+  "total_outputs": 1000,
+  "conditioning": "speaker_audio_and_listener_first_frame_only",
+  "cluster": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/cluster.json",
+  "metric_assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+  "metrics_cluster": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metrics_cluster.json",
+  "metrics_workers_per_gpu": 4,
+  "metric_batch_size": 64,
+  "execution_order": "checkpoint_outer_then_responsenet",
+  "metrics": [
+    "psnr",
+    "ssim",
+    "fid",
+    "fvd",
+    "lpips",
+    "emo_acc",
+    "emo_div",
+    "delta_resp",
+    "utmos"
+  ],
+  "text_batch_reason": "Native Gemma all-layer float32 processing OOM at batch32 on H200; use unchanged native encoder at batch16",
+  "scope_changed_at": 1793595801.550364,
+  "scope_reason": "User requested all four weights on ResponseNet only; defer seamless",
+  "inference_nodes": [
+    "node17",
+    "node12",
+    "node4",
+    "node8"
+  ],
+  "expanded_to_32_at": 1793596427.6659539,
+  "metrics_face_device": "cuda:0",
+  "metrics_emotion_device": "cuda:0",
+  "metrics_pixel_workers": 4,
+  "metrics_gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+  "metrics_use_released_inference_nodes": true,
+  "metrics_inference_workers_per_gpu": 4,
+  "metrics_acceleration_evidence": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102",
+  "enforce_planner_identity": true
+}

@@ -1,0 +1,73 @@
+\section{Method}
+\label{sec:method}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{F3_method.pdf}
+\caption{\figdraft{F3: Generation framework and training supervision} Qwen guided representations are mapped to video and audio conditions by a trainable connector; Gemma supplies text conditions. A separate Whisper path provides direct acoustic features through LTX cross-attention. Training uses annotated descriptions, whereas inference predicts and re-encodes them. Feature decoders supervise the connector conditions using target-media teacher features. Event heads supervise pooled valid hidden states from the last LTX block, excluding reference-frame and padding tokens. Both auxiliary objectives are training-only. Portraits and waveforms are schematic.}
+\label{fig:method}
+\end{figure*}
+\subsection{Overview and Condition Construction}
+% Paragraph role P01: 框架概览
+Our framework comprises a frozen Qwen2.5-Omni-3B model~\cite{qwen25omni}, a trainable connector, a Gemma text encoder~\cite{gemma_pending}, a speaker-audio Whisper branch~\cite{whisper}, and an LTX audiovisual generator~\cite{ltx_pending}. Given speaker audio $a_s$ and listener first frame $I_l$, Qwen provides multilayer hidden representations conditioned on the input and a reaction description $d$. The connector maps these representations into video and audio conditions $U_v$ and $U_a$. Gemma encodes the same description as a text condition. LTX jointly denoises audiovisual latents using these conditions, the reference frame, and direct speaker-audio features, then decodes listener video $V_l$ and audio $a_l$ (\cref{fig:method}).
+
+% Paragraph role P02: 训练／推理描述来源
+During training, $d$ is the annotated description $d^*$ of the target listener media. The full guidance text is appended at the assistant position after Qwen's native multimodal prefix to extract guided hidden states, and is also encoded by Gemma. At inference, Qwen predicts $\hat d$ from only the current speaker audio, listener first frame, and task instruction. This prediction is then re-encoded to obtain guided hidden states and Gemma conditions. The description is an internal intermediate condition, not an additional user input.
+
+% Paragraph role P03: Qwen版本与角色
+The current Qwen model is frozen and has not undergone planning SFT. We use representations from layers 8, 18, 28, and 35. Qwen3-Omni used for data annotation is distinct from Qwen2.5-Omni used for generation conditioning.
+\cnnote{技术与版本待确认}{本节忠实采用中文稿指定的未SFT Qwen版本，不替换为近期SFT2752评测版本。Gemma与LTX的精确版本及正式引用需补齐；原文未写定的Connector形状、token组织和Feature解码器细节不自行补全。}
+
+\subsection{Direct Speaker-Audio Conditioning}
+% Paragraph role P04: 直接语音分支
+High-level representations and text conditions may not fully expose local acoustic information to the generator. We encode the same speaker segment with a frozen Whisper-large-v3 encoder, retain its temporal features, and apply LayerNorm and a linear adapter. Independent video and audio cross-attention residual branches inject these features into every LTX block. The branches use a common clip time origin and temporal position encoding, preserve silent intervals, and initialize their output projections to zero. This path supplements the Qwen and Gemma conditions; it does not introduce a separate Whisper loss.
+
+\subsection{Target Audiovisual Feature Supervision}
+% Paragraph role P05: Feature设计
+General Qwen representations still need to be mapped to conditions suited to listener audiovisual generation. We extract target features $F_v$ and $F_a$ from the real listener video and processed audio using frozen Qwen2.5-Omni visual and audio towers. Two auxiliary embedding decoders, conditioned on $U_v$ and $U_a$, respectively, use flow-matching feature-reconstruction objectives $\mathcal L_{\mathrm{Feature}}^v$ and $\mathcal L_{\mathrm{Feature}}^a$. These objectives are evaluated only where both teacher features and conditions are valid. Silence remains a valid audio state and is not excluded solely because no vocalization occurs.
+
+% Paragraph role P06: Feature参数与推理边界
+The losses train the auxiliary decoders and the shared connector to encode information useful for fitting and generating the target media. They do not directly minimize a pointwise MSE between Qwen hidden states and teacher features, and do not update the frozen Qwen backbone. The feature decoders and target-media teachers are used only during training.
+
+\subsection{Clip-Level Event Supervision on LTX Representations}
+% Paragraph role P07: Event位置与聚合
+Continuous media-generation losses do not explicitly require feedback categories to appear. We therefore apply clip-level multilabel supervision to LTX audiovisual generation representations. Each training forward pass reads video and audio hidden states $Z_v$ and $Z_a$ from the final Transformer block, before output normalization and projection. For video, spatial tokens are pooled at each valid time position, followed by temporal averaging. Audio hidden states are pooled over their own temporal grid. The fixed reference frame, padding, positions beyond the actual duration, and other invalid positions are excluded. Separate visual and audio heads predict whether each behavior occurs in the clip.
+
+% Paragraph role P08: Event训练噪声步与非时序目标
+This supervision uses denoising hidden states at the sampled flow noise step; it does not require complete video sampling and decoding at each training step. The current configuration contains only clip-level heads, with no temporal branch or per-time event targets. The intervals used in annotation prompts are not used as temporal supervision for the generator.
+
+% Paragraph role P09: Event标签和权重
+The targets follow the description-based extraction and conflict handling in \cref{sec:data}. For sample $i$ and class $c$, let $y_{ic}$, $m_{ic}$, and $w_{ic}$ denote the target, validity mask, and sample weight. Accepted positives have weight 1. Genuinely unmentioned categories in descriptions that pass the completeness check receive weight 0.1 as weak negatives. Unknown or conflicting entries have $m_{ic}=0$. We use class-weighted binary cross-entropy, normalize each class by its valid sample count, and average over active classes:
+\begin{equation}
+\mathcal L_{\mathrm{Event}} =
+\frac{1}{|\mathcal C_{\mathrm{eff}}|}
+\sum_{c\in\mathcal C_{\mathrm{eff}}}
+\frac{\sum_i m_{ic} w_{ic}\,\mathrm{BCE}_{\alpha_c}(s_{ic},y_{ic})}
+{\sum_i m_{ic}}.
+\label{eq:event}
+\end{equation}
+% Paragraph role P10: Event类别与有效性
+Here $s_{ic}$ is a classification logit and $\alpha_c$ is a positive-class weight derived from training-label statistics. The set $\mathcal C_{\mathrm{eff}}$ contains enabled classes with valid targets in the current batch. There are 16 visual and 3 audio output slots. Eighteen classes satisfy the validity criteria and the threshold of at least 5,000 positive examples; the \emph{mouth closing} slot is retained but excluded from the loss. These training categories include general visual behaviors and are not identical to the communicative backchannel categories to be used in evaluation. The objective encourages supported feedback categories while retaining quiet-listening and unknown states.
+
+\subsection{Training Objective and Parameter Updates}
+\label{sec:training}
+% Paragraph role P11: 总体目标
+The native audiovisual objective $\mathcal L_{\mathrm{AV}}$ is the sum of video and audio flow-matching losses, computed on their valid generation supports. Reference-frame and padding positions follow the native training masks. The overall objective is
+\begin{equation}
+\begin{split}
+\mathcal L ={}& \mathcal L_{\mathrm{AV}} + 0.05\mathcal L_{\mathrm{Event}}\\
+&+0.025\mathcal L_{\mathrm{Feature}}^v
+ +0.025\mathcal L_{\mathrm{Feature}}^a.
+\end{split}
+\label{eq:total}
+\end{equation}
+% Paragraph role P12: 可训练参数与梯度
+We update the connector, feature decoders, event heads, LTX text-conditioning LoRA, Whisper adapter, and independent audiovisual cross-attention branches. Qwen, Gemma, the Whisper encoder, the teacher encoders, and the LTX backbone remain frozen. Feature gradients supervise the condition mapping. Event gradients pass from generation hidden states through the trainable LTX branches to the connector. Reading hidden states does not detach gradients, but does not imply that the LTX backbone is unfrozen.
+
+% Paragraph role P13: 实际AV训练集
+Generation training uses a separately prepared selection of 284,218 clips totaling approximately 500 hours. Precomputed conditions and features cover the same selected media. Clip-level targets, validity masks, and weights are compiled before training rather than parsed from label text online.
+
+\subsection{Inference}
+% Paragraph role P14: 推理流程
+At inference, Qwen first predicts a reaction description from $a_s$ and $I_l$. The predicted text is used to construct the guided Qwen and Gemma conditions, while Whisper encodes the same speaker audio. The connector maps Qwen representations to video and audio conditions. LTX jointly samples audiovisual latents from noise under the first-frame constraint and decodes listener video and audio. Inference does not access future listener media, annotated descriptions, teacher features, or event labels, and does not execute either auxiliary loss.
+\cnnote{采样设置待冻结}{中文稿当前共享推理函数采用30步采样，视频／音频CFG为3／7。它们是可在实验中统一调整的参数，不是方法贡献。最终检查点、规划器及采样协议须共同确定后填写。}

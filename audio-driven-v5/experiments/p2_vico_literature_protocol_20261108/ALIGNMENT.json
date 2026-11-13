@@ -1,0 +1,88 @@
+{
+  "anchor": "DIM Table1 -> INFP Table3 -> Avatar Forcing Table4",
+  "rows": [
+    {
+      "item": "test scope",
+      "paper": "ViCo; INFP says same test set as DIM",
+      "released_code": "DIM loader keys by audio, keeps5..1024 frames after shortest stream alignment",
+      "our_execution": "test43 UUIDs retained independently; no OOD; all source frames retained until declared score mask",
+      "remaining_difference": "Published effective IDs and intervals unavailable; released path may overwrite3 duplicated audio keys",
+      "evidence": "DIM p9-11; INFP p7; dataset/data_loader.py; vico_preprocessing.py"
+    },
+    {
+      "item": "extractor",
+      "paper": "EMOCA expression50 + pose6",
+      "released_code": "vico_preprocessing.py names EMOCA_v2_lr_mse_20",
+      "our_execution": "Exact named EMOCA checkpoint required; DECA cache never used as EMOCA",
+      "remaining_difference": "DIM did not publish full extractor config/crop/checkpoint hash",
+      "evidence": "DIM p9-10 and supplement p23; code/vico_preprocessing.py"
+    },
+    {
+      "item": "ordering and scale",
+      "paper": "Raw EMOCA coefficients, Exp/Pose groups",
+      "released_code": "pose6 followed by exp50; no display scaling",
+      "our_execution": "pose6+exp50, no z-score or rescaling",
+      "remaining_difference": "Need checkpoint and output verification before scoring",
+      "evidence": "code/vico_preprocessing.py; code/mymetrics.py"
+    },
+    {
+      "item": "FD / P-FD / MSE",
+      "paper": "Fréchet; concatenated speaker/listener Fréchet; MSE",
+      "released_code": "Per-clip computation and equal clip mean",
+      "our_execution": "Unmodified author functions and verified structured wrapper",
+      "remaining_difference": "RGB re-extraction differs from native model coefficients in original DIM baseline rows",
+      "evidence": "DIM supplement A; code/mymetrics.py"
+    },
+    {
+      "item": "SID",
+      "paper": "Entropy of cluster-ID histogram within each sequence",
+      "released_code": "GT-fitted KMeans40 expression /20 pose; dataset pooled histogram; log2",
+      "our_execution": "Match released code; record library versions and GT anchor",
+      "remaining_difference": "Per-sequence paper wording differs from global released computation; main-table exact aggregation unconfirmed",
+      "evidence": "DIM supplement A; code/metrics/eval_utils.py"
+    },
+    {
+      "item": "Var",
+      "paper": "Time-series variance",
+      "released_code": "np.var on all frames and coefficients flattened together",
+      "our_execution": "Use released pooled flattened formula; also report GT statistic",
+      "remaining_difference": "Not existing local mean temporal variance; do not compare old values",
+      "evidence": "DIM supplement A; code/mymetrics.py"
+    },
+    {
+      "item": "rPCC / speaker",
+      "paper": "Residual correlation with real speaker motion",
+      "released_code": "Pooled flattened correlation; default dataset substitutes all-one speaker",
+      "our_execution": "Real speaker extraction; constant inputs produce N/A",
+      "remaining_difference": "Default all-one route cannot yield finite paper rPCC; paper execution path unconfirmed",
+      "evidence": "DIM supplement A; dataset/data_loader.py; code/mymetrics.py"
+    },
+    {
+      "item": "frame offset",
+      "paper": "Frame-by-frame synchrony",
+      "released_code": "Tester compares listener t1..T-1 with speaker t0..T-2",
+      "our_execution": "Primary released-tester offset explicitly recorded; no GT-fitted lag",
+      "remaining_difference": "Published temporal convention not independently confirmed",
+      "evidence": "code/x_engine_pt.py evaluate_test_epoch"
+    },
+    {
+      "item": "sampling",
+      "paper": "Main table sample policy not fully specified",
+      "released_code": "10 candidates, per-clip minimum GT full56 Fréchet",
+      "our_execution": "Reuse one fixed seed137 video per method; never GT-select",
+      "remaining_difference": "Cannot claim same sampling budget; no retrospective best-of10",
+      "evidence": "code/x_engine_pt.py evaluate_test_epoch; main paper leaves budget unspecified"
+    },
+    {
+      "item": "readout / conditioning",
+      "paper": "DIM baselines retrained on EMOCA; INFP/Avatar native transfers",
+      "released_code": "Native coefficients for DIM scoring",
+      "our_execution": "Our output video re-extracted with EMOCA; speaker motion used only by scorer",
+      "remaining_difference": "Different readout/conditioning and training are disclosed; no claim of identical author implementation",
+      "evidence": "DIM p9-11; INFP Section5.2.2; AvatarForcing Table4"
+    }
+  ],
+  "status": "protocol frozen; exact published-table equivalence not established",
+  "literature_rows_may_be_cited": true,
+  "automatic_cross_source_ranking_allowed": false
+}

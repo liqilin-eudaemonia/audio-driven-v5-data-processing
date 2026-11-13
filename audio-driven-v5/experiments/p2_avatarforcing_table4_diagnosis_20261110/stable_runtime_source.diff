@@ -1,0 +1,100 @@
+--- scripts/p2_avatarforcing_table4_generate.py
++++ scripts/p2_avatarforcing_table4_generate_stable.py
+@@ -1,4 +1,8 @@
+-"""New full-user-visual Avatar Forcing run; original source-only run is read-only."""
++"""Versioned runtime correction; sealed v1 remains read-only.
++
++Enforce flags after FaceAlignment, log actual forward flags and export range.
++This is a reproducibility profile, not a claim that private Table4 settings match.
++"""
+ import argparse
+ import ast
+ import copy
+@@ -13,7 +17,7 @@
+ 
+ ROOT=Path(__file__).resolve().parents[1]
+ sys.path[:0]=[str(ROOT/'compare/deployment')]
+-WORK=ROOT/'experiments/p2_avatarforcing_table4_recheck_20261110'
++WORK=ROOT/'experiments/p2_avatarforcing_table4_stable_runtime_20261110_v2'
+ REPO=ROOT/'compare/AvatarForcing'
+ OLD=ROOT/'experiments/p2_vico43_unified_20261107'
+ SPECTRE=ROOT/'compare/deployment/vendor/spectre'
+@@ -69,7 +73,7 @@
+         samples.append(s)
+     sources=[Path(__file__),ROOT/'compare/deployment/vico_avatarforcing.py',REPO/'inference.py',REPO/'preprocess_user_video.py',
+         REPO/'configs/inference.yaml',*sorted((REPO/'models').rglob('*.py'))]
+-    p=dict(schema='avatarforcing-table4-recheck-v1',samples=samples,
++    p=dict(schema='avatarforcing-table4-stable-runtime-v2',samples=samples,
+         source_files={str(p):sha(p) for p in sources},assets=old['assets'],
+         paper_sha256=sha(ROOT/'writing/43_Avatar_Forcing_CVPR2026.pdf'),
+         source_run_sha256=sha(OLD/'COMPLETE.json'),official_test43=True,
+@@ -82,7 +86,10 @@
+         spectre_source='https://github.com/filby89/spectre',
+         target=dict(FD=dict(exp=16.64,pose=.05),rPCC=dict(exp=.01,pose=.01),SID=dict(exp=3.12,pose=3.00),Var=dict(exp=2.80,pose=.03)),
+         exact_checkpoint_table4_binding='not explicitly disclosed; official public final checkpoints',
+-        old_results_unchanged=True)
++        old_results_unchanged=True,
++        runtime_backend=dict(cudnn_benchmark=False,cudnn_deterministic=True,matmul_tf32=False,cudnn_tf32=False,
++            enforcement='Immediately before each model forward, after FaceAlignment and cached or uncached preprocessing'),
++        runtime_note='Reproducibility correction; effective flags of the private published Table4 are unconfirmed')
+     dest=WORK/'protocol.json'
+     if dest.exists():assert read(dest)==p,'Protocol changed; use a new version'
+     else:save(dest,p)
+@@ -121,7 +128,7 @@
+     return folder
+ 
+ 
+-def generate(smoke=False):
++def generate(smoke=False,outlier=False):
+     import cv2,numpy as np,soundfile as sf,torch,face_alignment,types
+     from transformers import Wav2Vec2FeatureExtractor
+     import vico_avatarforcing as old
+@@ -136,6 +143,7 @@
+     pp=Wav2Vec2FeatureExtractor.from_pretrained(str(REPO/'pretrained_dir/wav2vec2-base-960h'),local_files_only=True)
+     samples=p['samples']
+     if smoke:samples=[min(samples,key=lambda s:s['duration']),max(samples,key=lambda s:s['duration'])]
++    if outlier:samples=[s for s in samples if s['id']=='UCA1A5GqCdQ_001213_001223.1']
+     begin=time.time()
+     for s in samples:
+         output=WORK/'generated'/s['id'];output.mkdir(parents=True,exist_ok=True)
+@@ -155,6 +163,13 @@
+         data=dict(avatar_ref=torch.from_numpy(((ref.astype(np.float32)-127.5)/127.5).transpose(2,0,1).copy()).unsqueeze(0),
+             avatar_a=pp(np.zeros_like(wave),sampling_rate=sr,return_tensors='pt').input_values,
+             user_a=pp(wave,sampling_rate=sr,return_tensors='pt').input_values,user_frame=user)
++        # FaceAlignment mutates the global cuDNN benchmark flag. Reapply the
++        # declared policy after all preprocessing, on every clip and cache path.
++        torch.backends.cudnn.benchmark=False;torch.backends.cudnn.deterministic=True
++        torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
++        runtime=dict(cudnn_benchmark=torch.backends.cudnn.benchmark,cudnn_deterministic=torch.backends.cudnn.deterministic,
++            matmul_tf32=torch.backends.cuda.matmul.allow_tf32,cudnn_tf32=torch.backends.cudnn.allow_tf32)
++        assert runtime==dict(cudnn_benchmark=False,cudnn_deterministic=True,matmul_tf32=False,cudnn_tf32=False)
+         torch.manual_seed(p['seed']);np.random.seed(p['seed'])
+         with torch.inference_mode(),torch.autocast('cuda',dtype=torch.bfloat16):
+             prediction=model.inference(data,a_cfg_scale=p['avatar_cfg'],u_cfg_scale=p['user_cfg'],nfe=p['nfe'],seed=p['seed'],use_kv_cache=True)['d_hat']
+@@ -164,18 +179,21 @@
+         old.export_rgb(output/'generated.mp4',[rgb],512,25,18)
+         save(output/'complete.json',dict(id=s['id'],sha256=sha(output/'generated.mp4'),frames=frames,fps=25,
+             protocol_sha256=sha(WORK/'protocol.json'),seconds=time.time()-started,real_user_visual=True,
+-            avatar_audio_zero=True,listener_future_conditioned=False,peak_memory_gib=torch.cuda.max_memory_allocated()/2**30))
++            avatar_audio_zero=True,listener_future_conditioned=False,
++            runtime_backend=runtime,export_range=dict(minimum=float(lo),maximum=float(hi),mean=float(prediction.mean()),mapping='official whole-clip minmax after clamp'),
++            peak_memory_gib=torch.cuda.max_memory_allocated()/2**30))
+         done=len(list((WORK/'generated').glob('*/complete.json')))
+-        save(WORK/'status.json',dict(stage='generation',completed=done,total=43,last=s['id'],elapsed_s=time.time()-begin))
+-        print('generated',done,'/43',s['id'],'seconds',round(time.time()-started,2),flush=True)
++        save(WORK/'status.json',dict(stage='generation',completed=done,total=len(samples),last=s['id'],elapsed_s=time.time()-begin))
++        print('generated',done,'/',len(samples),s['id'],'seconds',round(time.time()-started,2),flush=True)
+         del prediction,rgb,data,user;torch.cuda.empty_cache()
++    if outlier:save(WORK/'OUTLIER_VALIDATION.json',dict(passed=True,id=samples[0]['id'],protocol_sha256=sha(WORK/'protocol.json')))
+     if smoke:save(WORK/'GENERATION_SMOKE.json',dict(passed=True,ids=[s['id'] for s in samples],retained_for_formal=True))
+     if len(list((WORK/'generated').glob('*/complete.json')))==43:
+         save(WORK/'GENERATION_COMPLETE.json',dict(passed=True,outputs=43,protocol_sha256=sha(WORK/'protocol.json')))
+ 
+ 
+ if __name__=='__main__':
+-    parser=argparse.ArgumentParser();parser.add_argument('action',choices=['prepare','smoke','generate'])
++    parser=argparse.ArgumentParser();parser.add_argument('action',choices=['prepare','smoke','generate','outlier'])
+     args=parser.parse_args()
+     if args.action=='prepare':prepare()
+-    else:generate(args.action=='smoke')
++    else:generate(args.action=='smoke',args.action=='outlier')

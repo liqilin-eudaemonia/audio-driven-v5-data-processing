@@ -1,0 +1,1076 @@
+                    Responsive Listening Head Generation:
+              A Benchmark Dataset and Baseline
+
+
+                     Mohan Zhou1∗†   , Yalong Bai2†   , Wei Zhang2   , Ting Yao2   , Tiejun Zhao1§   ,
+                                                 and Tao Mei2
+
+                                1Harbin Institute of Technology   2JD Explore Academy, Beijing, China
+                              {mhzhou99, ylbai}@outlook.com, {wzhang.cu, tingyao.ustc}@gmail.com,
+                                               tjzhao@hit.edu.cn, tmei@jd.com
+2022
+
+                               Abstract. We present a new listening head generation benchmark, forJul                               synthesizing responsive feedbacks of a listener (e.g., nod, smile) during
+20                           aingface-to-faceheads generation,conversation.listeningAsheadthe generationindispensablehascomplementseldomly beento stud-talk-
+                                       ied in literature. Automatically synthesizing listening behavior that ac-
+                                         tively responds to a talking head,  is critical to applications such as
+                                          digital human, virtual agents and social robots. In this work, we pro-
+                                  pose a novel dataset “ViCo”, highlighting the listening head generation
+                                   during a face-to-face conversation. A total number of 92 identities (67
+                                    speakers and 76 listeners) are involved in ViCo, featuring 483 clips in[cs.CV]                           a paired “speaking-listening” pattern, where listeners show three listen-
+                                     ing styles based on their attitudes: positive, neutral, negative. Differ-
+                                    ent from traditional speech-to-gesture or talking-head generation,  lis-
+                                    tening head generation takes as input both the audio and visual sig-
+                                      nals from the speaker, and gives non-verbal feedbacks (e.g., head mo-
+                                         tions, facial expressions) in a real-time manner. Our dataset supports a
+                                 wide range of applications such as human-to-human interaction, video-
+                                     to-video translation, cross-modal understanding and generation. To en-
+                                   courage further research, we also release a listening head generation base-
+                                             line, conditioning on different listening attitudes. Code & ViCo dataset:
+                                 https://project.mhzhou.com/vico.
+
+                            Keywords: Listening Head Generation · Video Synthesis
+
+
+                  1  IntroductionarXiv:2112.13548v3
+
+                       Communication [5,24,35,43,54,56] is one of the most common activities that ev-
+                        erybody engages in their daily lives. During a face-to-face communication [29],
+                        two persons shift their roles in turn between the speaker and listener, to effec-
+                               tively exchange information. The speaker verbally transmits information to the
+                                listener, while the listener provides real-time feedbacks to the speaker mostly
+                         through non-verbal behaviors such as affirmative nod, smiling, head shake.
+
+                          ∗This work was done at JD Explore Academy.
+                                 † Equal contribution.  § Corresponding author.2     M. Zhou et al.
+
+
+
+
+
+                                                                                                            emotion
+
+               gesture generator                                                        head motion predictor
+                                                                                                                                       speaker encoder            attitude
+                                                                                         reference image
+                                                    Wav2Lip                            head generator                                      listener decoder
+
+                                                                                                                                            reference image
+
+                 (a) Speech-to-Gesture                                                                                                                                         timeline
+
+                 input            output          (b) Speech to Lip Generation                     (c) Talking Head Generation                !"# $%&'()&*+% ,*&-%)*). /%0" 1%)%20-*()
+
+Fig. 1: Illustrations of three related tasks and our proposed responsive listen-
+ing head generation. (a) Speech-to-gesture translation: generates plausible ges-
+tures to go along with the given speech. (b) Speech to lip generation: produces
+lip-synchronization in talking-head video. (c) Talking head generation: synthe-
+sizes talking face video conditioned on the identity of the speaker, audio speech,
+and/or the speaker emotion. (d) Our proposed responsive listening head synthe-
+sizes videos in responding to the speaker video stream
+
+
+
+   Although static images, repeated frames, or pre-scripted animations are of-
+ten used to synthesize listeners in practice, they are often rigid and not realistic
+enough to respond to the speaker appropriately. According to studies in social
+psychology and anthropology, listening is a function-specific [18] and conditioned
+behavior [3], where learnable patterns can be inferred from training data. First,
+common patterns of listeners are observed to express their viewpoints, symmet-
+rical and cyclic motions were employed to signal ‘yes’, ‘no’ or equivalents; narrow
+linear movements occurred in phase with stressed syllables in the other’s speech;
+wide, linear movements occurred during pauses in the other’s speech. Even the
+duration of eye blinks of the listener is perceived as communicative signals in
+human face-to-face interaction [23]. Second, these patterns in listener motions
+are mainly affected by two signals: the attitude of listener [21], and signals from
+the speaker [10,16,36]. Different attitudes of the listener results in diverse facial
+expressions, e.g., attitude of agree  is meant by a nod and accept, attitude of
+disbelieve is represented by the combination of head tilt and frown. Meanwhile,
+listening behavior is heavily affected by speaker motion and audio signals. For
+example, the flow of movement of listener may be rhythmically coordinated with
+the speech and motions by the speaker [28]. These psychological and ethologi-
+cal studies motivate us to propose a data-driven method for modeling listening
+behaviors for face-to-face communication.
+   There have been extensive research efforts on speaker-centric synthesis. As
+shown in Fig. 1, speech to gesture generation [17] learns a mapping between
+the audio signal and speaker’s pose. Speech to lip generation [46] aims to refine
+the lip-synchronization of a given video input. Talking-head synthesis [11,58,64]
+tries to generate a vivid talking video of a specific speaker with facial animations
+from a still image and a clip of audio. However, these works only focus on the
+speaking role, while ignore the indispensable counterpart of listener. Notably
+during a face-to-face conversation, listening behavior is even more important, as
+proper feedbacks to the speaker (e.g., nod, smile, eye contact, etc.) are vital for
+a successful communication [38,51,52,53]. Through real-time feedbacks, listen-  Responsive Listening Head Generation: A Benchmark Dataset and Baseline      3
+
+
+ers show how they are engaged (e.g., interested, understand, agree, etc.) to the
+speech, such that conversation gets more accessible for both participates.
+   In this work, we propose a new task to highlight listener-centric generation.
+Specifically, listening-head generation aims to synthesize a video of listening
+head, conditioning on the corresponding talking-head video of the speaker and
+the identity information of the listener, as shown in Fig. 1d. Proper reactions of
+the listener are expected to coordinate with the input talking video. This task
+is critical to a wide range of applications including virtual anchors, digital influ-
+encers, customer representatives, digital avatar in Metaverse, wherever involves
+interactive communication.
+   To address this, we construct a high-quality speaker-listener dataset, named
+ViCo, by capturing the high-definition video data from public conversations be-
+tween two persons containing frontal faces on the same screen. The data strictly
+follows the principle that a video clip contains only uniquely identified listener
+and speaker, and requires that the listener has responsive non-verbal feedback
+to the speaker. After data cleaning, we further annotate the listener with three
+different attitudes: positive, neutral and negative. In total, our ViCo dataset
+contains 483 video clips of 76 listeners responding to 67 speakers. Compared to
+speaker-centric datasets such as MEAD [58] and VoxCeleb2 [12], ViCo highlights
+the listener role, making an indispensable couterpart to those speaker-centric
+ones. Compared to SEMAINE [37] (human interacts with a limited artificial
+agent) and MAHNOB Laughter [45] (people watching movies), ViCo features
+real persons in real conversations, such that natural reactions between genuine
+humans during a conversation make a key difference.
+   Together with the dataset, we propose a listening-head generation baseline
+method. We are aware that previous speaker-centric tasks are usually modeled in
+an idiosyncratic way (different speakers are modeled independently). However,
+listening behavior patterns are typically well coordinated with the speaker video.
+Thus we decouple the identity features from the listener and focus on learning
+the general motion patterns of responsive listening behaviors. We model listening
+head generation as a video-to-video translation task, by designing a sequence-
+to-sequence architecture to sequentially decode the listener’s head motion and
+expression. Through quantitative evaluation and user study, we show our base-
+line is able to automatically capture the salient moments of speaker video and
+responds properly with clear motions and expressions.
+
+
+2  Related Works
+
+Active listener  Active listening is an effective communication skill that not
+only means focusing fully on the speaker but also actively showing the non-
+verbal signals of listening with attitude. Usually, the active listener would mir-
+ror some facial expressions used by the speaker or shows more eye contact with
+the speaker. Active listening have shown its positive effects in many areas, such
+as teaching [26], medical consultations [15], team management [40], etc. In this
+paper, we aim to generate an active listener that could provide responsive feed-4     M. Zhou et al.
+
+
+back, the listener would understand the speaker’s verbal and non-verbal signals
+first and then give proper feedback to the speaker.
+   Speaker-centered video synthesis  Given time-varying signals and a ref-
+erence still image of the speaker, the talking head synthesis task aims to generate
+a vivid clip for the speaker with the time-varying signals matched. Based on the
+different types of time-varying signals, we can group these tasks into two groups:
+1) audio-driven talking head synthesis [11,46,62], 2) video-driven talking head
+synthesis [2,60]. The goal of the former one is to generate a video of the speaker
+that matches the audio. And the latter one is to generate videos of speakers
+with expressions similar to those in the video. This differs from our task: the
+“listener” is forced to perceive the speaker’s visual and audio signals and make
+an active response. Our task does not focus on only a single person or transfers
+face expression and slight head movements from another person. There are two
+roles in our task: listener and speaker, and the listener should actively respond
+to the speaker with non-verbal signals.
+   Listening behaviors modeling  Many applications and research papers
+have focused on speaking, while the “listener modeling” is seldomly explored.
+Gillies et al. [16] first propose the data-driven method that can generate an ani-
+mated character that can respond to speaker’s voice. This lacks the supervision
+of speaker visual signals, which is incomplete for responsive listener modeling.
+And this method can not be applied to realistic head synthesis. Heylen et al. [20]
+further studied the relationship between listener and speaker audio/visual signals
+from a cognitive technologies view. SEMAINE [37] records the conversation be-
+tween a human and a limited artificial listener. MAHNOB Laughter database [45]
+focuses on studying laughter’s behaviors when watching funny video clips. Apart
+from these related work, ALICO [8] corpus about active listener analysis is the
+most relevant dataset with our proposed task. However, it has not been made
+public and also not constructed from the real scene conversations. Moreover,
+the main objective of ALICO is for psychology analysis, the data mode of that
+dataset is vastly different from the audio-video corpora in computer vision area.
+In the past few years, the social AI intelligence [27,41] has been introduced to
+model the nonverbal social signals in triadic or multi-party interactions. Joo et
+al. [27] concerned with the overall posture and head movement of a person, and
+Oertel et al. [41] aims to mine listening motion rules for robotics controlling.
+
+
+
+          Table 1: Comparison with other listener-related datasets
+
+
+     Dataset                 Public Environment   Style   Interact with Real
+
+      Gillies et al. [16]         ✗      Lab     Simulated       ✗
+   SEMAINE [37]        ✓      Lab     Simulated     ✓
+     Heylen et al. [20]        ✗      Lab     Simulated     ✓
+   MAHNOB Laughter [45]  ✓      Lab      Realistic        ✗
+    ALICO [8]              ✗      Lab      Realistic      ✓
+    Ours              ✓      Wild      Realistic      ✓  Responsive Listening Head Generation: A Benchmark Dataset and Baseline      5
+
+
+Both related works only deal with the speaking status and ignore the speaker’s
+content. What’s more, they rarely care about two-person interactions nor pay
+attention to model the face in detail, which is also different from our task. A
+detailed comparison to exising listener-related datasets is shown in Tab. 1.
+   As far as we know, this is the first time to introduce the learning-based
+listening head generation task in computer vision area. In this work, we propose
+a formulation of responsive listening head generation and construct a public ViCo
+dataset for this task. Meanwhile, a baseline method is proposed for listening head
+synthesis by perceiving both speaker’s audio/visual signals and preset attitude.
+
+
+3  Task Overview
+
+
+We present Responsive Listening Head Generation, a new task that challenges
+vision systems to generate listening heads actively responding to the speaker’s
+face or/and audio in real-time. In particular, we need to understand the head
+motion, facial expression, including eye blinks, mouth movements, etc., of the
+input speaker video frame, and simultaneously understand the speaker’s voice,
+then synchronously generate the active listening face video conditioned by the
+given attitude.
+   Given an input video sequence Vst = {vs1, · · · , vst } of a speaker head in time
+stamps ranging from {1, ..., t}, and an corresponding audio signal sequence Ast =
+{a1, · · · , at} of the speaker, listening head generation aims to generate a listener’s
+head vlt+1 of the next time stamp:
+
+                             \Li s tener I tem {t+1 } =\bfG(\SpeakerSeq\AudioSeq\ListenerItem\Attitude(1)
+
+where vl1  is the reference head of the listener, e denotes the attitude of the
+listener. The whole generated listener video Vlt+1 can be denoted as the concate-
+nation of {vl2, · · · , vlt+1}.
+   Listening attitude  definition
+During conversation, after perceiving
+the signals from the speaker, the lis-
+tener usually reacts with an active, re-
+sponsive attitude, including epistemic
+attitudes (e.g., agree, disagree) and               negative                      neutral                        positive
+affective attitudes (e.g., like, dislike).  Fig. 2: During a conversation, different
+In this work, we group the attitudes  attitudes of the listener could show dif-
+into three categories: positive, neg-  ferent pose and expression patterns
+ative and neutral. Positive attitude
+consists of agree, like, interested. Conversely, negative attitude consists of dis-
+agree, dislike, disbelieve, not interested. In general, attitude potentially guides
+the listener’s behavior and consequently affects the conversation. Also, different
+attitude results in different facial expressions and behaviors of the listener [21],
+e.g. a smile appears as the most appropriate signal for like, a combination of
+smile and raise eyebrows could be a possibility for interested, disagree can be6     M. Zhou et al.
+
+
+meant by a head shake, dislike is represented by a frown and tension of the lips,
+etc. A listener example with different attitudes is illustrated in Fig. 2.
+
+   Feature extraction  In this work, we extract the energy feature, temporal
+domain feature, and frequency domain feature of the input audio; and model the
+facial expression and head poses using 3DMM [6] coefficients.
+
+   For the audio, we extract the Mel-frequency cepstral coefficients (MFCC)
+feature with the corresponding MFCC Delta and Delta-Delta feature. Besides,
+the energy, loudness and zero-crossing rate (ZCR) are also embedded into audio
+features si for each audio clip ai. The audio feature extracted from Ast can be
+denoted as Sst = {s1, · · · , st}.
+
+  We leverage the state-of-the-art deep learning-based 3D face reconstruction
+model [14] for the videos to get the 3DMM [6] coefficients. Specially, for each
+image, we can get the reconstruction coefficients {α, β, δ, p, γ} which denote the
+identity, expression, texture [9,44], pose and lighting [47], respectively. Further,
+we distinguished the 3D reconstruction coefficients into two parts: I = (α, δ, γ) to
+represent relatively fixed, identity-dependent features, and m = (β, p) to repre-
+sent relatively dynamic, identity-independent features. The identity-independent
+feature extracted from speaker videos can be denoted as Mst = {ms1, · · · , mst},
+where msi ∈R1×Cv is the expression and pose feature of 3D reconstruction co-
+efficients for the i-th frame vsi , where Cv = |β| + |p|.
+
+   Task definition  To ignore identity-dependent features and learn general
+listener patterns that can be adapted to multiple listener identities, we use only
+the head motion and facial expression feature m for responsive listening head
+generation model training, and then adapt the identity-dependent features I of
+different listener identities for visualization and evaluation. Thus our listening
+head synthesis task can be formulated as:
+
+
+
+                                                \                            lab e l {eq:g m_o r igna l}
+                                                                              (2)
+                              \begi n  {split} \Li stenerFeat{t+1}\Generator(\SpeakerFeats\AudioFeats\ListenerFeat\Attitude\ListenerItem{t+1}\Render(\ListenerFeat{t+1},\FixedMM\ListenerItem\end{split}
+
+
+where mlt+1 is the dynamic feature predicted for listener’s head, and Il denotes
+the identity-dependent features of the given listener. In a real implementation, we
+use T frame of speaker’s audio and video for responsive listening head generation
+model training.
+
+   The 3D face rendering technology Gv has been well studied in many recent
+related works [30,62]. Moreover, the face rendering models are usually identity-
+specific, so one may need to train the rendering model separately for each identity
+for better performance. To highlight the properties of the interactive digital
+human synthesis task, and decouple the critical factor in this task, our proposed
+responsive listening head synthesis model primarily focuses on the motion-related
+and identity-independent 3D facial coefficients prediction task Gm, and use the
+pretrained rendering model [49] for simplified visualization.  Responsive Listening Head Generation: A Benchmark Dataset and Baseline      7
+
+
+
+   single people               left: listener    right: speaker
+
+                                                                             ⋯                             valid …       …                    Speaker
+
+
+ …       …                                                             ⋯                                                                                                                                                                                                                                                                            Listener
+           right: listener     left: speaker          face not clear visible
+
+                  Raw Video Data                                                        ViCo Dataset
+
+Fig. 3: In ViCo, valid clips are selected in accordance with the standards that 1)
+both the speaker and listener behaviors are clearly visible, and 2) listeners are
+responsively engaged to the conversation. The facial regions of listener-speaker
+pairs are further cropped for constructing our ViCo dataset (right)
+
+
+Table 2: Statistics of ViCo dataset. #ID indicates the number of identities. The
+same person/identity can play different roles with multiple attitudes
+
+
+         Attitude  #Videos  #Speaker  #Listener  #ID  #Clips   Duration
+
+         Positive     42       53        62     81    226   49 min 18 s
+        Neutral     35       38        48     63    134   27 min 7 s
+        Negative    11       11        9      18    123   18 min 57 s
+         Total       50       67        76     92    483   95 min 22 s
+
+
+4  Dataset Construction
+
+
+We construct a dataset for responsive listening-head generation by capturing
+conversational video clips from YouTube containing two people’s frontal faces.
+A valid video clip is required to meet the following conditions:
+ – The screen contains only two people, and one of them is speaking while the
+    other is listening carefully.
+
+ – The frontal faces of both people are clearly visible. The facial expression is
+    natural and stable.
+
+ – The listener actively responds to the speaker in a dynamic and real-time
+   manner.
+   The annotators were asked to accurately record the start and end time of
+each valid clip, label the position of the speaker (left or right of the screen) and
+identify the attitude of the listener in the video. Cross-validation was applied
+among at least three annotators for each candidate clip for quality control. For
+each valid clip, we use the MTCNN [63] to detect the face regions in each frame,
+and then crop and resize the detected face regions to 384×384 resolution image
+sequence for model training and evaluation, as shown in Fig. 3.
+   Table 2 shows the statistical information of our annotated responsive listening
+head generation dataset ViCo. The proposed dataset contains rich samples of
+483 video clips. We normalize all videos to 30 FPS, forming more than 0.1 million
+frames in total. Moreover, our dataset has following properties:8     M. Zhou et al.
+
+
+
+       Speaker Encoder            Identity                                             tity                                         ...                   Listener Decoder                                  textutextutextu
+                                                texturelightilightirerere
+                                                       lightingngng                                   Rendering 𝑮𝑣
+                               expreposeposeexpreposepose                               𝑝2𝑙                𝑝3𝑙                    𝑝𝑡+1𝑙                                       Identitytexture
+                                             expressionssionssion                              𝛽2𝑙                𝛽3𝑙        ...  𝛽𝑡+1𝑙               shared           lighting
+
+                        MFCCMFCCMFCCMFCC                                 𝑓𝑎𝑚                Sequential Decoder 𝑮𝑚                         𝑝1𝛽1𝑙𝑙
+                             ZCREnergZCRZCRZCR
+                                          Loudnessy                                    ...                                                         Reference
+                                                     1        2                     𝑡         𝑡+1                                       Listener
+
+Fig. 4: The overall pipeline of our responsive listening head generation base-
+line. The speaker encoder aims to encode the head motion, facial expression
+and audio features. Starting from the fused feature from reference listener im-
+age, the listener decoder receives signals from speaker encoder in temporal or-
+der, and predicts the head motion and facial expression features. These features
+are adapted to reconstruct the 3DMM coefficients with the reference listener’s
+identity-dependent features, and then fed to a neural renderer to generate real-
+istic listening video
+
+
+
+  High quality  All raw videos are of high resolutions (1920×1080), so that
+the subtle differences between different attitudes and changing moods are well
+preserved. And audios are in 44.1 kHz/16 bit such that the speech-related fea-
+tures can be well preserved, too.
+  High diversity  Our dataset contains various scenarios, including news
+interviews, entertainment interviews, TED discussions, variety shows, etc. These
+diverse scenarios provide rich semantic information and various listener patterns
+in different situations. The video clips length ranges from 1 to 71 seconds.
+   Realtime and interactivity  Different from the existing talking head video
+datasets [1,12,33,58,61] which aim to generate head or face in synchronization
+with the audio signals, our dataset focus on the face-to-face response. These re-
+sponses are generated by jointly understanding the speaker’s audio, facial, and
+head motion signals, then adapting to different listener heads. It matters about
+mutual interaction rather than a monologue.
+
+
+5  Responsive Listening Head Generation
+
+Based on ViCo dataset, we propose a responsive listening head generation base-
+line. The overview of our approach is illustrated in Fig. 4.
+
+
+5.1  Model architecture
+
+According to the psychological knowledge, an active listener tends to respond
+based on speaker’s audio [28] and visual signals [10,16,36] comprehensively. And
+at a given moment, the listener receives information from the speaker of that  Responsive Listening Head Generation: A Benchmark Dataset and Baseline      9
+
+
+moment as well as information from history and adopts a certain attitude to
+present actions in response to the speaker. Thus, the goal of our model is to
+estimate the conditioned probability P(Mlt+1|Mst, Sst , ml1, e), where the Mst and
+Sst are time-varying signals that the listener should respond to, and the reference
+listener feature ml1 and attitude e constrain the pattern of the entire generated
+sequence.
+   Inspired by the sequence-to-sequence model [55], a multi-layer sequential de-
+coder module Gm  is applied for modeling the time-sequential information of
+conversation. Unlike talking-head generation [11,58,62,64], which accepts an en-
+tire input of audio and then processes it using a bidirectional LSTM or attention
+layer; in our scenario, the model Gm receives the streaming input of the speaker
+where future information is not available.
+   For the speaker feature encoder, at each time step t, we first extract the
+audio feature st and the speaker’s head and facial expression representation mst,
+then apply non-linear feature transformations following a multi-modal feature
+fusion function fam to get the encoded feature of speaker. The representation of
+reference listener ml1 and attitude e can be embeded as the initial state h1 for the
+sequential motion decoder. At each time step t, taking the speaker’s fused feature
+fam(st, mst) as input, Gm in Eq. 2 is functioned as updating current state ht+1
+and generating the listener motion mlt+1, which contains two feature vectors,
+i.e. βlt+1 for the expression and plt+1 for the head rotation and translation. Our
+responsive listening head generator supports an arbitrary length of speaker input.
+The procedure can be formulated as:
+
+                          \bet a_{t + 1}^l, p_{t+1} ^l =  \mathbf{G}_m(h_t,f_{am}(s_t,m_t^s)).                  (3)
+   For optimization, with the ground truth listener patterns denoted as Mlˆ T =
+[ˆml2, ˆml3, · · · , ˆmlT ], we drop the last prediction mlT +1 due to the lack of supervi-
+sion signals and use L2 distance to optimize the training procedure:
+
+                         \c L _ n}=    \sum _ { t=2} ^ {T} \Vert\beta_t^l\hat{\beta}_t^l\Vert\Vertp_t^l\hat{p}_t^l\Vert(4)
+                              {ge
+
+   Moreover, a motion constraint loss Lmot is applied to guarantee the inter-
+frame continuity across Mlˆ T is similar to the predicted MlT :
+
+                    \c L _ t} = \sum   _{t=2}^{T }  w_1\Vert  \mu(\beta_t^l)\mu(\hat{\beta}_t^l)\Vertw_2\Vert\mu(p_t^l)\mu(\hat{p}_t^l)\Vert(5)
+                     {mo
+
+where µ(·) measures the inter-frame changes of current frame and its adjacent
+previous frame, i.e., µ(βlt) = βlt −βlt−1, w1 and w2 is a weight to balance the
+motion constraint loss and generation loss. The final loss function of our proposed
+listening head motion generation baseline can be formulated as:
+
+                                    \cL _ {tot a l} = \cL_{gen}\cL_{mot}.                         (6)
+
+  By optimizing Ltotal, our model can generate attitude conditioned responsive
+listening head for a given speaker video and audio.10    M. Zhou et al.
+
+
+5.2  Implementation details
+
+To verify that our model can learn a generic listening pattern rather than condi-
+tioning on any particular individual, we divide the ViCo dataset (D) into three
+parts: i) training set Dtrain for learning listener patterns, ii) test set Dtest for
+validating our model on in-domain data, and iii) out-of-domain (OOD) test set
+Dood for evaluating the generalization and transferability. In this case, all identi-
+ties in Dtest have appeared in Dtrain, while identities in the Dood do not overlap
+with those in Dtrain.
+  We extract 45-dimensional acoustic features for audios, including 14-dim
+MFCC, 28-dim MFCC-Delta, energy, ZCR and loudness. There are multiple
+choices to implement Gm, such as standard sequential model like LSTM [22],
+GRU [13], or a Transformer [57] decoder with sliding window [4]. Here we adopt
+LSTM for our baseline, since it has been widely used in many similar applica-
+tions such as motion generation [50], and achieve stable state-of-the-art perfor-
+mance when training on small corpus [39]. Our listening head generation model
+is trained with AdamW [34] optimizer with a learning rate of 1 × 10−3 (decayed
+exponentially by 0.8 every 30 epochs), β1 = 0.9 and β2 = 0.999, for 300 epochs.
+For all experiments, we set hyper-parameter w1 to 0.1 and w2 to 1 × 10−4.
+
+
+5.3  Experimental results
+
+Quantitative results  Since we use a detached renderer rather than an end-
+to-end pipeline, we can divide the assessment into two sides: the performance
+of listener generator Gm and the visual effects of renderer Gv. For the former
+one, we use use L1 distance between the generated features and the ground-
+truth features (FD) to ensure the predicted fine-grained head and expression
+coefficients similar to the ground-truth. And for the latter one, we select the
+Fr´echet Inception Distance (FID) [19], Structural SIMilary (SSIM) [59], Peak
+Signal-to-Noise Ratio (PSNR) and Cumulative Probability of Blur Detection
+(CPBD) [7] to evaluate the visual effects of renderer. The high-level metric on
+Gm can help us analyze the model, and the low-level metrics on Gv provide a
+baseline for the successors.
+   In Table 3, we report the FD of the 3D facial coefficients across different lis-
+tening head generation methods, including: 1) “Random”: generate frames from
+reference image but injecting small perturbations in a normal distribution to
+mimic random head motion. 2) “Simulation”: simulating natural listening be-
+havior by repeating the motion patterns sampled from Dtrain. 3) “Simulation∗”:
+repeating the natural listening motion patterns sampled from Dtrain with the
+corresponding attitude. 4) “Ours”: our proposed responsive listening head gen-
+eration method. The random permutations is the worst and not able to present
+a listener. Our method can reach the best performance which demonstrates the
+superiority of our algorithm over traditional non-parametric listeners. Also, we
+provide the evaluation results of zero-shot 3D face rendering [49] in Table 4, as
+a basic criterion for evaluation of future realistic face rendering research work.  Responsive Listening Head Generation: A Benchmark Dataset and Baseline     11
+
+Table 3: The Feature Distance (×100) of different listening head generation
+methods. Each  cell in the table represent the feature distance of angle /
+expression / translation coefficients respectively. Lower is better
+
+                   Random    Simulation   Simulation∗     Ours
+    Attitude  Motion
+                         Dtest  Dood  Dtest  Dood  Dtest  Dood   Dtest   Dood
+
+               angle   17.92  17.99   9.86  10.48   9.79  11.57   6.79   9.72
+     Positive    exp    44.71  44.86  27.08  27.81  30.00  30.27  15.37  24.89
+                trans   19.74  20.14  16.25  12.06   9.07  13.82   6.48   9.51
+               angle   17.85  17.78  10.94   9.47  14.18   8.94   8.79   6.33
+    Neutral    exp    44.26  44.29  27.37  29.50  26.44  27.56  13.61  23.51
+                trans   19.98  20.17   8.47  12.27  11.53   9.40   6.68   8.95
+               angle   19.53  18.70  17.86   9.66  13.24  18.75  12.45   8.54
+    Negative   exp    45.68  44.62  29.57  28.78  31.62  27.04  16.98  18.99
+                trans   19.69  20.92   8.06  10.69  24.42  11.09   6.35   5.81
+               angle   18.04  18.11  10.81   9.91  11.24  12.58   7.79   8.23
+    Average    exp    44.67  44.60  27.37  28.66  29.20  28.46  15.04  22.83
+                trans   19.80  20.36  13.52  11.76  11.00  11.55   6.52   8.32
+
+
+       Table 4: Quantitative Results of Renderer Gv on Dtest and Dood
+
+
+                  FID↓       SSIM↑      PSNR↑     CPBD↑
+        Attitude
+                    Dtest   Dood   Dtest  Dood   Dtest   Dood   Dtest  Dood
+
+       Positive   29.736  27.865  0.565  0.496  17.075  15.421  0.122  0.121
+       Neutral    36.551  27.366  0.686  0.544  21.220  17.703  0.106  0.113
+       Negative   46.277  28.406  0.610  0.528  16.870  16.709  0.219  0.211
+      Average   30.529  24.962  0.601  0.521  18.149  16.558  0.126  0.142
+
+
+
+
+   Qualitative results  Further, we visualize the results of those generations
+to analyze the differences between different configurations intuitively. Given Dtest
+and Dood, we generate listener videos with a given attitude. We randomly select
+two sequences from each set and then down-sample to six frames to qualitatively
+visualize the generated results and the ground truth video. The results are shown
+in Fig. 5, we can find that our model is generally able to capture listener patterns
+(e.g., eye, mouth, and head motion, etc.), which may differ from the ground-truth
+while still making sense.
+
+   From these two groups, we observe that the “Random” patterns behave very
+confusing and messy. The “Simulation” patterns depend heavily on whether we
+can randomize to a given attitude, and as long as this fails, the result is bad. The
+“Simulation∗” performs a little bit better, while its motion is also limited by the
+size and diversity of dataset, and intuitively, it cannot respond to the speaker
+in a dynamic manner. Our results are more visually plausible than others with
+head motions and expression changes.12    M. Zhou et al.
+
+      Speaker
+  GT
+       Listener
+  GT
+     Random
+         Simulation
+         Simulation*
+
+   Ours
+
+
+Fig. 5: Qualitative comparison of listening head generation methods conditioned
+by the same reference frame (the first column of each group) and the same
+attitude (left: positive listener in Dtest, right: neutral listener in Dood). Our
+method can generate various, vivid and responsive listening motions for the
+given speaker video stream
+
+
+
+  We also provide the comparison results of listening head generation under
+different attitudes in Fig. 6. Obviously, the facial expression and head motions
+under different attitudes are expressive and distinguishable.
+   Ablation Studies We conduct an ablation study on the impact of dif-
+ferent speaker signals for listening head modeling on Dtest. As Tab. 5 shown,
+the listening head driven by audio-only inputs prefers expression modeling but
+performs badly in head motion (angle, trans), while the model with visual-only
+inputs would capture the motion or sightline changes of the speaker during con-
+versation and provide reasonable listening head action response. Removing these
+two modalities and simply mirror the speaker causes the worst listener. And with
+these two joint input signals, our model exhibits the best performance. That is,
+only when we look and hear, can we act as better responsive listeners.
+   Besides, we also report the perfor-
+mance of listener generation by giving  Table 5: The averaged Feature Distance
+wrong audio inputs and correct visual  (×100) of listener generations across all
+inputs in Tab. 5. It shows that Au-  attitudes on Dtest.
+dio Only < Wrong Audio < Visual
+Only for expression FD, while Visual     Method       angle   exp   trans
+Only ≈Wrong Audio < Audio Only                                       Audio only     8.69   17.19   8.49
+for head motion FD (lower is better).      Visual only     8.06   18.85   7.54
+This also reveals that expression mod-     Wrong Audio   8.15   18.02   7.60
+eling depends more on audio inputs      Mirroring       9.99   26.48  11.39
+and head motion modeling  is more     Ours         7.79  15.04  6.52
+corresponding to visual inputs.  Responsive Listening Head Generation: A Benchmark Dataset and Baseline     13
+
+        Speaker
+
+  PositiveListener
+
+  NegativeListener
+
+  NeutralListener
+
+
+Fig. 6: Comparative results of our listening heads generation method conditioned
+by the same reference image and speaker video but different attitudes
+
+
+
+
+
+Fig. 7: Diverse visual patterns can be observed from the generated listening-
+heads. Left: diverse expressions can be generated corresponding to different atti-
+tudes. Right: motion patterns including shaking head, nod, glare, looking askance,
+pressing lip and focusing
+
+
+
+   Diversity of Generations  Fig. 7 illustrates the diversity of visual pat-
+terns learned by our method. The single images on the left side show our model
+can generate different expressions while the six groups of images on the right
+demonstrate the head motions and eye contacts can be modeled by our method.
+  Runtime Complexity  With a given speaker’s streaming video, it takes
+52.5 ms to fit the 3DMM coefficients, and generate the next step listener’s motion
+in 0.0372 ms, then render the motion to RGB images in 29.3 ms. The per-frame
+delay of this process on one Tesla-V100 GPU is 81.84 ms without any optimiza-
+tion strategy such as ONNX or TensorRT. The FPS of generated listening head
+videos can reach 12, and can be further improved to 19 with pipeline parallelism.
+The bottleneck of our proposed baseline method is the efficiency of 3D face re-
+construction (fitting). Some video post-processing methods, such as video frame
+interpolation [25,32,42] can be used for real-time interaction.
+   User study  Since responsive listening head modeling is a user-oriented
+task, it is essential to conduct user studies for evaluation. For Dtest and Dood,
+we had 10 volunteers doing two double-blind tests: 1) Preference Test (PT).
+Given the shuffled tuple of 〈ground-truth listening head, generated listening
+head〉, along with the ground-truth attitude, speaker’s audio and speaker’s
+video, the volunteers were asked to pick the best listening head. 2) Attitude
+Matching Test (AttMatch). Given the randomly shuffled listening heads gen-14    M. Zhou et al.
+
+Table 6: (a) The result (mean / variance) of preference test. “Equal”: the gen-
+erated results and the ground-truth are visually equivalent. “PD Better”: the
+generated results are more in line with human perception. (b) Mean precision
+and precision variance of attitude matching test
+
+            (a) Preference Test                    (b) Attitude Matching Test
+
+   PT            Dtest      Dood          AttMatch     Dtest       Dood
+
+   Equal       31.3 / 17.1  13.9 / 6.2         Positive    66.7 / 15.7  69.0 /  7.1
+  GT Better  56.2 / 14.9  65.3 / 6.1        Negative   63.9 / 16.4  50.0 / 12.8
+  PD Better  12.5 /  9.3  20.8 / 4.6        Neutral    69.4 /  9.2  53.6 /  3.9
+
+
+
+erations conditioned by three different attitudes for each identity, the volunteers
+were asked to identify one attitude for each listening head.
+   For the first user-study, each volunteer was asked to check 30 samples in a
+preference test. As shown in Tab. 6a, fpr Dtest and Dood, volunteers voted that
+nearly 43.8% and 44.7% of the generated heads can get equal or even better
+rating than the ground-truth heads respectively, which verified that our model
+could generate responsive listeners consistent with subjective human perceptions,
+and even can be reached confused as real ones.
+   Our second user-study results are shown in Tab. 6b. Each volunteer was given
+90 generated listening clips under three different attitudes. For each attitude,
+we calculate the mean precision and precision variance across all volunteers for
+analysis. The results show that both in Dtest and Dood, our model is capable
+of generating listening head yielding to the required attitude. The precision for
+negative and neutral attitude is slightly decreased in Dood, which might be caused
+by the unbalanced attitude distributions.
+
+
+6  Conclusion
+
+In this paper, we define the responsive listening head generation task. It aims
+to generate a responsive video clip for a listener with the understanding of the
+speaker’s facial signals and voices. Further, the high-quality responsive listener
+dataset (ViCo) is contributed for addressing this problem. The responsive lis-
+tener generation baseline can synthesis active listeners, which are more consistent
+with human perception. We expect that ViCo could benefit the face-to-face com-
+munication modeling in computer vision area and facilitate the applications in
+more scenarios, such as intelligence assistance, virtual human, etc.
+Ethical Impact  The ViCo dataset will be released only for research pur-
+poses under restricted licenses. The responsive listening patterns are identity-
+independent, which reduces the abuse of facial data. The only potential social
+harm is “fake content”. However, different from talking head synthesis, respon-
+sive listening can hardly harm information fidelity.
+Acknowledgement This work was supported by the National Key R&D Pro-
+gram of China under Grant No. 2020AAA0108600.  Responsive Listening Head Generation: A Benchmark Dataset and Baseline     15
+
+References
+
+
+ 1. Afouras, T., Chung, J.S., Zisserman, A.: Lrs3-ted: a large-scale dataset for visual
+    speech recognition. arXiv preprint arXiv:1809.00496 (2018)
+ 2. Bansal, A., Ma, S., Ramanan, D., Sheikh, Y.: Recycle-gan: Unsupervised video re-
+    targeting. In: Proceedings of the European conference on computer vision (ECCV).
+    pp. 119–135 (2018)
+ 3. Barker, L.L.: Listening behavior. (1971)
+ 4. Beltagy, I., Peters, M.E., Cohan, A.: Longformer: The long-document transformer.
+    arXiv preprint arXiv:2004.05150 (2020)
+ 5. Berger,  C.R.:  Interpersonal communication:  Theoretical  perspectives,  future
+    prospects. Journal of communication (2005)
+ 6. Blanz, V., Vetter, T.: A morphable model for the synthesis of 3d faces. In: Pro-
+    ceedings of the 26th annual conference on Computer graphics and interactive tech-
+    niques. pp. 187–194 (1999)
+ 7. Bohr, P., Gargote, R., Vhorkate, R., Yawle, R., Bairagi, V.: A no reference image
+    blur detection using cumulative probability blur detection (cpbd) metric. Interna-
+    tional Journal of Science and Modern Engineering 1(5) (2013)
+ 8. Buschmeier, H., Malisz, Z., Skubisz, J., Wlodarczak, M., Wachsmuth, I., Kopp, S.,
+    Wagner, P.: Alico: A multimodal corpus for the study of active listening. In: LREC
+    2014, Ninth International Conference on Language Resources and Evaluation, 26-
+    31 May, Reykjavik, Iceland. pp. 3638–3643 (2014)
+ 9. Cao, C., Weng, Y., Zhou, S., Tong, Y., Zhou, K.: Facewarehouse: A 3d facial
+    expression database for visual computing. IEEE Transactions on Visualization and
+   Computer Graphics 20(3), 413–425 (2013)
+10. Cassel, N.N.W.W.: Elements of face-to-face conversation for embodied conversa-
+    tional agents, embodied conversational agents (2000)
+11. Chung,  J.S., Jamaludin,  A., Zisserman,  A.: You  said that? arXiv  preprint
+    arXiv:1705.02966 (2017)
+12. Chung, J.S., Nagrani, A., Zisserman, A.: Voxceleb2: Deep speaker recognition.
+    arXiv preprint arXiv:1806.05622 (2018)
+13. Chung, J., Gulcehre, C., Cho, K., Bengio, Y.: Empirical evaluation of gated recur-
+    rent neural networks on sequence modeling. arXiv preprint arXiv:1412.3555 (2014)
+14. Deng, Y., Yang, J., Xu, S., Chen, D., Jia, Y., Tong, X.: Accurate 3d face recon-
+    struction with weakly-supervised learning: From single image to image set. In:
+   IEEE Computer Vision and Pattern Recognition Workshops (2019)
+15. Fassaert, T., van Dulmen, S., Schellevis, F., Bensing, J.: Active listening in medical
+    consultations: Development of the active listening observation scale (alos-global).
+    Patient education and counseling 68(3), 258–264 (2007)
+16. Gillies, M., Pan, X., Slater, M., Shawe-Taylor, J.: Responsive listening behavior.
+   Computer animation and virtual worlds 19(5), 579–589 (2008)
+17. Ginosar, S., Bar, A., Kohavi, G., Chan, C., Owens, A., Malik, J.: Learning individ-
+    ual styles of conversational gesture. In: Proceedings of the IEEE/CVF Conference
+   on Computer Vision and Pattern Recognition. pp. 3497–3506 (2019)
+18. Hadar, U., Steiner, T.J., Rose, F.C.: Head movement during listening turns in
+    conversation. Journal of Nonverbal Behavior 9(4), 214–228 (1985)
+19. Heusel, M., Ramsauer, H., Unterthiner, T., Nessler, B., Hochreiter, S.: Gans trained
+   by a two time-scale update rule converge to a local nash equilibrium. Advances in
+    neural information processing systems 30 (2017)16    M. Zhou et al.
+
+
+20. Heylen, D., Bevacqua, E., Pelachaud, C., Poggi, I., Gratch, J., Schr¨oder, M.: Gen-
+    erating listening behaviour. In: Emotion-oriented systems, pp. 321–347. Springer
+    (2011)
+21. Heylen, D., Bevacqua, E., Tellier, M., Pelachaud, C.: Searching for prototypical
+     facial feedback signals. In: International Workshop on Intelligent Virtual Agents.
+    pp. 147–153. Springer (2007)
+22. Hochreiter, S., Schmidhuber, J.: Long short-term memory. Neural computation
+    9(8), 1735–1780 (1997)
+23. H¨omke, P., Holler, J., Levinson, S.C.: Eye blinks are perceived as communicative
+    signals in human face-to-face interaction. PloS one 13(12), e0208030 (2018)
+24. Honeycutt, J.M., Ford, S.G.: Mental imagery and intrapersonal communication: A
+    review of research on imagined interactions (iis) and current developments. Annals
+     of the International Communication Association 25(1), 315–345 (2001)
+25. Huang, Z., Zhang, T., Heng, W., Shi, B., Zhou, S.: Real-time intermediate flow es-
+    timation for video frame interpolation. In: Proceedings of the European Conference
+   on Computer Vision (ECCV) (2022)
+26. Jalongo, M.R.: Promoting active listening in the classroom. Childhood Education
+    72(1), 13–18 (1995)
+27. Joo, H., Simon, T., Cikara, M., Sheikh, Y.: Towards social artificial intelligence:
+    Nonverbal social signal prediction in a triadic interaction. In: Proceedings of the
+   IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 10873–
+    10883 (2019)
+28. Kendon, A.: Movement coordination in social interaction: Some examples de-
+    scribed. Acta psychologica 32, 101–125 (1970)
+29. Kendon, A., Harris, R.M., Key, M.R.: Organization of behavior in face-to-face
+    interaction. Walter de Gruyter (2011)
+30. Kim, H., Garrido, P., Tewari, A., Xu, W., Thies, J., Niessner, M., P´erez, P.,
+    Richardt, C., Zollh¨ofer, M., Theobalt, C.: Deep video portraits. ACM Transac-
+    tions on Graphics (TOG) 37(4), 1–14 (2018)
+31. Kington, R.S., Arnesen, S., Chou, W.Y.S., Curry, S.J., Lazer, D., Villarruel, A.M.:
+    Identifying credible sources of health information in social media: Principles and
+    attributes. NAM perspectives 2021 (2021)
+32. Kong, L., Jiang, B., Luo, D., Chu, W., Huang, X., Tai, Y., Wang, C., Yang, J.:
+     Ifrnet: Intermediate feature refine network for efficient frame interpolation. In: Pro-
+    ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-
+     tion. pp. 1969–1978 (2022)
+33. Li, L., Wang, S., Zhang, Z., Ding, Y., Zheng, Y., Yu, X., Fan, C.: Write-a-speaker:
+    Text-based emotional and rhythmic talking-head generation. In: Proceedings of
+    the AAAI Conference on Artificial Intelligence. vol. 35, pp. 1911–1920 (2021)
+34. Loshchilov, I., Hutter, F.: Decoupled weight decay regularization. arXiv preprint
+    arXiv:1711.05101 (2017)
+35. Luhmann, N.: What  is communication? Communication theory 2(3), 251–259
+    (1992)
+36. Maatman, R., Gratch, J., Marsella, S.: Natural behavior of a listening agent. In:
+    International workshop on intelligent virtual agents. pp. 25–36. Springer (2005)
+37. McKeown, G., Valstar, M., Cowie, R., Pantic, M., Schroder, M.: The semaine
+    database: Annotated multimodal records of emotionally colored conversations be-
+    tween a person and a limited agent. IEEE transactions on affective computing
+    3(1), 5–17 (2011)  Responsive Listening Head Generation: A Benchmark Dataset and Baseline     17
+
+
+38. McNaughton, D., Hamlin, D., McCarthy,  J., Head-Reeves, D., Schreiner, M.:
+    Learning to listen: Teaching an active listening strategy to preservice education
+    professionals. Topics in Early Childhood Special Education 27(4), 223–231 (2008)
+39. Melis,  G.,   Koˇcisk`y,  T.,  Blunsom,   P.:  Mogrifier  lstm.  arXiv  preprint
+    arXiv:1909.01792 (2019)
+40. Mineyama, S., Tsutsumi, A., Takao, S., Nishiuchi, K., Kawakami, N.: Supervisors’
+    attitudes and skills for active listening with regard to working conditions and
+    psychological stress reactions among subordinate workers. Journal of occupational
+    health 49(2), 81–87 (2007)
+41. Oertel, C., Jonell, P., Kontogiorgos, D., Mora, K.F., Odobez, J.M., Gustafson, J.:
+   Towards an engagement-aware attentive artificial listener for multi-party interac-
+     tions. Frontiers in Robotics and AI p. 189 (2021)
+42. Park, J., Lee, C., Kim, C.S.: Asymmetric bilateral motion estimation for video
+    frame interpolation. In: Proceedings of the IEEE/CVF International Conference
+   on Computer Vision. pp. 14539–14548 (2021)
+43. Parker, J., Coiera, E.: Improving clinical communication: a view from psychology.
+    Journal of the American Medical Informatics Association 7(5), 453–461 (2000)
+44. Paysan, P., Knothe, R., Amberg, B., Romdhani, S., Vetter, T.: A 3d face model
+     for pose and illumination invariant face recognition. In: 2009 sixth IEEE interna-
+    tional conference on advanced video and signal based surveillance. pp. 296–301.
+    Ieee (2009)
+45. Petridis, S., Martinez, B., Pantic, M.: The mahnob laughter database. Image and
+    Vision Computing 31(2), 186–202 (2013)
+46. Prajwal, K., Mukhopadhyay, R., Namboodiri, V.P., Jawahar, C.: A lip sync expert
+     is all you need for speech to lip generation in the wild. In: Proceedings of the 28th
+  ACM International Conference on Multimedia. pp. 484–492 (2020)
+47. Ramamoorthi, R., Hanrahan, P.: An efficient representation for irradiance environ-
+   ment maps. In: Proceedings of the 28th annual conference on Computer graphics
+   and interactive techniques. pp. 497–500 (2001)
+48. Ramamoorthi, R., Hanrahan, P.: A signal-processing framework for inverse ren-
+    dering. In: Proceedings of the 28th annual conference on Computer graphics and
+    interactive techniques. pp. 117–128 (2001)
+49. Ren, Y., Li, G., Chen, Y., Li, T.H., Liu, S.: Pirenderer: Controllable portrait im-
+    age generation via semantic neural rendering. In: Proceedings of the IEEE/CVF
+    International Conference on Computer Vision. pp. 13759–13768 (2021)
+50. Richard, A., Zollh¨ofer, M., Wen, Y., De la Torre, F., Sheikh, Y.: Meshtalk: 3d
+    face animation from speech using cross-modality disentanglement. In: Proceedings
+     of the IEEE/CVF International Conference on Computer Vision. pp. 1173–1182
+    (2021)
+51. Robertson, K.: Active listening: more than just paying attention. Australian family
+    physician 34(12) (2005)
+52. Rogers, C.R., Farson, R.E.: Active listening (1957)
+53. Rost, M., Wilson, J.: Active listening. Routledge (2013)
+54. Stacks, D.W., Salwen, M.B.: An integrated approach to communication theory and
+    research. Routledge (2014)
+55. Sutskever, I., Vinyals, O., Le, Q.V.: Sequence to sequence learning with neural
+    networks. In: Advances in neural information processing systems. pp. 3104–3112
+    (2014)
+56. Tomasello, M.: Origins of human communication. MIT press (2010)18    M. Zhou et al.
+
+
+57. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser,
+     L., Polosukhin, I.: Attention is all you need. Advances in neural information pro-
+    cessing systems 30 (2017)
+58. Wang, K., Wu, Q., Song, L., Yang, Z., Wu, W., Qian, C., He, R., Qiao, Y., Loy,
+    C.C.: Mead: A large-scale audio-visual dataset for emotional talking-face genera-
+     tion. In: European Conference on Computer Vision. pp. 700–717. Springer (2020)
+59. Wang, Z., Bovik, A.C., Sheikh, H.R., Simoncelli, E.P.: Image quality assessment:
+    from error visibility to structural similarity. IEEE transactions on image processing
+    13(4), 600–612 (2004)
+60. Wu, W., Zhang, Y., Li, C., Qian, C., Loy, C.C.: Reenactgan: Learning to reen-
+    act faces via boundary transfer. In: Proceedings of the European conference on
+    computer vision (ECCV). pp. 603–619 (2018)
+61. Zhang, C., Ni, S., Fan, Z., Li, H., Zeng, M., Budagavi, M., Guo, X.: 3d talking
+    face with personalized pose dynamics. IEEE Transactions on Visualization and
+   Computer Graphics (2021)
+62. Zhang, C., Zhao, Y., Huang, Y., Zeng, M., Ni, S., Budagavi, M., Guo, X.: Facial:
+    Synthesizing dynamic talking face with implicit attribute learning. In: Proceedings
+     of the IEEE/CVF International Conference on Computer Vision. pp. 3867–3876
+    (2021)
+63. Zhang, K., Zhang, Z., Li, Z., Qiao, Y.: Joint face detection and alignment using
+    multitask cascaded convolutional networks. IEEE Signal Processing Letters 23(10),
+    1499–1503 (2016)
+64. Zhu, H., Luo, M.D., Wang, R., Zheng, A.H., He, R.: Deep audio-visual learning:
+  A survey. International Journal of Automation and Computing pp. 1–26 (2021)  Responsive Listening Head Generation: A Benchmark Dataset and Baseline     19
+
+A  Dataset Details
+
+A.1  Clip Length / Duration Distribution
+
+We counted the distribution of clip lengths and the corresponding duration per-
+centage in ViCo, and the results are shown in Fig. A1.
+             200                                     0.23                                                                                                                                                      0.25
+                                                                                                    #Clips
+                                               189                                                                                                                        0.22
+                                                                                          Duration Percentage
+
+             160                                                                                                                                                                                                    0.20
+
+
+                                                                               0.16
+
+
+             120                                                                                                                                                                                                    0.15
+                             #Clips                                                                                          0.12                     0.12                                                                                                                                                                                                                                                                                Percentage
+              80           86                                         84                                                                       0.09                                         0.10    Duration
+
+
+              40            0.04                                                                                                                                                                                  0.05
+                                                                                           42
+                                                                                                                 33                                         29
+                                                                                                                                      20
+
+               0                                                                                                                                                                                                    0.00
+                                    [1, 5)                        [5, 10)                     [10, 15)                    [15, 20)                    [20, 25)                    [25, 30)                    [30, 75)
+                                                                                                          Clip Lengths (s)
+
+Fig. A1: The clip length distribution and the corresponding duration percentage
+in ViCo dataset.
+
+
+A.2  Identities
+
+The ViCo dataset contains 92 identities. In the Fig. A2, we picked a random
+image for each identity. It can be found that there are different genders and races;
+thus, the potential ethics problems can be reduced, i.e., the dataset represent
+the diversity of the community.
+
+
+
+
+
+  Fig. A2: Ninty-two identities with different genders and races in our dataset.20    M. Zhou et al.
+
+
+   Some identities in our dataset may act as different roles (speaker/listener)
+and present different listener patterns under different attitudes. So, we statis-
+tic the identity distribution in Fig. A3. This demonstrates the diversity of our
+dataset.
+    2 6    1 5 25   4 11        1    1 30 2 3 3 17 1 3 3 1 2 1    4    1    1 2 8         3 3           1 2 1    3 2 2 1 4 9 7 15   2    1      7    1         1 1 1           1    1      2              1 1 8 3 4
+
+                 1         1                       1                5              1                                                     5                          1             60 46        1      1Speaker 3      1    7    1 5 4 1         2 14 6 4 1 9 1    1 8 1      1    2    1    2      1      5                          2 3 1   20             1                       2           1         3 3         3    1 9 1 2    1
+
+    14 1 1    8 10 2 4   11 4 1    1    5 3 2 8 9 1 3 2      5    1 3    6 1 3 1 2 6 3    3 1 1 5 2 2      1 5 5 2    7 15 4 9 2    1    1 7              3    1    1      1    1    1 3 3              1 1 4 6 4 1 1
+
+                   1    1                                 6                                                                        5                       1    2                46 60      1Listener 2 2 1      1 4    4 5 1      2 3 1 4 6 3 1   10 3           1      2 1    1 2 3    1 4 2 2    1 4         2 2 2 5   20 3 1                1                   2                1    1 1    1 1 1    1    1 5 6
+     00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43Person44 45 46 47Id48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91
+
+Fig. A3: The identity distribution in our dataset. If an identity in a certain role
+(speaker/listener) shows a certain attitude (positive, negative and neutral), then
+the corresponding cell is colored, and the number of clips is also attached.
+
+
+B  IRB Approval
+
+The YouTube community has a strict censorship mechanism to avoid violent
+or dangerous content [31]. And as shown in the copyright1, research purpose
+is considered fair use, which is allowed the reuse of copyright-protected mate-
+rial without getting permission from the copyright owner. This guarantees our
+dataset is congruence with the ethics guidelines.
+
+
+C  Pipeline Details
+
+C.1 3DMM Coefficients
+
+We extract the 3DMM coefficients following [14,49], with the commonly used
+toolkit2 and the guides of PIRender3, we can obtain a parametric representation
+of the face: {α, β, δ, p, γ} which denote the identity, expression, texture, pose and
+lighting, respectively. Here, α ∈R80, β ∈R64, δ ∈R80, and γ ∈R27 for RGB
+channels in three-bands Spherical Harmonics [47,48] representations, p ∈R6 to
+represent rotations with SO(3)∈R3 and translations in R3.
+   Therefore, the relative fixed, identity-dependent features I = (α, δ, γ) is in
+R187, and the relative dynamic, identity-independent features m = (β, p) is in
+R70. Additionally, to better model the head movements and make it compatible
+with PIRender [49], we use a new “crop” parameter of R3 in practice. This guides
+where we will place and size the parametric 3D face in the original image.
+
+
+
+C.2  Model Complexity
+
+Our proposed model is lightweight (248K params) and efficient (941K flops for
+30 frames input) with the 3DMM coefficients.
+
+ 1 https://www.youtube.com/howyoutubeworks/policies/copyright/#fair-use
+ 2 https://github.com/microsoft/Deep3DFaceReconstruction
+ 3 https://github.com/RenYurui/PIRender  Responsive Listening Head Generation: A Benchmark Dataset and Baseline     21
+
+                                                Speaker
+              GT
+
+                                                       Listener
+              GT
+
+                                         Visual
+       +
+                                  Audio
+
+                            Only
+                                  Audio
+
+                            Only
+                                         Visual
+
+
+                           (a)                            (b)
+
+Fig. A4: Qualitative comparisons of listening head generation with different
+speaker signals (shown in rows). The attitude is positive for all listening heads
+
+
+D  Additional Experimental Results
+
+
+Qualitative Results with Different Modality Inputs We conduct an ab-
+lation study on the impact of different speaker signals for listening head model-
+ing. The qualitative results are shown in Fig. A4. We sample three frames from
+Dtest (Fig. A4a) and Dood (Fig. A4b) to make a simplified but clear visualization.
+From Fig. A4a, show that models with only a single input have less head motion
+and expression variations, and furthermore, the audio only model is able to ex-
+press some expressions (columns 1, 2) as full input model, while the video only
+model performs even worse in expression modeling, which may indicate that the
+speaker’s audio signals contributes more on listener’s expression. From Fig. A4b,
+we can find that the listener is more likely to lose focus in the absence of video
+input (columns 2, 3), which may indicate that the speaker’s visual signals can
+guide the listener where to focus.
+Table A1: The Feature Distance (×100) of generations with different modality
+inputs and architectures across all attitudes (Averaged) on Dtest.
+
+                Method               angle   exp   trans
+                 Audio only              8.69   17.19   8.49
+                    Visual only             8.06   18.85   7.54
+                    Non-sequential Model   8.40   18.50   7.06
+                 Ours                 7.79  15.04  6.5222    M. Zhou et al.
+
+
+Comparisons with Non-sequential Model  Furthermore, we also experi-
+mented generate the listener frames in a “purely parallel (non-sequential) man-
+ner” rather than our “auto-regressive decoder manner”, by removing the tem-
+poral connections and converting the LSTM cells to fully-connected layers with
+similar #params. The results are shown in Tab. A1 which worse than our model,
+since the “non-sequential model” results in noise and unnatural head motion
+caused by the lack of temporal constraint, as shown in  Fig. A5.
+             3.5                                               ground-truth
+             3.0                              our model
+                                               non-sequential model
+             2.5
+
+             2.0
+
+             1.5                           magnitude
+             1.0
+
+             0.5
+
+             0.0
+                0       50      100      150      200      250      300
+                                               frame
+
+Fig. A5: The magnitude of variation for feature angle and trans between frame
+t and frame t + 1 with L1 distance
+
+
+E  Applications and Limitations
+
+Applications  Active listening faces ineffective communication and plays an
+important role in human-to-human interaction. People are encouraged to learn
+to actively listen to others in many scenarios, such as doctor - patient, teacher
+- student, salesperson - customer, etc. Our proposed responsive listening head
+generation task fills a gap in modeling face-to-face communication in the com-
+puter vision area. It can be applied to many scenarios, such as human-computer
+interaction, intelligence assistance, virtual human, etc. It would contribute to
+the mutual interaction between the virtual human and the real human. It can
+also be adopted to virtual audience modeling or providing guidance about how
+to act as an active listener.
+Limitations  One potential limitation of our constructed dataset is that the
+attitude is assumed to be consistent across the clips, since we cut and annotate
+short clips from the candidate video. However, as shown in the qualitative re-
+sults, the generated head sequences can vary from one common head respecting
+different attitudes. We may deduce that our model is feasible to the attitude-
+transferable conversations.

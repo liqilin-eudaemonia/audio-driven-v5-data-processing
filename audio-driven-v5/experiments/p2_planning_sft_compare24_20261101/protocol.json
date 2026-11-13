@@ -1,0 +1,48 @@
+{
+  "sample_count": 24,
+  "train": 20,
+  "dev": 4,
+  "model": "/public/2_CKPT/3_PreTRAINED/Qwen2.5-Omni-3B",
+  "config": "/private/liqi_workspace/project_code/audio-driven-v5/configs/p2_planning_sft_3b_32gpu.json",
+  "config_sha256": "18cf021091d381031dd42f84e1ceeb6d56b246e7d585ff8529a9eb3c33bf5e0c",
+  "generator_sha256": "9b0f1d44f7c3e255fb2643c150f91f11b90d64f10d899f4a89bac15fa1adf580",
+  "data_code_sha256": "056e7a319c87be5e31e28da564657913a3edc0414c242bedfd82866bc170b6c8",
+  "models": {
+    "base": null,
+    "epoch1": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_3b_32gpu_20261101/final_adapter",
+    "epoch2": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_3b_32gpu_epoch2_20261101/final_adapter"
+  },
+  "adapter_sha256": {
+    "epoch1": "44ff154682545558290cd17b198e286418c8d8318f900dae3c637a19643a7090",
+    "epoch2": "04021a8b9e46b021abbb9cdae97bff2a7b813a202e2ab384512a1460ef760ded"
+  },
+  "decode": {
+    "do_sample": false,
+    "max_new_tokens": 512,
+    "batch_size": 24
+  },
+  "device": "172.29.189.119 GPU7",
+  "parallel_jobs": 3,
+  "memory_limit_per_job_gib": 40,
+  "input_scope": [
+    "speaker_audio",
+    "final_crop_listener_reference_first_frame",
+    "duration",
+    "system_user_instructions"
+  ],
+  "target_in_prompt": false,
+  "old_prompt_baseline_used_for_numeric_comparison": false,
+  "silence_ablation": {
+    "adapter": "epoch2",
+    "batch_size": 24,
+    "max_new_tokens": 512,
+    "do_sample": false,
+    "replacement": "np.zeros_like(source_audio), preserving duration",
+    "generator_sha256": "bb8c44fc6848eb18ae326499da4e927b7fab1322046e9b1991e843cbbb231a73",
+    "output_sha256": "28c00ad80569cb343a884024ca48ea0561949d584d985f79a61d08b1b8d3f36b"
+  },
+  "verified_sample_membership": {
+    "seen_train": 20,
+    "held_out_dev": 4
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "version": "p2-listen-event-v2-visual6-audio1",
+  "reuse_root": "../audio-driven-v4",
+  "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_listen_av_event_validation_20261026/runtime",
+  "extractor": {
+    "hidden_layers": [
+      8,
+      18,
+      28,
+      35
+    ],
+    "layer_fusion": "attention",
+    "fusion_width": 512,
+    "fusion_depth": 2,
+    "fusion_heads": 8,
+    "vision_fps": 8,
+    "audio_hz": 8,
+    "vision_max_pixels": 50176,
+    "feature_video_weight": 1,
+    "feature_audio_weight": 1,
+    "av_weight": 1
+  },
+  "data": {
+    "fps": 25,
+    "size": 512,
+    "max_frames": 305,
+    "min_seconds": 2
+  },
+  "events": {
+    "types": [
+      "head_nod",
+      "head_shake",
+      "smile",
+      "laugh",
+      "frown",
+      "surprise",
+      "listener_vocalization"
+    ],
+    "weight": 0.05,
+    "head_width": 128,
+    "pos_weight_cap": 10,
+    "schema": "listen-events-v2-visual6-audio1",
+    "K_train": [
+      "head_nod",
+      "head_shake",
+      "smile",
+      "laugh",
+      "frown",
+      "surprise",
+      "listener_vocalization"
+    ],
+    "mapping_version": "listen-candidate-training-v2",
+    "admission_policy": "event-interval-weak-background-v1"
+  },
+  "training": {
+    "global_batch": 8,
+    "steps": 1000,
+    "connector_lr": 3e-05,
+    "event_lr": 0.0001,
+    "warmup_steps": 50,
+    "save_every": 100,
+    "clip_norm": 1,
+    "weight_decay": 0,
+    "feature_loss_enabled": false
+  },
+  "generation": {
+    "steps": 30,
+    "video_cfg": 3,
+    "audio_cfg": 7,
+    "seeds": [
+      137,
+      251
+    ],
+    "u_in_cfg": "both_branches"
+  }
+}

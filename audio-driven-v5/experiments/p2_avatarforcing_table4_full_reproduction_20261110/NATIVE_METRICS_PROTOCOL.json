@@ -1,0 +1,28 @@
+{
+  "schema": "af-native-metrics-reconstruction-v1",
+  "implementation_sha256": "9d9cc7ff477bb1259ae1ee2278e0df2919b2add9dad88fb559d2ad6c4e8267e0",
+  "shared_kernels_sha256": "cea19d0bd64f87000afa97de065a1bd9dd00e39a833b2547a5ec19504856d416",
+  "primary": "retain earlier AF reconstruction statistics for comparability, not an official scoring entry",
+  "metrics": {
+    "FD": "standard Frechet; per-clip equal mean",
+    "rPCC": "absolute difference of global flattened speaker/GT and speaker/pred correlations",
+    "SID": "K15exp/K9pose; testGT-only fitted centers; entropy bits on pooled prediction histogram",
+    "Var": "pooled temporal variance per coefficient, mean across coefficients"
+  },
+  "predeclared_diagnostics": [
+    "global FD",
+    "paper unsquared mean FD term",
+    "equal-clip entropy with the same diagnostic quantizer",
+    "equal-clip temporal per-feature Var",
+    "coefficientwise and flattened rPCC per clip",
+    "global flattened Var"
+  ],
+  "known_gaps": [
+    "AF did not publish aggregation settings or fitted K-means centers",
+    "L2L cited metric fits clusters to training motion; testGT quantizer is an explicitly unverified proxy",
+    "AF D.5 states feature-mean temporal Var; clip/global pooling is not specified",
+    "No diagnostic is selected based on closeness to target Table4 cells"
+  ],
+  "alignment_claim": false,
+  "frozen_before_full_native_scoring": true
+}

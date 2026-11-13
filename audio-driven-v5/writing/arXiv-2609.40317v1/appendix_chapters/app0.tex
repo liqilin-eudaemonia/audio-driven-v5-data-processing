@@ -1,0 +1,135 @@
+\section{Dataset Construction and Annotation Details}  \label{app:data_curation}
+
+\subsection{Raw Data Sources}  \label{app:raw_sources}
+
+Our dataset is constructed from two dyadic conversational video resources, RealTalk \cite{geng2023affective} and Seamless Interaction \cite{agrawal2025seamless}. Both datasets provide high-quality two-person conversational videos, while Seamless Interaction offers a substantially larger collection of dyadic audiovisual recordings with high-resolution videos and cleaner audios. Since neither dataset is originally organized around listening-head generation with temporally localized listener reaction annotations, we further process the raw videos into aligned speaker-audio/listener-video pairs and annotate listener reactions at the event level.
+% \yumin{do we have ID information? can we include the number of identities if available?}
+
+\begin{table}[!htbp]
+    \centering
+    \fontsize{8.5pt}{7pt}\selectfont
+    \setcellgapes{1.5pt}
+    \makegapedcells
+    \setlength{\tabcolsep}{3pt} 
+    \caption{Summary of the raw data sources and the final curated listening-head dataset.}
+    \label{tab:app_source_summary}
+    \begin{tabular}{cccc}
+        \Xhline{1.2pt}
+        Source & Raw scale & Resolution & Role in our dataset \\
+        \hline
+        RealTalk & 694 videos & 1080P & Dyadic conversational footage for speaker--listener pairing \\
+        Seamless Interaction & 65k+ videos & 4K & Large-scale dyadic audiovisual data for diverse interactions \\
+        \hline
+        Curated dataset & 107,149 pairs & 512$\times$512 crops & 147 hours with 64,557 reaction instances \\
+        \Xhline{1.2pt}
+    \end{tabular}
+\end{table}
+
+
+
+
+
+
+\subsection{Video Filtering and Face-Crop Quality Control}  \label{app:video_filtering}
+
+The raw videos contain several types of content that are unsuitable for listening head generation, including abrupt scene transitions, blackout frames, irrelevant scenes, severe occlusion, unstable viewpoints, and cases where more than two people appear in the visible region. To remove these samples efficiently, we uniformly sample frames from each video at 2.5-second intervals and perform a thumbnail-based inspection. Videos with frequent scene changes, missing faces, severe visual artifacts, or excessive participant overlap are discarded. We then conduct a second verification pass on the retained videos to further remove visually unstable or semantically irrelevant clips.
+
+For each retained dyadic video, we separately crop the two participants into portrait-centered videos. We use Face-Alignment \cite{bulat2017far} to detect the facial region in the first frame where a valid face is observed, enlarge the detected bounding box by a scale factor of 1.5, and apply the resulting crop to the full video. The enlargement preserves contextual head motion and avoids overly tight crops that would remove meaningful listener reactions. After cropping, we re-run face detection and landmark localization on the cropped videos to identify low-quality samples. A cropped video is discarded if it contains missing face detections, partial faces, abnormal facial aspect ratios, unstable face proportions, or strong non-frontal views that prevent reliable motion extraction and reaction annotation.
+
+
+
+
+
+
+\subsection{Audio Processing and Speaker--Listener Pairing}  \label{app:audio_pairing}
+
+For RealTalk, the raw audio contain mixed speech from both participants. We first apply the Asteroid toolkit \cite{pariente2020asteroid} for source separation and then perform audio denoising to improve the quality of each separated stream. The separated streams are manually checked to remove severe separation failures. We then use PyAnnote \cite{Plaquet23pyannote1,Bredin23pyannote2} to estimate speech-activity boundaries for each participant. These boundaries define the time intervals in which one participant is treated as the active speaker and the other participant is treated as the listener.
+
+For Seamless Interaction, the audio streams are generally cleaner and often already separated, with small portion of them including noises. We use the provided audio and diarization information when reliable, and apply PyAnnote-based timestamp correction when the provided boundaries are inaccurate. After obtaining participant-level speech-activity timelines, we decompose each dyadic conversation into a sequence of speaker-dominant intervals. For each interval, we pair the active speaker's audio with the temporally synchronized cropped video of the other participant (listener). This produces paired samples of the form $(a^{\text{speaker}}, V^{\text{listener}})$, where $a^{\text{speaker}}$ denotes the speaker audio and $V^{\text{listener}}$ denotes the listener video.
+
+\subsection{Clip-Level Filtering}
+\label{app:clip_filtering}
+
+After video-audio pairing, we remove clips with invalid speaker audio, extremely short effective speech duration, missing listener frames, or unreliable face crops. We also discard segments where the listener face is not visibly clear for a substantial part of the clip. The remaining samples are temporally aligned at 25 FPS for video and 16 kHz for audio. This filtering step ensures that each training sample contains a valid speaker signal and a stable listener portrait sequence, which are both required for audio-driven listening head generation.
+
+% \ym{
+\subsection{Data License, Privacy, and Release Policy}
+We use Seamless Interaction under its CC-BY-NC 4.0 license and RealTalk under the terms of its public dataset release. Both datasets contain real human conversational videos and may include identifiable faces, voices, and conversational content. We do not collect new recordings or directly recruit participants, and we rely on the consent and release procedures of the original dataset creators. To minimize privacy and copyright risks, we only release the annotation pipeline as well as the processed dataset, without redistributing raw videos, audio, image frames, cropped faces, transcripts, or any media segments. We also verified at the time of submission that the datasets remain publicly available and are not listed as deprecated by NeurIPS.
+% }
+
+
+
+\section{Reaction Detector Details}
+\label{app:reaction_detector}
+
+\subsection{Frame-Wise Reaction Representation}
+\label{app:reaction_representation}
+
+For each cropped listener video with $T$ frames, the reaction detector outputs a dense frame-wise score map $\mathbf{r}\in[0,1]^{T\times K}$, where $K=6$ corresponds to \textit{nodding}, \textit{head shaking}, \textit{smiling}, \textit{laughing}, \textit{frowning}, and \textit{surprised}. The $k$-th channel $r^{(k)}_t$ represents the confidence that reaction type $k$ occurs at frame $t$. We convert the dense scores into event-level annotations by thresholding each channel, extracting connected temporal components, removing isolated short detections, and merging adjacent components separated by short gaps. Each retained component is stored as an event $(y_i,r_i,t_{s,i},t_{e,i})$, where $y_i$ is the reaction class, $r_i$ is the score vector, and $s_i,e_i$ are the start and end frames.
+
+Formally, for reaction class $k$, we define that the reaction score for a frame at time $t$ is 0 if the reaction detection confidence is lower than the corresponding threshold $\theta_k$:
+\begin{equation}
+    r^{(k)}_t = \mathbf{0}\left[r^{(k)}_t \leq \theta_k\right],
+\end{equation}
+where $\theta_k=0.5$ is a fixed threshold for all six classes. The dense reaction scores are used as supervision for the temporal reaction loss, while the event-level annotations are used for reaction-centric evaluation.
+
+It is noteworthy that event-level annotations are single-label. If candidate
+events from different reaction classes overlap in time, we keep the event with
+the highest averaged confidence score over the overlapping region, while
+discarding or trimming lower-confidence candidates. Ambiguous overlaps without a
+clear dominant visual cue are removed during manual verification to ensure a single event type $y_i$.
+
+\subsection{Head-Motion-Based Reactions}
+\label{app:head_motion_reactions}
+
+We detect nodding and head shaking mainly from landmark-based head-motion trajectories \cite{lugaresi2019mediapipe}. A Face Alignment Network predicts facial landmarks for each valid frame. For nodding, we compute a vertical head-center coordinate as a weighted combination of stable facial landmarks, including the nose tip, chin, and outer eyebrow corners. We normalize this coordinate by a face-scale estimate derived from jaw width and the nose--chin distance, which reduces sensitivity to crop size and identity-specific face shape. Missing detections are forward-filled from the most recent valid estimate, and remaining short gaps are linearly interpolated.
+
+Let $c^y_t$ denote the estimated vertical head-center coordinate and $s_t$ denote the face scale at frame $t$. We use the normalized vertical trajectory
+\begin{equation}
+    y_t = \frac{c^y_t - \mathrm{median}_{\tau}(c^y_{\tau})}{s_t+\epsilon},
+\end{equation}
+where $\epsilon$ is a small constant for numerical stability. The trajectory is smoothed with a Savitzky--Golay filter using an approximately 0.1-second temporal window. We then compute velocity and acceleration by discrete differentiation scaled by the video frame rate. Candidate nodding segments are generated from peak/valley patterns and velocity zero-crossings. A segment is retained only if it contains both upward and downward extrema, lies within a valid duration range, and exceeds a normalized amplitude floor.
+
+Each retained nod candidate receives a strength score based on its normalized amplitude, velocity range, acceleration range, temporal smoothness, and closeness to a nominal nodding period of approximately 0.5 seconds. Overlapping candidates are merged, and each final interval is converted into a dense frame-wise confidence using a center-peaked temporal weighting. Specifically, or a detected interval $[t_{s,i},t_{e,i}]$ with score $q_i$, we assign
+\begin{equation}
+    r^{(\mathrm{nod})}_t = \max_{i:t\in[t_{s,i},t_{e,i}]} q_i \cdot g_i(t),
+\end{equation}
+where $g_i(t)$ is a normalized center-peaked window over the interval. This produces both sparse event boundaries and dense reaction intensities.
+
+Head shaking is detected using an analogous procedure, but the primary motion signal is the normalized horizontal head-center trajectory together with yaw-related dynamics. Candidate head-shaking intervals are identified by alternating left-right extrema, horizontal velocity zero-crossings, and sufficient normalized horizontal amplitude. The same smoothing, duration filtering, candidate scoring, and event merging strategy is applied. More technical details can be referred to \cite{lugaresi2019mediapipe}.
+
+\subsection{Expression-Based Reactions}
+\label{app:expression_reactions}
+
+Smiling, laughing, frowning, and surprised reactions are detected from facial expression cues. We combine landmark dynamics, facial action-unit responses, and emotion predictions from facial expression analysis tools~\cite{pyfeat,goodfellow2013challenges}. The detector produces per-frame class confidence scores and then applies temporal smoothing and connected-component extraction to obtain event-level annotations. Table~\ref{tab:app_reaction_cues} summarizes the main visual cues used for each reaction class.
+
+\begin{table}[t]
+    \centering
+    \small
+    \caption{Summary of the visual cues used by the reaction detector. The thresholds and duration constraints are fixed per class during annotation and are not tuned separately for different methods.}
+    \label{tab:app_reaction_cues}
+    \begin{tabular}{p{0.12\linewidth}p{0.30\linewidth}p{0.28\linewidth}p{0.17\linewidth}}
+        \Xhline{1.2pt}
+        Reaction & Primary visual cues & Temporal rule & Post-processing \\
+        \hline
+        Nodding & Vertical head-center displacement, pitch-related dynamics, velocity and acceleration patterns & Peak/valley cycles with vertical zero-crossings and sufficient normalized amplitude & Smooth scores, me-rge overlapping intervals, threshold at 0.5 \\
+        \hline
+        Head shake & Horizontal head-center displacement, yaw-related dynamics, horizontal velocity and acceleration patterns & Alternating left-right extrema with horizontal zero-crossings and sufficient normalized amplitude & Smooth scores and merge adjacent intervals \\
+        \hline
+        Smiling & Happy-expression confidence, smile-related action units, lip-corner movement & Sustained high smile confidence over consecutive frames & Remove isolated p-eaks and merge sh-ort gaps \\
+        \hline
+        Laughing & Smile confidence, mouth opening, high-intensity happy-expression cues, stronger facial dynamics & Sustained expression with lar-ger mouth/facial motion than ordinary smiling & Merge nearby high-conf-idence intervals \\
+        \hline
+        Frowning & Negative-expression confidence, Brow-lowering cues (AU04), mouth-corner depression cues & Sustained negative facial expression over a short temporal window & Remove brief neutral fluctuations \\
+        \hline
+        Surprised & Surprise-expression confidence, eyebrow raising, eye opening, mouth opening & Short high-confidence peaks or short sustained surprise intervals & Allow shorter eve-nts than other expression classes \\
+        \Xhline{1.2pt}
+    \end{tabular}
+\end{table}
+
+The expression-based scores are temporally smoothed before thresholding. This reduces false positives caused by single-frame expression estimation noise while preserving reaction onsets and offsets. Although multiple reaction cues may be activated within the same temporal region, the final event-level annotations are single-label and temporally non-overlapping across reaction classes. We first extract class-specific candidate intervals and then resolve cross-class overlaps by retaining the candidate with the highest averaged confidence score and the clearest visual evidence. Lower-confidence overlapping candidates are suppressed, and ambiguous cases are removed during manual verification. This design avoids assigning multiple event types to the same listener behavior.
+
+\subsection{Manual Verification}
+\label{app:manual_verification}
+
+After automatic detection, we manually inspect the detected reaction events to improve annotation reliability. During verification, we remove events caused by tracking failure, scene change, face occlusion, unstable crops, non-listening behavior, or expression ambiguity. We also discard events whose visual evidence is too weak to support the assigned reaction label. This verification step is applied after the detector has produced candidate intervals, so the final annotations retain the temporal consistency of the automatic detector while reducing obvious false positives.

@@ -1,0 +1,54 @@
+{
+  "schema": "p2-matrix16-v1",
+  "id": "fixed_av_s2",
+  "text_condition": "fixed",
+  "loss": "av",
+  "stage": 2,
+  "data_config": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_legacy50h_qwen_lora_20261027/configs/E0_data.json",
+  "plan_cache": null,
+  "teacher_cache": null,
+  "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_legacy50h_qwen_lora_20261027/performance_world6/3/run",
+  "parent_experiment": "fixed_av_s1",
+  "loss_weights": {
+    "av": 1.0,
+    "event": 0.05,
+    "video_feature": 0.1,
+    "audio_feature": 0.1
+  },
+  "qwen_lora": {
+    "enabled": true,
+    "rank": 8,
+    "alpha": 8,
+    "learning_rate": 1e-05,
+    "targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ],
+    "gradient_checkpointing": true
+  },
+  "text_lora": {
+    "enabled": true,
+    "rank": 8,
+    "alpha": 8,
+    "learning_rate": 1e-05
+  },
+  "training": {
+    "seed": 20261023,
+    "global_batch": 24,
+    "steps": 1268,
+    "save_every": 100,
+    "warmup_steps": 50,
+    "connector_lr": 3e-05,
+    "feature_lr": 3e-05,
+    "event_lr": 0.0001,
+    "clip_norm": 1.0,
+    "weight_decay": 0.0,
+    "gradient_checkpointing": "all",
+    "tensorboard": true
+  },
+  "legacy_arm": "E0",
+  "legacy_parent": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_preflight_fix_20261026/production/runs/20261023/E0",
+  "audit_root": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_legacy50h_qwen_lora_20261027/admission"
+}

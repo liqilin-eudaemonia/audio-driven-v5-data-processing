@@ -1,0 +1,53 @@
+{
+  "scope": "read-only code review of backed-up v1; no source manifests changed",
+  "findings": [
+    {
+      "priority": "P1",
+      "location": "pipeline.py:28,157-162,176-177",
+      "finding": "Role boundaries depend exclusively on current_speaker transitions. Listener activity only adds a conflict flag; it does not refine takeover onset.",
+      "evidence": "synthetic_checks.json; 7742 conflict-flagged candidates, not ground-truth errors"
+    },
+    {
+      "priority": "P1",
+      "location": "pipeline.py:157-162",
+      "finding": "Every known-role transition splits immediately, with no backchannel/takeover distinction or minimum persistence.",
+      "evidence": "5-frame alternate-role synthetic case yields a separate 0.2s reversed-role segment"
+    },
+    {
+      "priority": "P1",
+      "location": "pipeline.py:140-143",
+      "finding": "Missing listener scores become zero, allowing up to20 unknown-role frames to be bridged without evidence of non-speech.",
+      "evidence": "synthetic_checks.json; 762 candidates carry bridge flag, not known incorrect bridges"
+    },
+    {
+      "priority": "P1",
+      "location": "pipeline.py:43-52",
+      "finding": "Per-person box jumps are unconditional hard shot edges; no temporal stability check, no confirmation of full-layout change, and no merging of adjacent visual/geometric cut estimates.",
+      "evidence": "57177 geometry cuts not exactly equal to scene cuts;1461 within2 frames of scene cuts; 21513 one-frame candidates. Counts are risk indicators, not false-cut counts."
+    },
+    {
+      "priority": "P1",
+      "location": "pipeline.py:51,144-145",
+      "finding": "EOF black_end may be timestamp of final black frame; interpreting it as exclusive end omits that frame.",
+      "evidence": "black_eof_test.json;583 matching single-frame tail candidates;3 source-frame checks all meet black-pixel criterion;246 of prior269 audio errors match this tail pattern"
+    },
+    {
+      "priority": "P2",
+      "location": "pipeline.py:49-53,156-162",
+      "finding": "audio_complete_frames recorded but not used to constrain supported audiovisual intervals; missing energy initialized as zero.",
+      "evidence": "269 candidates exceed complete audio support; prior independent decoder audit confirms end mismatch"
+    },
+    {
+      "priority": "P2",
+      "location": "pipeline.py:100-124",
+      "finding": "Sentence preservation relies on ASR segment-end punctuation and mixture energy, not per-person words/validated sentence boundaries; partition is a length splitter, not a turn detector.",
+      "evidence": "code inspection; 163 frame-fallback endings, ASR candidates explicitly approximate"
+    },
+    {
+      "priority": "P2",
+      "location": "pipeline.py:37,58,138; validate_all.py:8-39",
+      "finding": "Existence-only caches ignore changed code/policy; current checks validate coverage and dimensions, not takeover/backchannel correctness. Approved-reference video takes a special branch.",
+      "evidence": "code inspection; all-frame coverage does not establish semantic role validity"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "checked_at_utc": "2026-11-06T15:15:28.165719+00:00",
+  "config_matches_running_identity": true,
+  "source_files": 265,
+  "source_mismatches": [],
+  "feature_path": "frozen cached Qwen H -> trainable Connector U -> feature diffusion decoders -> frozen listener visual/audio teacher; no Qwen backbone gradient",
+  "event_path": "LTX last block before output projection -> valid spatial/time mean pooling -> clip multi-label BCE; no detach",
+  "speaker_path": "paired speaker audio frozen Whisper encoder cache -> trainable adapter -> independent video/audio cross-attention residuals with temporal positions",
+  "temporal_weight": 0.0,
+  "configured_classes": {
+    "video": [
+      "visual:blinking",
+      "visual:eye closing",
+      "visual:eye opening",
+      "visual:eyebrow raising",
+      "visual:frowning",
+      "visual:gaze shifting",
+      "visual:hand lowering",
+      "visual:hand raising",
+      "visual:head nodding",
+      "visual:head tilting",
+      "visual:head turning",
+      "visual:lip pursing",
+      "visual:mouth closing",
+      "visual:mouth movement",
+      "visual:mouth opening",
+      "visual:smiling"
+    ],
+    "audio": [
+      "audio:audible laughter",
+      "audio:speech",
+      "audio:vocalization"
+    ]
+  },
+  "effective_classes": [
+    "clip/visual:blinking",
+    "clip/visual:eye closing",
+    "clip/visual:eye opening",
+    "clip/visual:eyebrow raising",
+    "clip/visual:frowning",
+    "clip/visual:gaze shifting",
+    "clip/visual:hand lowering",
+    "clip/visual:hand raising",
+    "clip/visual:head nodding",
+    "clip/visual:head tilting",
+    "clip/visual:head turning",
+    "clip/visual:lip pursing",
+    "clip/visual:mouth movement",
+    "clip/visual:mouth opening",
+    "clip/visual:smiling",
+    "clip/audio:audible laughter",
+    "clip/audio:speech",
+    "clip/audio:vocalization"
+  ],
+  "disabled_classes": {
+    "clip/visual:mouth closing": {
+      "positive": 3032,
+      "weak_negative": 220988,
+      "known_weight": 25130.800000000003,
+      "enabled": false,
+      "pos_weight": 7.288522427440634,
+      "disabled_reason": "below_frozen_clip_min_positive"
+    }
+  },
+  "tests": {
+    "passed": 94,
+    "warnings": 3,
+    "seconds": 13.85,
+    "device": "CPU",
+    "scope": "ltx_events,evidence_guard,numeric_labels,whisper_event_feature,whisper_av"
+  },
+  "observed_step": 211,
+  "observed_losses": {
+    "av": 0.31474027084186673,
+    "event_clip": 0.15529127185618563,
+    "event_temporal": 0.0,
+    "feature_video": 2.073616247624159,
+    "feature_audio": 0.9772293586283922
+  },
+  "optimizer_group_grad_norms": {
+    "connector": 0.021084809840509047,
+    "events": 0.015268946633033314,
+    "features": 0.03819029404145825,
+    "text_lora": 0.0010664291526391548,
+    "whisper": 0.06656394493613911,
+    "main": 0.07959248870611191
+  },
+  "training_modified": false
+}

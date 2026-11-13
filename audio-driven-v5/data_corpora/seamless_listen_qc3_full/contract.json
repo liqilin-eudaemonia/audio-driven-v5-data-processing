@@ -1,0 +1,96 @@
+{
+  "revision": "v6-qc3-full-1",
+  "utc": "2026-10-22T07:09:53Z",
+  "video_policy": {
+    "revision": 6,
+    "fps": 25,
+    "max_frames": 249,
+    "min_seconds": 4,
+    "orientation_policy": "reject_non_upright_or_uncertain_raw_video",
+    "natural_pause_seconds": 0.65,
+    "minimum_crop_side": 512,
+    "max_unknown_burst": 0.8,
+    "max_unknown_seconds": 1.2,
+    "max_unknown_fraction": 0.15,
+    "max_unknown_bursts": 2,
+    "max_listener_fraction": 0.25,
+    "max_listener_bursts": 3
+  },
+  "audio_policy": {
+    "revision": "audio-qc-3",
+    "scope": "same 56 QC2 candidates; development regression separate",
+    "hard_rejection_validated": false,
+    "denoising": false,
+    "cross_track_high_correlation": 0.75,
+    "cross_track_review_correlation": 0.45,
+    "model_noise_strong": 0.45,
+    "model_noise_review": 0.2,
+    "vocal_two_model": 0.2,
+    "vocal_panns_strong": 0.6,
+    "background_window_seconds": 2.0,
+    "background_stride_seconds": 1.0,
+    "note": "Human voice and contamination are independent evidence; thresholds provisional and frozen before this run."
+  },
+  "normalization_policy": {
+    "target_lufs": -18.0,
+    "max_gain_db": 45.0,
+    "min_gain_db": -18.0,
+    "peak_db": -1.0,
+    "silence_threshold_lufs": -70.0,
+    "scope": "whole original participant track; same gain for every role and subturn",
+    "filter": "constant gain, oversampled peak limiter with latency compensation"
+  },
+  "scope": "all isolated official train/dev source pairs; no test or old training windows",
+  "nodes": 3,
+  "workers_per_node": 8,
+  "world_size": 24,
+  "ast_batch": 16,
+  "panns_batch": 16,
+  "code_sha256": {
+    "scripts/run_listen_qc3_bulk.py": "a184ac43ad25ac8ce00421b4e9e325c8a59ba943f663c5e8b29be62bff25db25",
+    "scripts/preview_listen_v6.py": "4b35098352a50bf35ce5a937b4126c1eed748e039cd47d8ee749664c5dfe1226",
+    "scripts/listen_policy_v6.py": "b69ec984e6f4f9ee0089d6ea67dba857b1a30f2c365571fe544aaf08f64551dc",
+    "scripts/build_seamless_rule_turns.py": "ca6252028bd55f181290318053cadbd035459731f5ff3adfed4301b56a944b4b",
+    "scripts/prepare_listen_300h.py": "d2f0da5e73de1b3bdfbf4425a4936c60c0ee81425c7dd92cd462a9be0fb71b07",
+    "scripts/listen_audio_quality.py": "b891c5ac336ab3dce638f94aad86f1d5b09f7361405b5c3a9deb7c95eddfb1e0",
+    "scripts/listen_audio_quality_v3.py": "94a0587581d0b85e0807664e0c4072caa35be103908c26466cd1bb5d518917c2",
+    "scripts/screen_listen_qc_sample.py": "42abd277294afe8f3cd2e717dc67c2e9c2cca058328127e71b0fb6ad8f4f9798",
+    "scripts/build_seamless_listening_preview.py": "a3fbe676dc89e41ba9d31772cd6dd74bd8cf9598751b51aefddc5c10c4757afd",
+    "src/p3_listen/subturns.py": "fd8d41f14f76ddee63e25a6c3b9136d5bbf445ec596be3f2ab183c4c09259c60",
+    "src/p3_listen/media.py": "3c22f7617acf559f06c264842cdb719f94fd581b6f0cec7372cd67407aa020c9",
+    "src/p3_listen/common.py": "958313bf125e4366d8e61c04385f6871a609530d901206058064e2a463bbadcc"
+  },
+  "input_sha256": {
+    "catalog.json": "b6899aaa625cf6fff2ee79044b4b34376555eb8363310aef2b7dd52055df180e",
+    "human_rejections.json": "2f4a0dd32a8e8109b8e0e271f8af2fa959ac3ace31f59249d13492594564263c",
+    "human_retained.json": "a4177a8daeffc5aec28b186357caed3212b12693a9cfcbb1a3cdddbd366e7a90"
+  },
+  "models": {
+    "audio_qc_ast": {
+      "repo": "MIT/ast-finetuned-audioset-10-10-0.4593",
+      "revision": "f826b80d28226b62986cc218e5cec390b1096902",
+      "files": {
+        "config.json": "a93d525511d77e8ecc933d09674b85099815bbbb417c228a4edd655e252fb9ff",
+        "preprocessor_config.json": "8d04ba5a9c6fca5d39d0de2b1fd05ecf79deb589fbba279728bbebac39934231",
+        "model.safetensors": "ae0c1e2ad4e1381d851fa9bf298ba13ebc9c5a914cdee2dbe427a6583869924d"
+      },
+      "license": "bsd-3-clause"
+    },
+    "audio_qc_panns": {
+      "repo": "thelou1s/panns-inference",
+      "revision": "f98a09ed0dca73b284786393cfc2b2bd6f46f878",
+      "checkpoint": "Cnn14_mAP=0.431.pth",
+      "sha256": "0dc499e40e9761ef5ea061ffc77697697f277f6a960894903df3ada000e34b31",
+      "bytes": 327428481,
+      "source_url": "https://huggingface.co/thelou1s/panns-inference/resolve/f98a09ed0dca73b284786393cfc2b2bd6f46f878/Cnn14_mAP=0.431.pth",
+      "description": "Mirror of PANNs Cnn14 AudioSet mAP0.431 checkpoint; model loaded with weights_only=True and strict state matching",
+      "labels": {
+        "url": "https://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/class_labels_indices.csv",
+        "sha256": "cdd1049833c4b86127c2773ac0d14a2754b6a6d0d1798002ed5c66e699708429"
+      }
+    }
+  },
+  "admission": "keep is a candidate; review quarantined; exclude retained for audit",
+  "training_authorized": false,
+  "training_ready": false
+}

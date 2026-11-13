@@ -1,0 +1,669 @@
+
+=== PDF PAGE 1 ===
+                     This CVPR paper is the Open Access version, provided by the Computer Vision Foundation.
+                                 Except for this watermark, it is identical to the accepted version;
+                                the final published version of the proceedings is available on IEEE Xplore.
+
+
+
+
+
+    Diffusion-based Realistic Listening Head Generation via Hybrid Motion
+                              Modeling
+
+
+              Yinuo Wang1,*,‡, Yanbo Fan2,*,†, Xuan Wang2, Guo Yu1,†, Fei Wang1
+           1National Key Laboratory of Human-Machine Hybrid Augmented Intelligence,
+           National Engineering Research Center for Visual Information and Applications,
+           and Institute of Artificial Intelligence and Robotics, Xi’an Jiaotong University
+                                       2Ant Group
+                              nuo1wang.github.io/DiffListener
+
+
+
+                 Abstract                               ing, frowning, head shaking, etc. The realism and vividness
+                                                              of the listener feedback are vital to the success of speaker
+   Listening head generation aims to synthesize non-verbal     and listener communication. Being a crucial part of digital
+responsive listening head videos that naturally react to a      avatar generation, listening head generation has many po-
+certain speaker, for which, both realistic head movements,      tential applications, such as movie production, online cus-
+expressive facial expressions, and high visual qualities are     tomer service, and human-computer interaction.
+expected. Previous approaches typically follow a two-stage                                                        While most works focus on speaker-centric talking head
+pipeline that first generates intermediate 3D motion signals                                                              generation [16, 17, 26–28, 37, 44], only a few study lis-
+such as 3DMM coefficients, and then synthesizes the videos                                                              tening head generation [21, 24, 25, 46].  It is a non-trivial
+by deterministic rendering, suffering from limited motion                                                       problem as given a certain speaker video, there can be many
+expressiveness and low visual quality (e.g. 256 × 256). In                                                             reasonable listener reactions. Such a one-to-many mapping
+this work, we propose a novel listening head generation                                                       problem makes it challenging for the model to learn to gen-
+method that harnesses the generative capabilities of the dif-                                                                   erate proper yet diverse listener motions. In addition, since
+fusion model for both motion generation and high-quality                                                                the generated listening head mostly contains non-verbal re-
+rendering. Crucially, we propose an effective hybrid motion                                                                   actions, the audience may focus more on the listeners’ facial
+modeling module that addresses training difficulties caused                                                                expressions, requiring that the generated reaction videos be
+by the scarcity of listening head data while preserving the                                                                    high-fidelity to manifest detailed and subtle expressions.
+intricate details that may be lost in explicit motion repre-
+sentations. We further develop a tailored control guidance       The state-of-the-art works of listening head generation
+for head pose and facial expression, by integrating their in-     follow a two-stage design that first generates intermediate
+trinsic motion characteristics. Our method enables high-      listener motion signals and then synthesizes the RGB videos
+fidelity video generation with 512 × 512 resolution and de-     with post-rendering [20, 21, 35, 46]. For motion generation,
+livers vivid listener motion feedback. We conduct compre-      explicit 3D motion signals, such as 3DMM [3] coefficients
+hensive experiments and obtain superior performance in      are used as motion descriptions. Existing works developed
+terms of both visual quality and motion expressiveness com-      different models to generate the listener’s 3D motion coeffi-
+pared with existing methods.                                       cients, including LSTM [46], VQ-VAE [35], and diffusion-
+                                                         based models [20, 21]. As for the video rendering, PIRen-
+                                                               derer [29] is used to generate the RGB frames conditioned
+1. Introduction                                     on the generated 3DMM coefficients. Though promising,
+                                                             they still fall short of generating expressive and natural lis-
+Listening head generation aims to generate responsive lis-     tening head motions, as well as photorealistic rendering.
+tener videos that react to the corresponding speaker [46].     For instance, 1) the intermediate parametric 3D motion sig-
+Unlike talking head videos, the listener’s response mainly      nals, such as the 3DMM expression coefficients, are char-
+consists of non-verbal behaviors, such as nodding, smil-      acterized in a low-dimensional generalizable subspace and
+                                                              lack facial details and subtle expressions, which limits the
+   *Equal contribution
+   †Corresponding authors                                          richness and naturalness of the learned facial expressions, 2)
+   ‡This work was done during Yinuo Wang’s internship at Ant Group       while focusing more on motion generation, the determinis-
+
+
+
+                                                    15885
+
+=== PDF PAGE 2 ===
+tic rendering used in existing works is of low visual quality,      eling audio-to-visual correspondence, making it possible to
+suffering from low resolution (e.g. 256 × 256), identity in-      learn the long-term relations between speaker and listener,
+consistency, improper head motions, and facial artifacts.       which is essential for listener motion modeling.  2) The
+   In this work, we propose a novel listening head gener-      learning of the hybrid motion representation is much easier
+ation framework that enables both highly expressive head     than the pure latent motion modeling, especially on limited
+motions and photorealistic rendering. Our motivation is to      training data. In addition, with the intermediate explicit rep-
+fully leverage the generative ability of the diffusion model      resentation, we can better utilize talking videos to pre-train
+for both motion generation and video synthesis. Recently,      the rendering module. We conduct thorough ablation stud-
+the latent diffusion model (LDM) [30] has shown supe-      ies and verify the necessity of the hybrid motion modeling.
+rior ability in high-resolution and vivid video generation,       Our contributions are as follows,
+largely promoting the speaker-centric talking head genera-      • We propose a novel diffusion-based method for motion
+tion performance [7, 34, 41]. Nevertheless, it is not feasi-       generation and visual rendering, resulting in realistic and
+ble to directly apply these methods to listening head gen-        vivid listening head generation.
+eration.  Firstly, they require hundreds of hours of talk-      • We introduce an effective hybrid motion modeling mod-
+ing head videos for training the audio-to-visual correspon-        ule that overcomes training challenges while enhancing
+dence, which does not apply to listening head generation,       both motion dynamics and visual quality.
+where only a few hours of training data are available. Sec-      • We conduct comprehensive experiments and significantly
+ondly, due to the high computational and memory cost,       improve listening head generation in both visual quality
+these methods can only model the context information in      and motion quality compared with existing methods.
+a small window size (e.g. 16 frames in [34]). This is accept-
+able for talking head generation since talking heads have a     2. Related Works
+strong correlation with the audio. However, for listening                                                      Non-verbal Listening Head Generation. Non-verbal lis-
+head generation, the listener feedback may be related to an                                                              tening head generation is an important part of digital avatar
+even longer duration of the speaker’s content. To generate                                                                generation, and has drawn increasing research interests in
+a reasonable reaction, it may require long-term modeling                                                                recent years. Earlier works [4, 5, 10, 15, 32] use rule-based
+of audio conditions and motion. Based on these, it is non-                                                      methods to generate the listener response. Such methods
+trivial to unleash the diffusion generative ability for listen-                                                                require specifically designed rules and pre-defined reaction
+ing head generation.                                                       motion sequences. Thus they have very limited motion di-
+  To address these challenges, we propose a novel hybrid      versity and expressiveness.
+motion modeling method, which consists of an explicit and        Learning-based methods alleviate the problem by using
+explainable 3D motion representation and a learnable im-      data-driven approaches to automatically learn to generate
+plicit latent representation.  Specifically, instead of utiliz-     proper reactions given speaker conditions. Zhou et al. [46]
+ing the LDM-based rendering to generate listening video     propose an LSTM-based network RLHG that predicts the
+directly from the speaker’s input, we first learn explicit      listener’s head poses and 3DMM expression coefficients
+3D motion signals by a diffusion-based motion generation     given speaker’s audio and motions. Later, several works are
+module. The explicit motions are later used as guiding con-     proposed to improve the performance of RLHG by refining
+ditions to train the rendering module. To facilitate controlla-      the conditional features [6, 45] or improving visual qual-
+bility, we propose distinct control strategies considering the      ity [14].  However, these works are deterministic models
+different intrinsic natures of head poses and facial expres-     and are inefficient in addressing the one-to-many mapping
+sions. The explicit motion generation module is expected     problems in listener motion generation, resulting in unnat-
+to generate feasible and diverse listener motions but may      ural motions. To alleviate this, the work of [25] models the
+lack facial details, as analyzed above. We further develop      listener motion with VQ-VAE. Song et al. [31] proposes a
+an implicit motion refinement module to complement the    more fine-grained codebook that supports emotion control.
+potentially missing facial details. With these designs, we     Liu et al. [20] further improves the diversity of the gener-
+successfully train the LDM-based rendering model on the     ated motion by a diffusion model. In addition, the work of
+small-scale listening dataset, enabling high-fidelity render-     Liu et al. [21] improves the controllability of the diffusion-
+ing (e.g. 512×512) and vivid and expressive listener motion     based motion generation model by aggregating the user-
+generation. Compared with the existing methods, we signif-      specified expression and pose labels. Focusing on interme-
+icantly boost listening head generation performance in both      diate motion generation, these methods suffer from limited
+visual and motion quality.                                     expressiveness and naturalness in the generated videos.
+  The hybrid motion design brings several advantages, 1)     Diffusion Generative Models on Head Generation. De-
+the explicit motion generation module is lightweight and     noising diffusion probabilistic models [13] have shown re-
+takes much less computational resources than directly mod-     markable results on image generation tasks. An iconic work
+
+
+
+                                                     15886
+
+=== PDF PAGE 3 ===
+   Speaker Head       (a) Explicit Motion Generation                                                       (b) Reference Net
+     Motion
+                                            Cross-modal             Transformer          Transformer
+                   Mapping Net                                             Transformer              Encoder             Decoder        Listener Image
+
+                                                                              Denoise                                                                                          VAE     …                                                                                                                        Encoder
+  Speaker Audio                                                 Noisy Motion 𝐋𝑡
+                         …                   Audio Encoder
+
+                                                                                  Pose
+                                                                                                 Expression
+
+                                            Cross-modal
+                   Mapping Net                                                 Mapping Net
+                                                  Attention
+
+   Pose Images
+                                                                                                                               Expression          Speaker
+                    Guidance
+                                                                                                                                     Feature             Feature
+                      Net                                                                          Generated Frames
+             …                   VAE
+                                                                                   Decoder                            Hidden    Noisy Frames
+                                                                                                                                               States                VAE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Cross-Attention                                                             Cross-Attention                                                               Self-Attention
+                     Encoder
+
+                                                      Denoise
+                                                                                                                                              (d) Implicit Motion Refinement
+    (c) High Fidelity Rendering                       Reference Attention                Speaker Feature Attention
+                                                        Expression Attention              Motion Module
+
+Figure 1. Overview of the proposed framework. Given one listener portrait image and speaker’s audio and head motion as input, we
+generate realistic and vivid listening head video. (a) is a lightweight diffusion transformer to generate the explicit motion representation,
+(b) is a reference net to extract the listener identity feature, (c) is our generation backbone, (d) is the implicit motion refinement module.
+
+
+is Stable Diffusion (SD), which is based on latent diffu-     work.  The diffusion model defines a Markov chain of
+sion model (LDM) [30] and can generate high-resolution     adding random noise to data samples and then trains the
+images. Guo et al. [11] propose a plug-in motion module     network to learn the reverse process, so that it can gener-
+and a lightweight fine-tuning technique that enables Stable      ate desired data from random noise. The forward diffusion
+Diffusion to generate animated clips. Based on these works,     process is defined as,
+Tian et al. [34] propose EMO, a direct audio to talking                  √
+head video generation framework that discards intermediate                   xt = √αtx0 +  1 −αtϵ,              (1)
+3DMM representations. Benefiting from the capability of
+                                                     where ϵ ∼N(0, I), and αt is a hyper-parameter that con-Stable Diffusion, EMO outperforms previous talking head
+                                                                         trols the diffusion rate. With Eq. (1), we can sample at arbi-generation methods in terms of expressiveness and realism.
+                                                                     trary step t to get the noised sample. Then the reverse dif-Several other diffusion-based audio driven works are pro-
+                                                              fusion process trains a neural network to predict the noiseposed after EMO, and achieve promising results [7, 18, 41],
+proving the powerful generative capabilities of diffusion      ϵt added to the samples at step t, and the overall training
+                                                                objective is simplified as [13]:models in talking head generations.  Nevertheless, these
+models require hundreds of hours training data. This can be
+                                                            Lt = Et∼[1,T ],x0,ϵt[||ϵt −ϵθ(xt, t, c)||2],      (2)an obstacle for training the listening head generation model,
+where only a few hours of data are available.                                                     where ϵθ is predicted using a neural network with parame-
+                                                                        ters θ, T is the max step, and c is the additional condition.
+3. Method
+                                                               3.2. Network PipelineGiven a single listener portrait image and a speaker’s audio
+and video, we aim to generate a non-verbal responsive lis-     Let A ∈RN×da and S ∈RN×d denote the speaker’s au-
+tening head video that synchronizes with the speaker, with     dio and 3D head motion features, where N is the number of
+detailed facial expressions and natural head movements.     frames, da and d are dimensionality of audio and speaker’s
+Our overall framework is shown in Fig. 1.                   motion features respectively. Let I ∈Rh×w×c be the lis-
+                                                                 tener portrait for identity reference. As shown in Fig. 1,
+3.1. Preliminaries                                                                   to enable high-fidelity rendering and vivid responsive head
+We  first  introduce  the  preliminaries  of  the  diffusion     motion generation, 1) we adopt an LDM-based high-fidelity
+model [13, 30], which is a key component of our frame-     rendering module to harness the power of diffusion models,
+
+
+
+                                                     15887
+
+=== PDF PAGE 4 ===
+so the visual qualities of the generated videos can be greatly       Given a noised motion sequence Lt ∈RM×d at step t,
+improved. 2) We propose a novel hybrid motion modeling      the explicit motion generation module G aims to predict the
+module that consists of a lightweight explicit motion gener-     clean sample ˆL condition on speaker features A and S:
+ation module to generate explicit guiding motions, i.e. head
+poses and facial expressions, a tailored control strategy for                        ˆL = G(Lt, t, c), c = {A, S}.            (5)
+the rigid head poses and non-rigid facial expressions, and
+                                               As shown in Fig. 1 (a), the noised motion sequence Lt isan implicit and learnable motion refinement module to com-
+                                                 mapped to the latent space and then encoded by a trans-plement the motion details. 3) To enhance the identity con-
+                                                         former encoder. In the meantime, the speaker features, i.e.sistency of the generated video, a parallel reference net with
+                                                             speakers facial expression features and audio features aresimilar structure as the rendering module is used to integrate
+                                                                 integrated by a cross-modal transformer, where we use athe listener identity features. We introduce each part next.
+                                                                pretrained speech model wav2vec 2.0 [2] to encode the rawHigh-fidelity Rendering Module. One major limitation of
+                                                               audio. Then a transformer decoder is used to generate de-the existing listening head generation methods is the deter-
+                                                            noised sequence, where the integrated speaker features areministic rendering module such as PIRenderer [29], which
+                                                         used as keys and values.suffers from low resolution, identity inconsistency, and vi-
+                                                              Explicit Motion Guidance.  ˆL generated by Eq. (5) con-sual artifacts. Inspired by the recent advance in diffusion-
+                                                                     tains the learned explicit 3D head poses and facial expres-based talking head generation works [34, 36, 39], we de-
+                                                              sion coefficients. It serves as a explicit motion guidance insign a high-fidelity rendering module based on SD 1.5. To
+                                                          our design. There are other options for explicit motion rep-enable the video generation capability of SD 1.5, we follow
+                                                                 resentation such as mesh, normal maps etc. We choose ex-the motion module design [11, 19] that applies self attention
+                                                              pression coefficients because it’s more compact and seman-along the temporal dimension of the network’s intermediate
+                                                                              tic meaningful. The ways to inject conditional informationfeatures, ensuring the continuity and consistency along the
+                                                                are crucial in diffusion models. An intuitive way to add con-generated video frames. Benefiting from the probabilistic
+                                                                          trollability of head poses and facial expressions might benature and the great generative capabilities, the proposed
+                                                             concatenating these features and injecting to the layers ofrendering module can generate photorealistic videos with
+                                                                the rendering module via cross-attention operator, which isdetailed visuals and expressive motions.
+                                                          a common practice in existing methods. However, in prac-   Conditioned on reference image I, and speaker features
+                                                                             tice, such an operation leads to sub-optimal head pose andA and S, the rendering module R takes noised latent Vt ∈
+RN×h×w×c at step t as inputs, and predicts the denoised     expression controllability. Considering the different intrin-
+                                                                      sic nature of head poses and facial expressions, i.e. headlatent ˆV0:
+                                                         pose is a global rigid transformation that decides the posi-
+            ˆV0 = R(Vt, t, c), c = {A, S, I}.          (3)      tion of the generated head while facial expression is a lo-
+                                                                   cal non-rigid transformation that focuses more on the visual
+However, facing the scarcity of the listening head data, it’s      details, we opt to use distinct conditional strategies for head
+not feasible to train the rendering module directly from     pose and facial expressions accordingly.
+speaker features alone. So we propose a novel hybrid mo-         Specifically, for pose control, we generate explicit pose
+tion modeling method where we use explicit listener mo-     images P as guidance. We use three facial key points (the
+tion ˆL as an additional guiding signal to ease the training     inner corners of the eyes and nose tip) and synthesize the
+of the rendering module. ˆL is set to 51-dim facial expres-     pose guidance images by connecting them. Then, a pose
+sion coefficient and 6-dim head pose coefficients extracted     guidance net consists of multiple convolutional layers is de-
+by MediaPipe [23]. The generation procedure becomes:        signed to extract multi-resolution features of the pose guid-
+                                                         ance images, and the extracted features are added to the
+           ˆV0 = R(Vt, t, c), c = {ˆL, A, S, I},        (4)      latent features of the same resolution in the downsample
+                                                            blocks of the rendering module:
+where ˆL is generated by a lightweight motion generation
+module, given the speaker features A and S.                                                 ˆh(i)d = Convi(P) + h(i)d                (6)
+Explicit Motion Generation. We design a transformer
+diffusion-based explicit motion generation module, inspired     where Convi is the i-th convolutional layer in the pose
+by the successful applications of diffusion models on vari-     guidance net, its output has the same dimensionality as the
+ous human motion generations [1, 21, 33, 42]. The motion      latent features h(i)d  in the downsample blocks of rendering
+generation module generates both listener’s facial expres-     module.
+sions and head poses with a lightweight diffusion network,      As for the facial expression control, we adopt more fine-
+addressing the one-to-many mapping problem as well as en-     grained control where we inject the facial expression fea-
+abling us to model motions in larger time window.               tures F into the rendering module through additional cross
+
+
+
+                                                     15888
+
+=== PDF PAGE 5 ===
+  Speaker
+
+
+      Reference                               Reference                            Reference                               Reference
+     Image                              Image                            Image                              Image
+
+
+
+GT
+
+ RLHG
+
+
+ L2L
+
+
+ PCH
+
+
+ Ours
+
+
+                          (a)                                          (b)                                               (c)                                            (d)
+
+Figure 2. Visualization of the compared methods. Our method exhibits highly detailed visuals, accurate motion, and identity consistency.
+
+
+attention layers, one after each reference layer, and the fa-    SD 1.5, the corresponding layers of the two networks share
+cial expression features F are use as keys and values, as      certain similarities. We feed the reference image I to the ref-
+follows                                                     erence net and use its intermediate UNet block features to
+                h(l)e = CrossAttn(h(l)r  , F),             (7)     guide the denoising process of the rendering module. Con-
+                                                                       cretely, the features r(l)s  from self-attention layers of the ref-where h(l)r  is the output of the l-th reference layer.
+                                                            erence net are first concatenated with the corresponding lay-Implicit Motion Refinement. Though the explicit motion
+                                                                     ers’ features h(l)s  from the rendering module, then undergoguidance introduced above eases the training difficulty, the
+explicit motion representation ˆL has limitations in depict-     a cross-attention layer to inject the identity information into
+                                                                the denoising process:ing the facial details and subtle expressions, restricting the
+overall generation quality. We further propose an implicit
+                                                                               h(l)r = CrossAttn[h(l)s  , (h(l)s  ⊕r(l)s  )],        (9)motion refinement module to complement the explicit mo-
+tion representation. Concretely, during the motion refining                                                     where the concatenated features are used as keys and values.
+process, the speaker features (i.e. audio features A and fa-
+cial expression features S) are first integrated, then injected     3.3. Training Strategy
+into a cross-attention layer as keys and values, and the latent
+                                                  The training of our method has two stages. In the first stage,
+feature map generated after the explicit motion modeling
+                                                                the motion generation module is trained on listening head
+serving as the query, the motion refinement is
+                                                                  datasets while the rendering module is pretrained on lis-
+ h(l)i = CrossAttns[h(l)e  , CrossAttni(S, A)] + h(l)e  . (8)     tening head dataset together with a large scale talking head
+                                                                 dataset VFHQ [40]. For the rendering module pretrain, we
+We add this refinement module after each explicit facial ex-     do not incorporate the speaker information, and the ground
+pression cross-attention layer by residual connections.           truth head poses and facial expression coefficients are used
+Reference Net. Inspired by [34], we adopt a parallel net-     as guidance signals. In the second stage, we train the im-
+work that has a similar structure as the rendering module to       plicit motion refinement part in the rendering backbone. In
+inject the identity features. Since the reference net and the      this stage, we incorporate the explicit motion generated by
+rendering module both inherit structures and weights from      the motion generation module as guidance.
+
+
+
+                                                    15889
+
+=== PDF PAGE 6 ===
+  GT                                                                         GT
+
+     motion                                                                                                                                                                                                                                                                                                                                                                                                       Implicit Refinement  w/o guidance                                                                                                                                               w/o
+                                                                                                                                                                                                                                                                                                                      Motion
+
+    Ours                                                                                                                                                 Ours
+
+
+Figure 3.  Visualization of the ablation study on explicit motion      Figure 5. Visualization of the ablation study on implicit motion
+guidance. We highlight the artifacts of the compared method with      refinement. We highlight the inaccurate motion with red boxes
+red boxes.                                                   and the improved facial details with green box.
+
+
+  GT                                                       with several state-of-the-art listening head generation meth-
+                                                               ods, including RLHG [46], PCH [14], L2L [25], MFR-
+                                                      Net [20] and CustomListener [21]. We retrain RLHG, PCH
+       Pose                                                   and L2L on both ViCo and RealTalk dataset. Since MFR-         Concatenate                                                    Net and CustomListener are not open-sourced, we list their
+                                                                      results on ViCo dataset from the original papers for refer-
+    Ours                                                           ence. We also conduct thorough ablation studies to verify
+                                                                the effectiveness of the proposed method.
+                                                        Evaluation Metrics. We compare both visual and mo-
+Figure 4. Visualization of the ablation study on different motion      tion quality for evaluation. The visual quality is evaluated
+control schemes. We highlight the inaccurate head poses and facial                                                    by Fr´echet Inception Distance (FID) [12], Peak Signal-to-
+expressions, as well as visual artifacts with red boxes.
+                                                        Noise Ratio (PSNR), and Structural Similarity (SSIM) [38].
+                                                         For the motion quality evaluation, we adopt 1) Feature Dis-
+4. Experiments                                           tance (FD), the L1 distance between the generated motion
+                                                      and the ground truth motion, 2) FID∆fm [43], the FID score
+4.1. Experimental Setup                                   of motion difference between consecutive frames, and 3)
+                                                      Sequence Naturalness Distance (SND) [43], the summa-Dataset. We conduct experiments on the widely used ViCo
+                                                                    rization of FID∆fm and FID score of motion. For FID∆fmdataset [46] and RealTalk dataset [9]. Both ViCo and Re-
+                                                      and SND, we concatenate the angle and translation to com-alTalk consist of videos of face-to-face daily conversations
+                                                            pute the overall pose metrics. To compare with existingbetween two individuals of diverse ages, genders, and eth-
+                                                          works, we extract the 3DMM coefficients by [8], to com-nicity. We follow the training and testing split provided
+                                                            pute the motion quality metrics.in their original papers. ViCo contains 398 clips of total
+1.3 hours for training, 43 clips for testing, and 42 clips for
+                                                               4.2. Quantitative Results
+out-of-distribution (OOD) testing. RealTalk contains 1489
+clips of total 6.4 hours for training and 407 clips for testing.    The quantitative results on RealTalk and ViCo are listed in
+Additionally, VFHQ dataset [40], a large-scale high-quality     Table 1 and Table 2, respectively.
+talking head video dataset containing over 16k clips, is used       For the visual quality, our proposed method obtains sig-
+to pretrain the rendering module.                                  nificantly better visual quality in terms of SSIM, PSNR and
+Implementation Details. For both datasets, we crop the    FID on both Realtalk and ViCo datasets. For instance, on
+original videos into 512 × 512 face videos for training and     RealTalk dataset, the relative performance improvements
+testing, and use MediaPipe [23] to extract 51-dim facial ex-      are 14% for SSIM, 14% for PSNR, and 33% for FID. On
+pression coefficients and 6-dim head pose. For the motion    ViCo dataset, the improvements are 12% for SSIM, 15%
+generation module, we train it with the input sequence of      for PSNR, and 5% for FID. These demonstrate the superior
+50 frames and a batch size of 64. The diffusion step is set      high-fidelity generative capability of our proposed method.
+to 1000 for training and inference. For the high-fidelity ren-     This is due to the proposed rendering module is much more
+dering, we set the input to 16 frames with a batch size of 8.     powerful than the deterministic PIRenderer, and that the hy-
+The diffusion step is 1000 for training and 25 for inference.      brid motion modeling further enhances the visual quality of
+Both modules are trained with AdamW [22] optimizer.          the rendering module.
+Compared Methods. We compare the proposed method       For the motion quality, our method also achieves the
+
+
+
+                                                     15890
+
+=== PDF PAGE 7 ===
+                                             FD↓          FID∆fm ↓     SND↓
+            Methods   SSIM↑  PSNR↑  FID↓
+                                                 exp    angle   trans   exp    pose   exp   pose
+
+        RLHG [46]    0.57     17.87    20.79   13.09   5.91    6.02   12.01   0.74   2.09   0.04
+         PCH [14]     0.57     17.78    20.05   13.80   5.69    5.99   11.36   0.72   2.11   0.04
+          L2L [25]     0.50     15.61    27.28   22.92   11.77   9.19   10.93   0.58   7.81   0.14
+              Ours       0.65     20.34    13.38   10.49   3.95    5.12    6.00   0.05   1.49   0.02
+
+Table 1. Quantitative results on RealTalk dataset, where the values of FD and FID∆fm are multiplied by 100. The ↑indicates the higher
+the better while ↓indicates the lower the better. The best and the second best results are in bold and underlined, respectively.
+
+
+                                                 FD ↓          FID∆fm ↓     SND↓
+         Methods         Test set  SSIM↑  PSNR↑  FID↓
+                                                           exp    angle    trans    exp    pose   exp   pose
+
+                             Dtest                              16.43   9.05    6.75    9.54   0.76   3.45   0.09
+      RLHG [46]                  0.58     17.88    38.69
+                         Dood                              26.70   9.75   10.61   7.36   0.55   9.38   0.14
+                             Dtest                              15.48   8.84    5.95    8.91   0.73   3.01   0.09
+       PCH [14]                   0.60     17.92    31.62
+                         Dood                              24.11   7.27   10.05   6.07   0.47   7.79   0.11
+                             Dtest                              20.36   12.52   8.88   12.06   0.60   6.61   0.19
+        L2L [25]                   0.58     17.75    38.39
+                         Dood                              23.82   8.10    7.43    8.67   0.51   8.16   0.07
+                             Dtest                              13.37   6.82    6.02         /           /          /          /      MFR-Net* [20]                0.59     17.82    20.08
+                         Dood                              14.70   8.12    6.37         /           /          /          /
+                             Dtest                              11.54   6.12    5.90    3.12   0.06   2.40   0.07    CustomListener* [21]              0.60     17.98    20.06
+                         Dood                              12.67   7.49    6.01    3.59   0.07   5.94   0.05
+                             Dtest                              12.54   7.57    5.68    5.13   0.08   2.36   0.08
+           Ours                     0.67     20.60    18.99
+                         Dood                              11.89   3.83    5.43    5.05   0.05   2.06   0.02
+
+Table 2. Quantitative results on ViCo dataset, where the values of FD and FID∆fm are multiplied by 100. The ↑indicates higher is better
+for the corresponding metric while ↓indicates lower is better. The * denotes we report the results from their papers. The best and the
+second best results are in bold and underlined respectively.
+
+
+best overall performance on both datasets. Specifically, for     and their visualization is not available. As shown in Fig 2,
+RealTalk, we achieve the best results on all motion metrics.     our method surpasses the baseline methods in terms of vi-
+In terms of FD, we obtain 20%, 31%, and 15% performance      sual quality, motion accuracy, and identity consistency. To
+improvement for the expression, angle, and translations, re-     be specific, 1) in Fig. 2 (a), our method generates a proper
+spectively. In terms of FID∆fm, the performance improve-      reaction video while the baseline methods show impropri-
+ments are 45% for expression and 91% for head pose. On      ate facial expressions. 2) in Fig. 2 (b, c), we obtain much
+ViCo dataset, we also obtain the best motion quality on the      better identity preservation, even under more drastic facial
+OOD set and the second-best results on the test set.  For      expressions, e.g. laughing. 3) in Fig. 2 (b ,c, d), our method
+ViCo, the motion of the test set is much more intense and      retains better facial details, such as realistic teeth, wrinkles,
+random than that of the OOD set. The one-to-many charac-     and natural complexions.
+teristic makes it more difficult to generate the exact motion
+                                                               4.4. Ablation Studyas the ground truth on the test set. In such cases, Custom-
+Listener that additionally incorporates the ground-truth mo-   We conduct ablations to demonstrate the necessities of each
+tion text description leads to more similar motions to the      part of the proposed hybrid motion modeling.
+ground-truth.  Nevertheless, the superior performance on     Explicit Motion Modeling. We remove the intermediate
+the OOD set demonstrates our better generalization ability.      explicit motion guidance and train a diffusion UNet that
+These results verify that our method can largely promote      learns the listener motion purely from implicit motion mod-
+the visual and motion quality, enabling realistic and vivid      eling, i.e. the rendering module in Section 3.2 without pose
+listening head generation.                                   guidance net and expression attention layers. The network
+                                                                              is first pretrained on VFHQ and Realtalk dataset for uncon-
+4.3. Qualitative Results                                                               ditioned image generation, then trained on Realtalk dataset
+We compare the visualization result with RLHG, L2L and      for listening head generation conditioned on speaker fea-
+PCH. MFR-Net and CustomListener are not open-sourced      tures. As shown in Table 3, without the motion guidance,
+
+
+
+                                                     15891
+
+=== PDF PAGE 8 ===
+                                                      FD↓         FID∆fm ↓    SND↓
+               Methods          SSIM↑  PSNR↑  FID↓
+                                                             exp    angle   trans   exp   pose   exp   pose
+
+          w/o motion guidance         0.63     19.75    14.37   11.02   4.28   5.00   9.05   0.12   1.67   0.02
+      w/o implicit motion refinement    0.64     20.17    13.58   11.00   4.05   5.17   6.84   0.06   1.61   0.02
+                 Ours                0.65     20.34   13.38   10.48   3.94   5.12   6.00   0.05   1.48   0.02
+
+
+      Table 3. Ablation study on motion modeling, tested on Realtalk dataset, the values of FD and FID∆fm are multiplied by 100.
+
+
+                      FD↓         FID∆fm ↓           left example), and the second is that it tends to add more fa-
+        Settings
+                    exp   angle   trans   exp   pose          cial details to the generated videos, such as more realistic
+                                                            wrinkles (the right example). As a result, we can observe   Concatenate pose   7.81   3.03   4.36   9.87   0.10
+                                                   more stable and detailed facial expressions after refinement.    Separate control   7.48   2.01   4.28   4.69   0.10
+                                                          This implies that the implicit motion refinement helps the
+                                                             rendering module learn to revise the details of the gener-Table 4.  Ablation study on different motion control schemes,
+tested on Realtalk dataset, the values of FD and FID∆fm are mul-     ated videos given additional conditions, further improving
+tiplied by 100.                                                   the visual qualities.
+                                                             Discussions. Our proposed framework can generate high
+                                                                         fidelity listening head videos with accurate motion, vivid
+both the visual quality and the motion quality of the gen-      facial details and expressive motions.  Nevertheless, there
+erated listening head degrades.   It can be observed that      are still some limitations. 1) The condition used to generate
+FID∆fm has significantly degrades, indicating there are un-      listening heads is restricted within the speaker’s audio and
+natural transitions of expression and head poses. As shown      facial expressions. But more flexible conditions such as text
+in Fig. 3, without motion guidance, the network struggles      description, motion styles etc. are always appreciated. The
+to generate continuous head poses and expressions, often     proposed hybrid motion generation has the potential of inte-
+resulting in serious artifacts in faces. Such result proves      grating diverse control signals, we will study this in the fu-
+that the explicit motion guidance can effectively ease the      ture. 2) Time complexities. The motion generation module
+training of LDM-based models on small scale datasets.          in our framework is lightweight and can generate motions
+                                                                        at 15 fps, the computational bottleneck lies in the renderingThe Distinct Controls of Pose and Expressions. In Sec-
+                                                        module.  This is a common limitation of the LDM-based
+tion 3.2, we propose to use separate controls of head pose
+                                                      methods and can be alleviated by model quantization or dis-
+and facial expression according to the intrinsics of these two
+                                                                             tillation, and we will explore more in the future.
+types of motion signals. To validate the effectiveness of the
+                                                    Supplementary Materials. We provide user study, details
+proposed control strategies, we remove the pose images in
+                                                              of network, training objectives, experimental setups, ethics,
+the rendering module, and concatenate the head pose coeffi-
+                                                      and more visual results in supplementary materials.
+cients with the facial expression coefficients. The concate-
+nated motion signal is injected into the rendering module
+                                                          5. Conclusionthrough the expression cross-attention layer. The results in
+Table 4 show that using concatenated motion as the con-     In this paper, we propose a diffusion-based listening head
+trol signal leads to a degeneration in both motion accuracy     generation framework that generates photorealistic listen-
+and naturalness, especially on expression metrics. We also     ing head videos up to 512 × 512 resolution, with highly
+present some visualizations in Fig. 4. From the visualiza-     expressive motions and fine facial details. A hybrid motion
+tion, there exists inaccurate pose control and visual arti-     modeling method that consists of an explicit motion gener-
+facts when using concatenated motion signals (the left ex-      ation module, a specially designed motion control strategy
+ample), and poor expression controllability (the right exam-     and an implicit motion refining process eases the training
+ple). These results verify the effectiveness of the proposed     of the LDM-based framework, making the learning on a
+pose and expression controls.                                 small scale dataset feasible. Comprehensive experiments on
+Implicit Motion Refinement.  Furthermore, we validate     Realtalk and ViCo dataset demonstrate that our framework
+the effectiveness of the proposed implicit motion refinement     achieves superior results in terms of visual quality and mo-
+method. As shown in Table 3, without the refinement mod-      tion expressiveness compared with several state-of-the-art
+ule, the motion quality and visual quality of the generated     methods. And a thorough ablation study proves the effec-
+video both degrade. As shown in Fig. 5, we observe mainly      tiveness and necessity of the proposed hybrid motion mod-
+two effects of the implicit motion refinement. The first is      eling method. In the future, we will study further to improve
+that the refinement fixes some wrong facial expressions (the      the controllability and the generating speed of our model.
+
+
+
+                                                    15892
+
+=== PDF PAGE 9 ===
+Acknowledgement                                                Louis-Philippe Morency. Virtual rapport. In Intelligent Vir-
+                                                                                tual Agents, pages 14–27, Berlin, Heidelberg, 2006. Springer
+This research was funded by Key R&D Program of Shaanxi           Berlin Heidelberg. 2
+Province under Grant 2024GX-YBXM-141.  This work                                                                     [11] Yuwei Guo, Ceyuan Yang, Anyi Rao, Yaohui Wang, Y. Qiao,
+was also supported by Ant Group Research Intern Program.                                                            Dahua Lin, and Bo Dai. Animatediff: Animate your person-
+                                                                              alized text-to-image diffusion models without specific tun-
+                                                                                 ing. ArXiv, abs/2307.04725, 2023. 3, 4
+References                                                      [12] Martin Heusel,  Hubert Ramsauer, Thomas  Unterthiner,
+                                                                   Bernhard Nessler, and Sepp Hochreiter. Gans trained by a
+ [1] Tenglong Ao, Zeyi Zhang, and Libin Liu.  Gesturediffu-
+                                                               two time-scale update rule converge to a local nash equilib-
+      clip: Gesture diffusion model with clip latents. ACM Trans.
+                                                                         rium. In Proceedings of the 31st International Conference on
+     Graph., 42(4), 2023. 4
+                                                                   Neural Information Processing Systems, page 6629–6640,
+ [2] Alexei Baevski, Henry Zhou, Abdelrahman Mohamed, and                                                          Red Hook, NY, USA, 2017. Curran Associates Inc. 6
+     Michael Auli. wav2vec 2.0: a framework for self-supervised                                                                     [13] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffu-
+     learning of speech representations.  In Proceedings of the                                                                           sion probabilistic models. In Proceedings of the 34th Inter-
+     34th International Conference on Neural Information Pro-                                                                           national Conference on Neural Information Processing Sys-
+     cessing Systems, Red Hook, NY, USA, 2020. Curran Asso-                                                                           tems, Red Hook, NY, USA, 2020. Curran Associates Inc. 2,
+      ciates Inc. 4                                                              3
+ [3] Volker Blanz and Thomas Vetter. A morphable model for                                                                     [14] Ai-Mei Huang, Zhewei Huang, and Shuchang Zhou. Percep-
+     the synthesis of 3d faces. In Proceedings of the 26th Annual                                                                                   tual conversational head generation with regularized driver
+     Conference on Computer Graphics and Interactive Tech-                                                                 and enhanced renderer. Proceedings of the 30th ACM Inter-
+     niques, page 187–194, USA, 1999. ACM Press/Addison-                                                                           national Conference on Multimedia, 2022. 2, 6, 7
+     Wesley Publishing Co. 1
+                                                                     [15] Lixing Huang,  Louis-Philippe  Morency,  and  Jonathan
+ [4] Justine Cassell and Kristinn R. Thorisson. The power of a                                                                         Gratch.  Virtual rapport 2.0.  In Intelligent Virtual Agents,
+    nod and a glance: Envelope vs. emotional feedback in ani-                                                                    pages 68–79, Berlin, Heidelberg, 2011. Springer Berlin Hei-
+     mated conversational agents. Applied Artificial Intelligence,                                                                             delberg. 2
+     13(4-5):519–538, 1999. 2
+                                                                     [16] Xinya  Ji,  Hang Zhou,  Kaisiyuan Wang, Wayne Wu,
+ [5] Justine Cassell, Catherine Pelachaud, Norman Badler, Mark         Chen Change Loy, Xun Cao, and Feng Xu.  Audio-Driven
+     Steedman, Brett Achorn, Tripp Becket, Brett Douville, Scott          Emotional Video Portraits . In 2021 IEEE/CVF Conference
+      Prevost, and Matthew Stone. Animated conversation: rule-         on Computer Vision and Pattern Recognition (CVPR), pages
+     based generation of facial expression, gesture & spoken in-          14075–14084, Los Alamitos, CA, USA, 2021. IEEE Com-
+     tonation for multiple conversational agents. In Proceedings            puter Society. 1
+      of the 21st Annual Conference on Computer Graphics and                                                                     [17] Xinya Ji, Hang Zhou, Kaisiyuan Wang, Qianyi Wu, Wayne
+      Interactive Techniques, page 413–420, New York, NY, USA,                                                         Wu, Feng Xu, and Xun Cao. Eamm: One-shot emotional
+     1994. Association for Computing Machinery. 2                                                                              talking face via audio-based emotion-aware motion model.
+ [6] Zhigang Chang, Weitai Hu, Qing Yang, and Shibao Zheng.           In ACM SIGGRAPH 2022 Conference Proceedings, New
+     Hierarchical semantic perceptual listener head video gener-           York, NY, USA, 2022. Association for Computing Machin-
+      ation: A high-performance pipeline. In Proceedings of the             ery. 1
+     31st ACM International Conference on Multimedia, page                                                                     [18] Jianwen Jiang, Chao Liang, Jiaqi Yang, Gaojie Lin, Tianyun
+     9581–9585, New York, NY, USA, 2023. Association for                                                                 Zhong, and Yanbo Zheng.  Loopy: Taming Audio-Driven
+    Computing Machinery. 2                                                                                   Portrait Avatar with Long-Term Motion Dependency. arXiv
+ [7] Zhiyuan Chen, Jiajiong Cao, Zhiquan Chen, Yuming Li, and             e-prints, art. arXiv:2409.02634, 2024. 3
+    Chenguang Ma. EchoMimic: Lifelike Audio-Driven Portrait                                                                     [19] H. Li.   Animate Anyone:  Consistent and Controllable
+     Animations through Editable Landmark Conditions. arXiv                                                                     Image-to-Video Synthesis for Character Animation  .   In
+      e-prints, art. arXiv:2407.08136, 2024. 2, 3                        2024 IEEE/CVF Conference on Computer Vision and Pat-
+ [8] Yu Deng, Jiaolong Yang, Sicheng Xu, Dong Chen, Yunde            tern Recognition (CVPR), pages 8153–8163, Los Alamitos,
+       Jia, and Xin Tong.  Accurate 3D Face Reconstruction With         CA, USA, 2024. IEEE Computer Society. 4
+     Weakly-Supervised Learning: From Single Image to Image      [20] Jin Liu, Xi Wang, Xiaomeng Fu, Yesheng Chai, Cai Yu, Jiao
+     Set . In 2019 IEEE/CVF Conference on Computer Vision and           Dai, and Jizhong Han.  Mfr-net: Multi-faceted responsive
+     Pattern Recognition Workshops (CVPRW), pages 285–295,            listening head generation via denoising diffusion model. In
+    Los Alamitos, CA, USA, 2019. IEEE Computer Society. 6            Proceedings of the 31st ACM International Conference on
+ [9] Scott Geng, Revant Teotia, Purva Tendulkar, Sachit Menon,           Multimedia, page 6734–6743, New York, NY, USA, 2023.
+     and Carl Vondrick. Affective Faces for Goal-Driven Dyadic           Association for Computing Machinery. 1, 2, 6, 7
+     Communication.   arXiv e-prints,  art. arXiv:2301.10939,      [21] X. Liu, Y. Guo, C. Zhen, T. Li, Y. Ao, and P. Yan. Custom-
+     2023. 6                                                                        listener: Text-guided responsive interaction for user-friendly
+[10] Jonathan Gratch, Anna Okhmatovskaia, Francois Lamothe,            listening head generation.  In 2024 IEEE/CVF Conference
+     Stacy Marsella, Mathieu Morales, R. J. van der Werf, and         on Computer Vision and Pattern Recognition (CVPR), pages
+
+
+
+                                                     15893
+
+=== PDF PAGE 10 ===
+     2415–2424, Los Alamitos, CA, USA, 2024. IEEE Computer      [33] Guy Tevet, Sigal Raab, Brian Gordon, Yoni Shafir, Daniel
+      Society. 1, 2, 4, 6, 7                                               Cohen-or, and Amit Haim Bermano. Human motion diffu-
+[22] Ilya Loshchilov and Frank Hutter.  Decoupled weight de-           sion model.  In The Eleventh International Conference on
+     cay regularization. In International Conference on Learning          Learning Representations, 2023. 4
+     Representations, 2017. 6                                        [34] Linrui Tian, Qi Wang, Bang Zhang, and Liefeng Bo.
+[23] Camillo Lugaresi, Jiuqiang Tang, Hadon Nash, Chris Mc-        EMO: Emote Portrait Alive – Generating Expressive Por-
+     Clanahan, Esha Uboweja, Michael Hays, Fan Zhang, Chuo-               trait Videos with Audio2Video Diffusion Model under Weak
+     Ling Chang, Ming Guang Yong, Juhyun Lee, Wan-Teh           Conditions. arXiv e-prints, art. arXiv:2402.17485, 2024. 2,
+     Chang, Wei Hua, Manfred Georg, and Matthias Grundmann.             3, 4, 5
+     MediaPipe: A Framework for Building Perception Pipelines.      [35] Aaron  van  den  Oord,   Oriol  Vinyals,  and  Koray
+     arXiv e-prints, art. arXiv:1906.08172, 2019. 4, 6                    Kavukcuoglu.   Neural  discrete  representation  learning.
+[24] Cheng Luo, Siyang Song, Weicheng Xie, Micol Spitale, Lin-           In Proceedings of the 31st International Conference on
+      lin Shen, and Hatice Gunes. ReactFace: Multiple Appropri-          Neural Information Processing Systems, page 6309–6318,
+      ate Facial Reaction Generation in Dyadic Interactions. arXiv         Red Hook, NY, USA, 2017. Curran Associates Inc. 1
+      e-prints, art. arXiv:2305.15748, 2023. 1                         [36] Cong Wang, Kuan Tian, Jun Zhang, Yonghang Guan, Feng
+[25] Evonne Ng, Hanbyul Joo, Liwen Hu, Hao Li, Trevor Dar-          Luo, Fei Shen, Zhiwei Jiang, Qing Gu, Xiao Han, and
+       rell, Angjoo Kanazawa, and Shiry Ginosar.  Learning to         Wei Yang. V-Express: Conditional Dropout for Progressive
+      listen:  Modeling non-deterministic dyadic facial motion.           Training of Portrait Video Generation.  arXiv e-prints, art.
+    2022 IEEE/CVF Conference on Computer Vision and Pat-           arXiv:2406.02511, 2024. 4
+      tern Recognition (CVPR), pages 20363–20373, 2022.  1, 2,                                                                     [37] Duomin Wang, Yu Deng, Zixin Yin, Heung-Yeung Shum,
+      6, 7                                                                 and Baoyuan Wang. Progressive disentangled representation
+[26] Youxin Pang, Yong Zhang, Weize Quan, Yanbo Fan, Xi-                                                                            learning for fine-grained controllable talking head synthesis.
+     aodong Cun, Ying Shan, and Dong-Ming Yan. DPE: Disen-                                                                           In 2023 IEEE/CVF Conference on Computer Vision and Pat-
+     tanglement of Pose and Expression for General Video Por-                                                                             tern Recognition (CVPR), pages 17979–17989, 2023. 1
+       trait Editing . In 2023 IEEE/CVF Conference on Computer
+                                                                     [38] Zhou Wang, A.C. Bovik, H.R. Sheikh, and E.P. Simoncelli.
+     Vision and Pattern Recognition (CVPR), pages 427–436, Los
+                                                              Image quality assessment: from error visibility to structural
+     Alamitos, CA, USA, 2023. IEEE Computer Society. 1
+                                                                                     similarity. IEEE Transactions on Image Processing, 13(4):
+[27] Ziqiao Peng, Yihao Luo, Yue Shi, Hao Xu, Xiangyu Zhu,
+                                                                  600–612, 2004. 6
+    Hongyan Liu, Jun He, and Zhaoxin Fan.  Selftalk: A self-
+                                                                     [39] Huawei Wei, Zejun Yang, and Zhisheng Wang.  AniPor-
+     supervised commutative training diagram to comprehend 3d
+                                                                                                   trait: Audio-Driven Synthesis of Photorealistic Portrait Ani-
+      talking faces. In Proceedings of the 31st ACM International
+                                                                        mation. arXiv e-prints, art. arXiv:2403.17694, 2024. 4
+     Conference on Multimedia, pages 5292–5301, 2023.
+                                                                     [40] Liangbin Xie, Xintao Wang, Honglun Zhang, Chao Dong,[28] Ziqiao Peng, Wentao Hu, Yue Shi, Xiangyu Zhu, Xiaomei
+                                                                 and Ying Shan. Vfhq: A high-quality dataset and benchmark     Zhang, Hao Zhao, Jun He, Hongyan Liu, and Zhaoxin Fan.
+                                                                                for video face super-resolution.  In 2022 IEEE/CVF Con-     SyncTalk: The Devil is in the Synchronization for Talking
+                                                                           ference on Computer Vision and Pattern Recognition Work-    Head Synthesis .  In 2024 IEEE/CVF Conference on Com-
+                                                                    shops (CVPRW), pages 656–665, 2022. 5, 6     puter Vision and Pattern Recognition (CVPR), pages 666–
+     676, Los Alamitos, CA, USA, 2024. IEEE Computer Soci-      [41] Mingwang Xu, Hui Li, Qingkun Su, Hanlin Shang, Li-
+      ety. 1                                                       wei Zhang, Ce Liu, Jingdong Wang, Yao Yao, and Siyu
+[29] Yurui Ren, Gezhong Li, Yuanqi Chen, Thomas H. Li, and          Zhu.   Hallo:  Hierarchical Audio-Driven Visual Synthe-
+    Shan Liu.  Pirenderer:  Controllable portrait image gener-             sis for  Portrait Image Animation.   arXiv  e-prints,  art.
+      ation via semantic neural rendering.  2021 IEEE/CVF In-           arXiv:2406.08801, 2024. 2, 3
+     ternational Conference on Computer Vision (ICCV), pages      [42] Ziyu Yao, Xuxin Cheng, and Zhiqi Huang.  Fd2talk: To-
+     13739–13748, 2021. 1, 4                                       wards generalized talking head generation with facial decou-
+[30] Robin Rombach, Andreas Blattmann, Dominik Lorenz,           pled diffusion model. In Proceedings of the 32nd ACM Inter-
+      Patrick Esser, and Bjorn Ommer.  High-Resolution Image           national Conference on Multimedia, page 3411–3420, New
+     Synthesis with Latent Diffusion Models . In 2022 IEEE/CVF           York, NY, USA, 2024. Association for Computing Machin-
+     Conference on Computer Vision and Pattern Recognition             ery. 4
+     (CVPR), pages 10674–10685, Los Alamitos, CA, USA,      [43] Zhentao Yu, Zixin Yin, Deyu Zhou, Duomin Wang, Finn
+     2022. IEEE Computer Society. 2, 3                            Wong,  and Baoyuan Wang.    Talking head generation
+[31] L. Song, G. Yin, Z. Jin, X. Dong, and C. Xu.  Emotional           with probabilistic audio-to-visual diffusion priors.  2023
+      listener portrait: Realistic listener motion simulation in con-         IEEE/CVF International Conference on Computer Vision
+      versation. In 2023 IEEE/CVF International Conference on          (ICCV), pages 7611–7621, 2022. 6
+    Computer Vision (ICCV), pages 20782–20792, Los Alami-      [44] Wenxuan Zhang, Xiaodong Cun, Xuan Wang, Yong Zhang,
+      tos, CA, USA, 2023. IEEE Computer Society. 2                   Xi Shen, Yu Guo, Ying Shan, and Fei Wang.  SadTalker:
+[32] Sinan Sonlu, U˘gur G¨ud¨ukbay, and Funda Durupinar. A con-          Learning  Realistic 3D Motion Coefficients  for Stylized
+      versational agent framework with multi-modal personality          Audio-Driven Single Image Talking Face Animation  .  In
+     expression. ACM Trans. Graph., 40(1), 2021. 2                    2023 IEEE/CVF Conference on Computer Vision and Pat-
+
+
+
+                                                     15894
+
+=== PDF PAGE 11 ===
+      tern Recognition (CVPR), pages 8652–8661, Los Alamitos,
+    CA, USA, 2023. IEEE Computer Society. 1
+[45] Wei Zhao, Peng Xiao, Rongju Zhang, Yijun Wang, and
+     Jianxin Lin. Semantic-aware responsive listener head syn-
+      thesis. In Proceedings of the 30th ACM International Confer-
+     ence on Multimedia, page 7065–7069, New York, NY, USA,
+     2022. Association for Computing Machinery. 2
+[46] Mohan Zhou, Yalong Bai, Wei Zhang, Tiejun Zhao, and Tao
+     Mei.  Responsive listening head generation: A benchmark
+      dataset and baseline. In European Conference on Computer
+      Vision, 2021. 1, 2, 6, 7
+
+
+
+
+
+                                                     15895

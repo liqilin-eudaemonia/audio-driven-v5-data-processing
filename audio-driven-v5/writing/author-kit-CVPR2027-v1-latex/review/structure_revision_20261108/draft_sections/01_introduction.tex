@@ -1,0 +1,171 @@
+% 2026-11-08: revised from the author's version, not from the initial draft.
+% Exact author version and change rationale: review/intro_revision_20261108/.
+% Citation keys are stable placeholders; replace matching entries in references.bib.
+\section{Introduction}
+\label{sec:intro}
+
+% Paragraph role P01: 任务价值与成功标准——倾听行为是否合适，而不仅是媒体是否逼真。
+Natural conversation requires both speaking and listening. While one
+participant holds the conversational floor, the listener conveys attention
+and engagement through facial expressions, head movements, and brief vocal
+acknowledgments~\cite{learningtolisten,omnipersona}. These backchannels
+support the ongoing utterance without taking over the conversation. Visual
+reactions may occur with or without vocal feedback, and quiet listening is
+also appropriate. Digital humans therefore need to produce appropriate
+listening behavior as well as fluent spoken responses: realistic faces and
+voices alone do not establish whether feedback fits the conversational
+context.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{F1_task.pdf}
+\caption{\figdraft{F1: Audiovisual backchannels during listening} Given current speaker audio and the listener's first frame, the task is to generate listener video and audio while the speaker holds the floor. Quiet listening is also valid. The rows illustrate visual and audiovisual output scopes, not measured comparisons between methods. Portraits, utterances, and waveforms are schematic.}
+\label{fig:task}
+\end{figure*}
+
+% Paragraph role P02: 已有能力递进——给定目标语音、视觉倾听、双音轨交互、自主视听回应。
+Speech-driven talking-head methods such as
+OmniHuman-1.5~\cite{omnihuman15} synthesize visual behavior from the target
+person's supplied speech. Listening-generation methods, including
+ViCo~\cite{vico}, Learning to Listen~\cite{learningtolisten}, and
+GLARE~\cite{glare}, instead generate visual reactions to another speaker
+without synthesizing the listener's audio. 
+% GLARE also introduces reaction-oriented supervision and evaluation.
+Interactive methods such as INFP~\cite{infp} and DyStream~\cite{dystream}
+model speaking and listening from both participants' audio tracks, with
+the target person's vocal behavior supplied as an input. OmniResponse~\cite{omniresponse}
+and OmniPersona~\cite{omnipersona} further generate audiovisual
+conversational responses, including listener feedback. Building on these
+advances, we focus on listening feedback as the primary target of learning
+and evaluation, and investigate how listening-specific conditioning,
+supervision, and data can support its visual and vocal expression.
+% 引用边界：不推断OmniResponse／OmniPersona只做整段对话评价；两者已有倾听反馈研究。
+
+% Paragraph role P03: 任务设定及应用理由——无需用户视频，允许无历史的初次／独立交流。
+We study audiovisual backchannel generation from the current speaker audio
+and a reference image of the listener (\cref{fig:task}). This setting
+supports interaction with a visible digital avatar without requiring the
+user to enable a camera, and accommodates initial or standalone exchanges
+with no prior dialogue history. 
+% The image specifies the avatar's visual identity, while the current utterance provides the conversational input.
+The listener's audio is generated rather than supplied: the model must
+produce visual reactions, brief vocal feedback, and quiet listening while
+the speaker retains the floor.
+
+% Paragraph role P04: 两个建模挑战——从对方语音构建生成条件，以及显式监督短暂反馈行为。
+Learning this behavior presents two related challenges. First, the input
+speech belongs to the other participant: it provides semantic and acoustic
+cues, but does not prescribe the listener's articulation or reaction.
+These cues must be mapped to conditions suitable for generating the
+listener's audio and video. Second, feedback can be brief, subtle, and
+interspersed with quiet listening. A media-generation objective supervises
+the audiovisual output as a whole, but does not explicitly specify which
+feedback categories should occur. This motivates event supervision that
+makes feedback behavior a direct target of learning.
+% 这是本文的设计依据，不是对所有既有模型已验证的失败结论。
+
+% Paragraph role P05: 方法回应挑战——直接声学条件＋目标特征适配，对应第一个挑战；Event对应第二个。
+Our framework addresses these challenges through direct speaker-audio
+conditioning and supervision of both conditioning representations and
+feedback events. Speaker-audio cross-attention supplies acoustic
+information to the generator, while target audiovisual feature supervision
+trains the conditioning mapping to retain information relevant to the
+listener's response. Clip-level event supervision complements the
+media-generation objective by encouraging the corresponding feedback
+categories to occur. This auxiliary objective supervises category presence
+over the clip without imposing exact event timestamps.
+% Feature监督适配条件映射，不更新冻结Qwen；整段Event不表示其他AV训练目标也放弃时间对应。
+% 效果待证据：上述句子说明机制与目标，不预填组件收益或联合优于级联的结论。
+
+% Paragraph role P06: 数据回应学习要求——角色筛选、配对媒体和有序视听反应描述。
+To support listening-focused learning, we construct paired
+audiovisual data from Seamless conversations~\cite{seamless},
+updating speaker--listener roles as turns change while retaining
+brief vocal backchannels as listening feedback. We use extracted
+visual and vocal cues to guide Qwen3-Omni~\cite{qwen3omni} in
+producing ordered reaction descriptions, linking speaker audio
+with listener audiovisual media and annotations of their feedback.
+
+% Paragraph role P07: 评价回应任务标准——类别一致性、语境／参与感、生成音画自身协调。
+We formulate a listening-focused evaluation design that considers
+audiovisual quality, feedback-category agreement, contextual
+appropriateness and engagement, and audiovisual coordination. A speaker
+utterance can admit multiple reasonable reactions~\cite{learningtolisten,reactface},
+so agreement with one recorded response cannot fully determine feedback
+quality. Clip-level category agreement measures whether the reference
+feedback categories are expressed without requiring temporal overlap with
+reference events. Contextual evaluation considers whether a response fits
+the utterance and preserves the listening role, including reasonable
+alternatives to the reference; audiovisual coordination concerns the
+relation between generated sounds and movements. Together, these
+dimensions separate media quality from the listening behavior it conveys.
+% GLARE也承认一对多；这里的区别是类别一致性不要求时间重叠，不是首次提出一对多。
+% 后续计划仍为中文：类别／检测器、人工量表及正式结果未定，故使用evaluation design。
+
+% Paragraph role P08: 贡献收束——保留作者的模型、数据、评价顺序。
+Our contributions are as follows:
+\begin{itemize}
+    \item We introduce an audiovisual backchannel generation framework
+    conditioned on current speaker audio and a listener reference image.
+    It combines direct acoustic conditioning, target audiovisual feature
+    supervision, and clip-level event supervision for listening feedback.
+
+    \item \textcolor{red}{(如果写数据贡献，需要一些体现贡献的数字：xxh，xxpairs，xxtypes…)}We construct listening-focused audiovisual data through
+    conversational-role filtering and cue-assisted feedback annotation,
+    associating speaker audio with listener audiovisual media and ordered
+    descriptions of visual and vocal behavior.
+
+    \item We formulate a listening-focused evaluation design that
+    complements audiovisual quality with feedback-category agreement,
+    contextual appropriateness and engagement, and audiovisual
+    coordination, accommodating reasonable variation in listener responses.
+\end{itemize}
+
+
+
+
+% 11-07
+% \section{Introduction}
+% \label{sec:intro}
+% % Paragraph role P01: 开场：任务及目标
+% Speakers and listeners both contribute to natural conversation. Listeners use nods, facial expressions, and brief vocal acknowledgments to convey attention and engagement. Digital humans therefore need to produce natural audiovisual feedback while listening. We study audiovisual backchannel generation from the current speaker audio and a reference image of the listener, with the aim of making conversation more natural and engaging (\cref{fig:task}).
+
+% \begin{figure*}[t]
+% \centering
+% \includegraphics[width=\textwidth]{F1_task.pdf}
+% \caption{\figdraft{F1: Audiovisual backchannels during listening} Given current speaker audio and the listener's first frame, the task is to generate listener video and audio while the speaker holds the floor. Quiet listening is also valid. The rows illustrate visual and audiovisual output scopes, not measured comparisons between methods. Portraits, utterances, and waveforms are schematic.}
+% \label{fig:task}
+% \end{figure*}
+
+% % Paragraph role P02: 已有能力与本文范围
+% Speech-driven talking-head methods, such as OmniHuman-1.5~\cite{omnihuman15}, generate facial motion from the target person's given speech, emphasizing lip synchronization and natural motion. Listening-generation methods instead model responses to a speaker. ViCo~\cite{vico}, Learning to Listen~\cite{learningtolisten}, and GLARE~\cite{glare} generate visual listening behavior without generating the listener's own audio. More recent work, including OmniResponse~\cite{omniresponse} and OmniPersona~\cite{omnipersona}, also studies vocal and silent responses. We focus on feedback produced while the speaker holds the conversational floor, using only the current speaker audio and the listener's reference image, without dialogue history or a supplied listener audio track.
+
+% % Paragraph role P03: 技术困难与设计目标
+% This task requires converting semantic and acoustic information in the current speech into listener sounds and visual behavior. General multimodal representations provide a basis for understanding, but their mapping to audiovisual generation conditions still needs to be adapted to listening. Moreover, media reconstruction objectives do not directly specify whether feedback categories, such as nods or acknowledgments, should occur. We therefore address the use of current speech information, the adaptation of conditioning representations, and explicit supervision of feedback behavior.
+
+% % Paragraph role P04: 数据需求
+% The task also requires paired speaker inputs, listener video, and the listener's own audio, with clear listening roles and feedback annotations. Existing resources support these requirements to different extents. Some do not provide an independent listener audio track ready for generation training. Others contain both participants' audiovisual information but still require listening-oriented sample organization and backchannel annotation. Converting raw conversations into suitable training samples thus requires task-specific data preparation.
+% \cnnote{待补引用}{上述资源差异沿用中文稿的限定表述。定稿时须为各类局限补充对应资源证据；不将Seamless或ResponseNet写成完全没有音轨或行为标注。}
+
+% % Paragraph role P05: 评价需求
+% Evaluation must also address listening behavior. Standard video-quality metrics describe visual fidelity and realism, but a visually convincing output may still lack meaningful feedback or respond inappropriately to the current utterance. Evaluation should therefore consider audiovisual quality, feedback behavior, naturalness, and conversational engagement.
+
+% % Paragraph role P06: 数据方案
+% We address these requirements through data construction, a generation framework, and an evaluation design. Starting from Seamless conversations~\cite{seamless}, we use pauses, ASR punctuation, and transcript-based utterance-boundary cues to organize paired speaker--listener clips. To address reaction omissions observed when describing audiovisual clips directly, we extract visual and vocal cues and provide their categories and temporal intervals to Qwen3-Omni~\cite{qwen3omni}. The resulting natural-language descriptions organize reactions in their observed order, providing paired media and descriptions for learning audiovisual listening responses.
+
+% % Paragraph role P07: 方法方案
+% Our generator uses speaker-audio cross-attention to supply direct acoustic information, target audiovisual feature supervision to adapt the conditioning representations, and clip-level event supervision to encourage the corresponding backchannel categories. These components address input information, condition adaptation, and feedback expression, respectively.
+% \cnnote{证据待补}{这里陈述设计目的；三个组件的实际效果由最终同条件消融支持，不预写显著提升或最优结论。}
+
+% % Paragraph role P08: 评价方案
+% Our evaluation design considers clip-level event-category agreement, contextual appropriateness and engagement, and audiovisual event coordination. Category agreement allows feedback timing to vary, contextual evaluation allows different reasonable responses, and coordination concerns the relation between generated sounds and movements.
+% \cnnote{协议待补}{测试集组织、事件检测与核验、人工评价工具及细则尚待确定；不表示完整benchmark已执行或发布。}
+
+% % Paragraph role P09: 贡献入口
+% Our contributions are as follows:
+% \begin{itemize}
+% \item We construct paired data for audiovisual backchannel generation during listening from Seamless conversations. Role-aware clip organization, media processing, and cue-assisted annotation link speaker audio, listener audiovisual media, and ordered reaction descriptions.
+% \item We introduce a generation framework conditioned on current speaker audio and the listener's first frame. Direct audio conditioning supplies acoustic information, target feature supervision adapts the conditioning representations, and clip-level event supervision explicitly encourages feedback categories.
+% \item We organize feedback evaluation around clip-level category agreement, contextual appropriateness and engagement, and audiovisual coordination, complementing media-quality evaluation while allowing reasonable variation in reaction timing.
+% \end{itemize}
+% \cnnote{贡献边界}{第三条保留为已确认的评价设计，不新增“首个”“首次”或“已发布benchmark”的主张。本文仅说明采用联合生成，不主张其已被证明优于音频—视频级联。}

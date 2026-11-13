@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Omni · 三版对照（仅点头 / 点头+原ASR / 点头+修正拟声ASR）</title>
+<style>
+@font-face{font-family:Review;src:url(review.woff)}
+*{box-sizing:border-box}
+body{margin:0;background:#f3f5f8;color:#17243b;font:15px/1.7 system-ui,Review,sans-serif}
+main{max-width:1620px;margin:auto;padding:22px}
+h1{font-size:23px;margin:4px 0}
+h2{font-size:16px;margin:0 0 10px}
+p{margin:8px 0}
+.muted{color:#617087;font-size:13px}
+.panel{background:#fff;border:1px solid #dde3eb;border-radius:12px;padding:18px;margin-top:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button,select{font:inherit;border:1px solid #cad3e0;background:white;border-radius:7px;padding:6px 11px;color:inherit;cursor:pointer}
+button:hover{background:#f0f4fa}
+.badge-vocal{background:#e8f5e9;border-color:#a5d6a7;color:#1b5e20;font-weight:500}
+.badge-nod{background:#eef3ff;border-color:#b8cdf8;color:#1e3a8a}
+.layout{display:grid;grid-template-columns:minmax(330px,35%) minmax(0,1fr);gap:18px;align-items:start}
+.left{position:sticky;top:14px}
+video{width:100%;max-height:460px;background:#111;border-radius:9px}
+.compare-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.box-v3{border:2px solid #1b5e20;background:#f6fcf7;border-radius:10px;padding:14px}
+.box-v2{border:1.5px solid #0284c7;background:#f5faff;border-radius:10px;padding:14px}
+.box-v1{border:1px solid #cbd5e1;background:#f8fafc;border-radius:10px;padding:14px}
+.caption-text{font-size:15px;line-height:1.78;white-space:pre-wrap}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.6 monospace;background:#f7f9fc;padding:12px;border-radius:8px}
+@media(max-width:1100px){.layout,.compare-grid3{grid-template-columns:1fr}.left{position:static}}
+</style>
+<main>
+  <h1>Qwen3-Omni-30B 自然语言描述三版对照：第一版（仅点头） vs 上一版（点头＋原ASR） vs 本轮新生成（点头＋修正拟声ASR）</h1>
+  <p class="muted">在 <code>172.29.189.119</code> 实测：三版均不输入旧 caption。本轮将单字中文语气词映射为纯粹英文拟声音节（<code>"嘿"→"heh"</code>, <code>"哈"→"ha"</code>, <code>"嗯"→"mhm"</code>）并要求显式引用拟声音节（如 <code>laughs audibly with a series of "heh" sounds</code>）。</p>
+  <div class="panel">
+    <div id="summary" style="font-weight:600;margin-bottom:8px">加载中…</div>
+    <div class="row">
+      <button id="prev">← 上一条</button>
+      <select id="sample"></select>
+      <button id="next">下一条 →</button>
+      <select id="filter">
+        <option value="all">全部 24 条有声样本</option>
+        <option value="single_han">含单字中文语气词的 5 条重点样本 (#1, #8, #16, #19, #21)</option>
+        <option value="j_face224_missed_vocal">J 大脸(p10≥224)原漏发声样本 (14条)</option>
+        <option value="pilot50_audible">原 50 条试点中的有声样本 (10条)</option>
+      </select>
+      <a href="review.json" download>下载完整三版对照 JSON</a>
+    </div>
+  </div>
+  <div class="layout">
+    <section class="panel left">
+      <h2 id="sampleId"></h2>
+      <video id="video" controls muted playsinline></video>
+      <audio id="listenerAudio" preload="auto"></audio>
+      <audio id="speakerAudio" preload="auto"></audio>
+      <div class="row" style="margin-top:10px">
+        <button id="soundPlay">有声播放／暂停</button>
+        <select id="audioMode">
+          <option value="processed">净化 listener（模型实际输入）</option>
+          <option value="original">原始 listener（未静音参考）</option>
+          <option value="dialogue">双人对话混音（带 speaker 参考）</option>
+          <option value="silent">静音仅看画面</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label>音量 <input id="audioVolume" type="range" min="0" max="1" step=".05" value="1"></label>
+        <label>速度 <select id="speed"><option value="1">1×</option><option value=".75">0.75×</option><option value=".5">0.5×</option></select></label>
+      </div>
+      <p id="audioStatus" class="muted"></p>
+    </section>
+    <section>
+      <div class="panel">
+        <h2>补充给 Qwen3-Omni-30B 的真实发声区间与 ASR 线索（点击跳转试听）</h2>
+        <div id="vocalIntervals" class="row"></div>
+        <h2 style="margin-top:14px">补充的 25fps 高召回点头区间（点击跳转查看）</h2>
+        <div id="nodIntervals" class="row"></div>
+      </div>
+      <div class="panel">
+        <div class="compare-grid3">
+          <div class="box-v1">
+            <h2 style="color:#475569">第一版（仅点头线索，无 ASR 发声提示）</h2>
+            <div id="v1Caption" class="caption-text"></div>
+          </div>
+          <div class="box-v2">
+            <h2 style="color:#0369a1">上一版（点头 ＋ 原 ASR 发声提示）</h2>
+            <div id="v2Caption" class="caption-text"></div>
+          </div>
+          <div class="box-v3">
+            <h2 style="color:#1b5e20">本轮新生成（点头 ＋ 修正后拟声 ASR 线索）</h2>
+            <div id="v3Caption" class="caption-text"></div>
+            <p id="v3Meta" class="muted"></p>
+          </div>
+        </div>
+      </div>
+      <details class="panel">
+        <summary>查看本轮完整输入 Prompt</summary>
+        <pre id="prompt"></pre>
+      </details>
+    </section>
+  </div>
+</main>
+<script src="audio.js"></script>
+<script>
+let data, visible=[], current, stopAt=null;
+const $=id=>document.getElementById(id);
+$('video').addEventListener('timeupdate',()=>{if(stopAt!==null&&$('video').currentTime>=stopAt){$('video').pause();stopAt=null}});
+function jump(s, start, end){
+  stopAt=null;
+  $('video').pause();
+  $('video').currentTime=Math.max(0, start - 0.25);
+  stopAt=Math.min(s.duration, end + 0.35);
+  $('video').play();
+}
+async function show(id){
+  current=data.samples.find(s=>s.id===id);
+  if(!current)return;
+  const s=current;
+  stopAt=null;
+  $('video').pause();
+  $('video').muted=true;
+  $('video').src=s.video;
+  $('sample').value=id;
+  $('sampleId').textContent=`#${s.index} · ${s.short} · ${s.duration.toFixed(2)}s · ${s.group_label}${s.face_p10?' (p10='+s.face_p10.toFixed(0)+'px)':''}`;
+  $('vocalIntervals').replaceChildren(...s.vocal_cues.map(c=>{
+    let b=document.createElement('button');
+    b.className='badge-vocal';
+    let asrStr=c.asr_text?`修正后ASR: "${c.asr_text}"${c.raw_asr_text?` (原ASR:"${c.raw_asr_text}")`:''}`:'';
+    let label=[asrStr, c.official_text?`官方: "${c.official_text}"`:'', c.observation?`[${c.observation}]`:''].filter(Boolean).join(' | ');
+    b.textContent=`${c.id} · ${c.start.toFixed(2)}–${c.end.toFixed(2)}s · ${label}`;
+    b.onclick=()=>jump(s, c.start, c.end);
+    return b;
+  }));
+  if(s.nod_events.length){
+    $('nodIntervals').replaceChildren(...s.nod_events.map(e=>{
+      let b=document.createElement('button');
+      b.className='badge-nod';
+      let nid=e.id||e.event_id;
+      b.textContent=`${nid} · ${e.start.toFixed(2)}–${e.end.toFixed(2)}s · head nodding`;
+      b.onclick=()=>jump(s, e.start, e.end);
+      return b;
+    }));
+  } else {
+    let span=document.createElement('span');
+    span.className='muted';
+    span.textContent='无点头候选区间';
+    $('nodIntervals').replaceChildren(span);
+  }
+  $('v1Caption').textContent=s.version1_nod_only_caption;
+  $('v2Caption').textContent=s.version2_raw_asr_caption;
+  $('v3Caption').textContent=s.version3_revised_asr_caption;
+  $('v3Meta').textContent=`${s.completion_tokens} tokens · 耗时 ${s.seconds.toFixed(1)}s · finish=${s.finish_reason}`;
+  $('prompt').textContent=s.prompt;
+  history.replaceState(null,'','?sample='+encodeURIComponent(id));
+  await window.reviewAudioLoad(s);
+}
+function rebuild(){
+  const f=$('filter').value;
+  visible=data.samples.filter(s=>f==='all'||(f==='single_han'&&s.has_single_han)||s.group===f);
+  $('sample').replaceChildren(...visible.map((s,i)=>{
+    let o=document.createElement('option');
+    let vtxt=s.vocal_cues.map(c=>c.raw_asr_text?`${c.raw_asr_text}→${c.asr_text}`:(c.asr_text||c.official_text||c.observation)).join(', ');
+    o.value=s.id;
+    o.textContent=`#${s.index} · ${s.short} (${s.group==='pilot50_audible'?'50试点':'J漏发声'}) · [${vtxt}]`;
+    return o;
+  }));
+  if(visible.length) show(visible.some(s=>s.id===current?.id)?current.id:visible[0].id);
+}
+$('sample').onchange=()=>show($('sample').value);
+$('filter').onchange=rebuild;
+$('prev').onclick=()=>{const i=visible.findIndex(s=>s.id===current?.id);if(visible.length)show(visible[(i-1+visible.length)%visible.length].id)};
+$('next').onclick=()=>{const i=visible.findIndex(s=>s.id===current?.id);if(visible.length)show(visible[(i+1)%visible.length].id)};
+$('speed').onchange=()=>{$('video').playbackRate=+$('speed').value};
+fetch('review.json').then(r=>r.json()).then(d=>{
+  data=d;
+  $('summary').textContent=`共完成 ${d.summary.total_samples}/24 条 · 三列并排对照（第一版：仅点头 / 上一版：点头＋原ASR / 本轮新生成：点头＋修正拟声ASR）· 含单字中文语气词样本 ${d.summary.single_han_samples} 条`;
+  const id=new URLSearchParams(location.search).get('sample');
+  current=data.samples.find(s=>s.id===id);
+  rebuild();
+});
+</script>
+</html>

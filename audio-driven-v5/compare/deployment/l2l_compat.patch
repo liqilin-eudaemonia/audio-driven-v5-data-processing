@@ -1,0 +1,35 @@
+diff --git a/src/test_vq_decoder.py b/src/test_vq_decoder.py
+index e3691a7..f07df77 100644
+--- a/src/test_vq_decoder.py
++++ b/src/test_vq_decoder.py
+@@ -199,7 +199,7 @@ def main(args):
+     torch.cuda.manual_seed(23456)
+     seq_len = 32
+     patch_size = 8
+-    num_out = 1024
++    num_out = args.num_samples
+     with open(args.config) as f:
+       config = json.load(f)
+     pipeline = config['pipeline']
+@@ -251,6 +251,8 @@ if __name__ == '__main__':
+     parser.add_argument('--etag', type=str, default='')
+     parser.add_argument('--sample_idx', type=int, default=None)
+     parser.add_argument('--save', action='store_true')
++    parser.add_argument('--num-samples', type=int, default=1024,
++                        help='Limit official test sequences (default unchanged: 1024)')
+ 
+     args = parser.parse_args()
+     print(args)
+diff --git a/src/vqgan/vqmodules/gan_models.py b/src/vqgan/vqmodules/gan_models.py
+index c2f09e4..ca2dd72 100644
+--- a/src/vqgan/vqmodules/gan_models.py
++++ b/src/vqgan/vqmodules/gan_models.py
+@@ -235,7 +235,7 @@ class TransformerDecoder(nn.Module):
+     self.expander.append(nn.Sequential(
+                    nn.ConvTranspose1d(size,dim,5,stride=2,padding=2,
+                                       output_padding=1,
+-                                      padding_mode='replicate'),
++                                      padding_mode='zeros'),  # Official README's compatibility workaround
+                    nn.LeakyReLU(0.2, True),
+                    nn.BatchNorm1d(dim)))
+     num_layers = config['transformer_config']['quant_factor']+2 \

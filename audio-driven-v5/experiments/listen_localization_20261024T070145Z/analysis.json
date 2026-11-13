@@ -1,0 +1,91 @@
+{
+  "completed_at_utc": "2026-10-24T07:23:12Z",
+  "human_ground_truth": false,
+  "boundary_target_s": 0.2,
+  "boundary_target_verified": false,
+  "inferences": {
+    "backend_diagnostic": 12,
+    "omni_windows": 257,
+    "vl_windows": 257,
+    "vl_fullclip": 50,
+    "asr_fullclip": 50,
+    "asr_windows": 257,
+    "total": 883
+  },
+  "stats": {
+    "omni_windows": {
+      "schema_pass": 247,
+      "valid_candidate_rows": 142,
+      "invalid_candidate_rows": 11,
+      "truncated": 5,
+      "failed": 10,
+      "positive_parent_clips": 28
+    },
+    "vl_windows": {
+      "schema_pass": 240,
+      "valid_candidate_rows": 1003,
+      "invalid_candidate_rows": 26,
+      "truncated": 0,
+      "failed": 17,
+      "positive_parent_clips": 49
+    }
+  },
+  "resource_stats": {
+    "0": {
+      "max_memory_mib": 124566.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_when_memory_over_100GiB": 14.017543859649123
+    },
+    "1": {
+      "max_memory_mib": 124566.0,
+      "peak_gpu_utilization_percent": 84.0,
+      "mean_gpu_utilization_when_memory_over_100GiB": 15.454545454545455
+    },
+    "2": {
+      "max_memory_mib": 124566.0,
+      "peak_gpu_utilization_percent": 24.0,
+      "mean_gpu_utilization_when_memory_over_100GiB": 14.706666666666667
+    },
+    "3": {
+      "max_memory_mib": 124566.0,
+      "peak_gpu_utilization_percent": 75.0,
+      "mean_gpu_utilization_when_memory_over_100GiB": 9.6
+    },
+    "4": {
+      "max_memory_mib": 126596.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_when_memory_over_100GiB": 49.30769230769231
+    },
+    "5": {
+      "max_memory_mib": 124566.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_when_memory_over_100GiB": 12.333333333333334
+    },
+    "6": {
+      "max_memory_mib": 126454.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_when_memory_over_100GiB": 38.89655172413793
+    },
+    "7": {
+      "max_memory_mib": 126288.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_when_memory_over_100GiB": 41.05555555555556
+    }
+  },
+  "paragraphs": [
+    "结论：不建议单用 Qwen3-Omni 原生视听做最终标注。推荐继续验证分工方案：短窗口 ASR＋ForcedAligner 负责语言反馈时间，Qwen3-VL 提供视觉候选，Omni 补充非语言声音；点头/摇头再结合头部运动轨迹复核。视觉候选尚不能直接当作可靠最终标签。",
+    "本轮已完成 883 次推理，使用 node8 的 8 张 H200；50 个原片展开为 257 个 3 秒窗口，步长 1 秒。视频与独立 listener 音轨按同一原点裁切，所有结果映射回原片时间。",
+    "最明确的改善在语音：S0699 两次 okay 的跨窗口一致候选为 1.78–2.10 秒（2 个窗口）、4.08–4.40 秒（3 个窗口）；S3370 的 yeah 为 4.40–4.68 秒（3 个窗口）。整段对齐曾把第二次 okay 拉成 2.08–4.40 秒，因此不能盲信单次强制对齐。",
+    "动作仍不可靠：Omni 短窗口有 28/50 个原片出现区间合法候选，但其中不少时间仍覆盖整个窗口；S0699 不同窗口把点头标在不同位置。Qwen3-VL 窗口有 49/50 个原片出现候选，却也出现将持续表情按 0.1 秒拆成多条、加入悲伤等主观推断的问题；条目增多不等于准确率提高。",
+    "4 段后端对照中，关闭 JSON 约束或改用 Transformers 仍有空输出与时间偏移。展示时仅把时间字符串和根数组规范化，原始输出全部保留；不能把格式失败等同于识别失败，也不能将后端切换视为已解决定位。",
+    "当前还没有完整人工事件与边界真值，不能报告召回率、准确率或宣称 ±0.2 秒达标。重复词、笑声转写和零时长对齐仍需复核。网页已提供逐条循环播放、原始 prompt/响应、音量包络、头部俯仰轨迹和反馈导出。"
+  ],
+  "candidate_count_definition": "Individually legal time intervals in complete, syntactically parseable outputs, including legal rows from otherwise failed responses. Overlapping window duplicates retained; not event recall.",
+  "word_candidate_clustering": "Same normalized token; pairwise start and end differences <=0.2 s; interval overlap; distinct source windows. Median boundaries; singleton candidates retained; invalid word intervals retained in raw outputs.",
+  "operational_notes": [
+    "Initial 50-window worker limit was extended explicitly to all 257 windows; existing outputs retained and remaining windows resumed.",
+    "First HF initialization lacked flash_attention_2; actual diagnostic used SDPA and completed all four requests.",
+    "ASR dependency overlay was restored after missing nagisa; all final ASR outputs completed.",
+    "8-GPU allocation does not imply 100% GPU utilization. Omni native generation remains serial per replica; resource measurements are in resources.jsonl."
+  ]
+}

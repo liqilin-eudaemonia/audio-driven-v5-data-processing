@@ -1,0 +1,37 @@
+{
+  "schema": "fixed-two-audio-condition-protocol-before-new-AF-scores-v1",
+  "created_unix": 1794310006.7610676,
+  "target": "AF Table4 own8 values; baseline provenance unchanged",
+  "source_basis": [
+    "AF paper5.1 visual-grounded separation and D.1 triplet of user audio/motion/avatar audio",
+    "Official inference.py requires avatar_audio_path and applies Wav2Vec2 normalization",
+    "Measured quiet listener residual becomes normalized RMS0.465/0.994 in two published examples, while zeros remain0"
+  ],
+  "prior_condition_audit_sha256": "c261443e12ab6e83201a0ff5f1cbfc09429b856e7f2cd99076c5f636696a6dbf",
+  "branches": [
+    {
+      "name": "separated_speaker_avatar_zero",
+      "user_audio": "IIANet target speaker stem",
+      "avatar_audio": "zero waveform, exact same sample count",
+      "GT_listener_audio_conditioned": false
+    },
+    {
+      "name": "separated_speaker_and_avatar",
+      "user_audio": "IIANet target speaker stem",
+      "avatar_audio": "IIANet target listener stem",
+      "GT_listener_audio_conditioned": true,
+      "listener_video_used_offline_for_target_audio_extraction": true
+    }
+  ],
+  "all43_in_each_branch": true,
+  "generated_outputs": 86,
+  "only_audio_preparation_changes_from_V3": true,
+  "fixed": "Same43, original-view512/25, same mean-reference JPEGs, same official checkpoint bytes, seed20 initialization and same per-clip initial RNG, NFE10,CFG2/1,KVcache,bf16,official export",
+  "primary_GT": "Same V3 original-view square crop, supported by paper preprocessing and published framing",
+  "canonical256_GT": "Separate already specified evaluation-source control; not selected per metric",
+  "scoring": "Keep predeclared whole SPECTRE15/9 per-feature variance reconstruction and whole published DIM-math40/20 flattened variance separately; do not mix cells",
+  "no_hyperparameter_seed_or_test_list_sweep": true,
+  "actual_AF_Table4_avatar_audio_policy_published": false,
+  "interpretation": "Two explicitly disclosed input conditions justified by the model interface; own-audio branch is not the same input task as avatar-zero. Match to Table4 alone does not prove common listener evaluation alignment.",
+  "no_author_private_settings_claim": true
+}

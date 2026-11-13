@@ -1,0 +1,55 @@
+\section{Listening Data Construction}
+\label{sec:data}
+% Section role: explain how paired media, descriptions, and labels are constructed.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{F2_data.pdf}
+\caption{\figdraft{F2: Data construction and cue-assisted annotation} Seamless conversations are segmented and paired before listener media processing. Listener audiovisual media and timestamped reaction cues guide Qwen3-Omni to produce an ordered description without numerical timestamps. Each sample links the input conditions, listener targets, and description. Text-based behavior extraction and conflict masking produce clip-level training labels. Example media, cue intervals, and descriptions are schematic; the reported resource counts differ from the AV training selection.}
+\label{fig:data}
+\end{figure*}
+\subsection{Role-Aware Pair Construction}
+\label{sec:pairing}
+
+We construct 2--12-second listening clips from Seamless
+conversations~\cite{seamless}, pairing the current speaker's
+audio with a listener reference frame and synchronized
+listener audio and video. Transcripts, word timings,
+speech activity, and pauses guide segmentation toward
+complete sentences. Roles switch when the listener takes
+the conversational floor, while brief vocal backchannels,
+including overlapping feedback, remain part of listening.
+\Cref{fig:data} summarizes the pipeline.
+
+Listener videos are screened, corrected for orientation
+where needed, and cropped consistently for reaction
+detection and annotation. Listener audio is extracted
+from the participant's separate track over the same
+interval. Officially annotated vocal regions are retained
+with short margins and boundary fades; the remaining
+audio is set to zero, preserving duration and audiovisual
+alignment.
+
+\subsection{Cue-Assisted Reaction Annotation}
+\label{sec:annotation}
+
+To reduce omissions of brief reactions, we extract visual
+and vocal cues and provide their categories and temporal
+intervals to Qwen3-Omni~\cite{qwen3omni}, together with the
+listener audio and video. The model is prompted to describe
+the reactions in their observed order without numerical
+timestamps.
+
+We then use Qwen3-30B-A3B-Instruct-2507~\cite{qwen3} to
+extract clip-level behavior labels from these descriptions.
+Supported categories provide positive labels, while
+unmentioned categories receive weak-negative labels only
+after completeness checks. Uncertain or conflicting labels
+are masked, as detailed in \cref{sec:event}.
+
+\subsection{Dataset Statistics}
+\label{sec:data-statistics}
+% Paragraph role P07: 样本与规模
+Each sample links the current speaker audio, the listener's first frame, aligned listener video and audio, and a reaction description, together with source and temporal metadata. The retained resource contains 704,368 training samples and 7,087 test samples. The AV generation model uses a separately selected training set, specified in \cref{sec:setup}; these counts do not denote the same training manifest. Data and annotation quality checks are organized in \cref{sec:validation}.
+\input{tables/T1_data}
+\cnnote{感觉可以去掉。如果保留的话要补充：数据总量xx条xxh、标柱类别数xx种}{}

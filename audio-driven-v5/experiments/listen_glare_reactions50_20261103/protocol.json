@@ -1,0 +1,82 @@
+{
+  "schema": "glare-reaction-supplement-v1",
+  "source_sha256": "b2f1988ac29fa0ae958abfeaeb0fc7fdc1ac9c6b44fa6aa6699bac702894f518",
+  "nod_run": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_native_caption_nod50_20261030/nod",
+  "nod_protocol_sha256": "dabd29fd2d01d4658c6743e8e423b320ce1e432e1143d316bc61eda3141398bc",
+  "runner_sha256": "81237c35a9d55803bb3c6b6c6547b66c473fdab1006dc8d6deb98f80aba216f6",
+  "parameters": {
+    "head_shaking": {
+      "smooth_window": 9,
+      "baseline_window": 40,
+      "th_on": 0.5,
+      "th_off": 0.35,
+      "min_event_len": 7,
+      "min_turns_per_event": 1,
+      "pitch_penalty_weight": 0.4,
+      "min_yaw_peak_to_valley_deg": 2.0,
+      "min_peak_yaw_vel_deg": 0.12,
+      "min_cycles_per_event": 0
+    },
+    "smiling": {
+      "smooth_window": 7,
+      "th_on": 0.45,
+      "th_off": 0.3,
+      "min_event_len": 6
+    },
+    "laughing": {
+      "smooth_window": 9,
+      "th_on": 0.52,
+      "th_off": 0.36,
+      "min_event_len": 8
+    },
+    "frowning": {
+      "smooth_window": 7,
+      "th_on": 0.42,
+      "th_off": 0.3,
+      "min_event_len": 6
+    },
+    "surprised": {
+      "smooth_window": 7,
+      "th_on": 0.45,
+      "th_off": 0.32,
+      "min_event_len": 5
+    }
+  },
+  "nod_profile": "recall",
+  "nod_user_feedback": "2026-10-29 user: 高召回候选基本正确，可以作为VLM信息补充",
+  "vendor_sha256": {
+    "head_shaking": "35d414b25f4d75c9e93077337f669f3395c18af079182df830ae87ca08c7c459",
+    "smiling": "27935de8c5f97b93ec61f56a0d136edf69fc0767659fa38428a904d93944233d",
+    "laughing": "6b9de7039fdefe0bfafc59975af4197f47f93a5f25a70c513e355856d8d20800",
+    "frowning": "d9c5deb938a9ac09e739b29ff44b08d8fc39fe27ab44d75f8bbf0331662878e6",
+    "surprised": "1ddf40b115b780f02c0f5415678b3dfb107e8790c5016263e3ba9258216f73df"
+  },
+  "packages": {
+    "fer": "25.10.3",
+    "tensorflow-cpu": "2.15.1",
+    "facenet-pytorch": "2.6.0",
+    "torch": "2.11.0+cu128",
+    "torchvision": "0.26.0+cu128",
+    "numpy": "1.26.4"
+  },
+  "fer_code_sha256": "f431b3aef7336e3daec840b35756293eba96954b306c2eaa9a984f59bdbc3768",
+  "fer_model_sha256": "65e3961bb68f497bd02a8d075da8409364db90004edb80c0c6cb15647c4de559",
+  "mtcnn_model_sha256": {
+    "onet.pt": "165bfbe42940416ccfb977545cf0e976d5bf321f67083ae2aaaa5c764280118d",
+    "pnet.pt": "a2a71925e0b9996a42f63e47efc1ca19043e69558b5c523b978d611dfae49c8f",
+    "rnet.pt": "bbb937de72efc9ef83b186c49f5f558467a1d7e3453a8ece0d71a886633f6a86"
+  },
+  "fer": {
+    "mtcnn": true,
+    "use_tflite": true,
+    "mtcnn_device": "cuda",
+    "gpu_memory_fraction": 0.04,
+    "face_selection": "maximum IoU with same-frame MediaPipe box, otherwise largest; all detections preserved",
+    "frames": "every decoded frame, no sampling or dropped no-face rows",
+    "inference_workers": 1,
+    "cpu_threads": 2
+  },
+  "combine": "independent multi-label channels; no winner-takes-all; original VLM records unchanged",
+  "human_ground_truth": false,
+  "training_admitted": false
+}

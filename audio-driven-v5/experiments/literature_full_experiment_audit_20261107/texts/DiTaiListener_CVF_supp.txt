@@ -1,0 +1,127 @@
+   DiTaiListener: Controllable High Fidelity Listener Video Generation with
+                                   Diffusion
+
+                           Supplementary Material
+
+
+                                                        bounding boxes, bounding boxes changing size, and extreme
+                                                       head poses.
+
+                                                               Training the model on raw data led to model collapse
+                                                                    (floating hands, blurry, distorted faces, face out of frame),
+                                                                necessitating data cleaning. To address this, we applied a
+                                                               multi-step filtering process. First, for each clip, instead of
+                                                           using per-frame bounding boxes, we identified the largest
+                                                      bounding box covering faces in all frames and used it for
+                                                             cropping. This provided a static background and a constant
+                                                      bounding box size and removed frame-to-frame jitter. We
+                                                           then used LibreFace [8] to estimate head pose and only
+                                                            kept frames with frontal-looking faces by applying pitch
+                                                     and yaw thresholds; the acceptable range of yaw and pitch
+                                                              angles was set to [−30, 30] degrees. In order to remove other
+                                                                frame-level artifacts, we collected annotations in-house. For
+                                                             every one of the 50,000 clips, we randomly selected a frame.
+                                                           Annotators were to label if each frame had artifacts of some
+                                                              category: split screens, text overlays or transition effects,
+                                                        non-hand objects blocking the view, visible hands, and other
+                                                                visual disturbances such as glare. Frames without artifacts
+Figure 6. A screenshot of user study survey example. The methods    were automatically labeled as clean. Initial manual sparse
+are anonymized as A, B, C, D, E, and the order is randomized.        annotations were used to finetune a CLIP image encoder
+                                                                  for artifact detection. This method provided 0.95 recall on
+                                                        unseen clips. As a result, 13.6% of all data was marked for
+7. Detailed User Study                               removal due to detected artifacts. The resulting model was
+                                                              applied with a high sensitivity threshold to filter artifacts on
+We show an example screenshot of our user study survey in
+                                                                              all the other frames in the dataset.
+Fig. 6. The methods are well-anonymized, and we keep track
+of the original method order for each comparison offline. The
+participants are paid $12/hr for their labor, and we collect                                                          9. Details of 3DMM Space Evaluation Metrics
+the results of each user after careful human review. The
+incomplete and invalid responses are rejected. After such      • Fr´echet Distance (FD) measures discrepancies between
+a review, we have 50 valid responses in total. The result is        distributions of real and generated listener’s EMOCA
+presented in Table. 1                        3DMM coefficients.  It is separately computed for head
+                                                            poses and facial expressions.
+8. Details of Dataset Processing                             • Paired FD (P-FD) is an extension of FD for synchrony.
+                                                  P-FD is calculated by concatenating listener motions with
+RealTalk database includes videos from The Skin Deep     GT speaker motions and measuring Fr´echet Distance of
+YouTube Podcast and contains 692 dyadic conversations.       resulting features. It measures how well listener motions
+The total duration of the videos is 115 hours. The database        are temporally aligned with speaker motions.
+provides bounding boxes of participants’ faces, as well as      • Variance (Var) and SI for Diversity (SID) are used to mea-
+EMOCA 3DMM coefficients [12]. The dataset contains        sure the diversity of generated listener motions, following
+around 50,000 conversational turns of dyadic interactions     DIM [56] and L2L [39]. SID is computed by applying
+with specified roles, i.e., speaker vs listener. We noticed      k-means clustering to 3DMM features and computing en-
+that some of the videos contain artifacts that make them       tropy of the histogram of cluster assignments. The higher
+hard to use for direct training in the video-generation model;       the SID, the more diverse the motions are. Var is the
+such artifacts include occlusions between the listener and       variance of pose and expression features that indicate how
+the camera, bounding boxes not covering full faces, shaky        expressive the movements are across temporal dimensions.10. Text control                              emotions. Only retain direct
+                                           observations about the listener’s
+We add text control inputs to guide the model with text                                           facial expressions, emotions, or other
+prompts. ViCo and RealTalk datasets do not contain any                                           reactions. Give only extracted
+textual captions. Therefore, we performed captioning in                                           information in plaintext form in a
+two stages: text extraction and prompt refinement.  In                                           single sentence.
+the first stage, we used a Large Video-Language-Model
+(VLM) Google Gemini 1.5 Flash 002 [53] to extract text                                           Analytical description example:
+descriptions of audio-visual emotional cue information                                           "The person in the video is shown
+from the listener video with the speaker audio. The fol-                                           smiling broadly, with their mouth wide
+lowing prompt was used:                                           open and eyes crinkled at the corners.
+Which emotion is present in the video?     This is a classic display of happiness
+Emotion can belong to only one of the      There are no other indicators of any
+following classes - angry, happy, sad,     other emotion present."
+neutral, disgust, fear, surprise. Give
+your response in JSON format as            Example extracted: Listener looks
+following: {"emotion": "angry",            happy, smiling broadly with mouth open
+"reason":"reason for your response"}       and eyes crinkled.
+
+Example of model respose:                         User:
+                                           Analytical description:{"emotion": "happy", "reason": "The
+                                             "{text}"person in the video is expressing
+feelings of freedom and self-
+                                           Assistant:acceptance. The overall tone is
+                                           Extracted: Listener looks """positive, suggesting contentment
+and happiness. He talks about being
+able to be himself without                                                 The processed text is used as text control. Example of
+conforming to external pressures.                                                                  resulting text control: “happy, smiling broadly, showing
+This indicates a sense of                                                             her teeth”.
+liberation and joy. Phrases such as
+"I’m free" and "I get to be me"               11. Long Video Generation
+directly convey positive emotions."}
+                                       We provide a quantitative comparison of temporal con-
+                                                                sistency — Motion History Energy (MHE) [5] and Flow
+Extracted information has emotional cues from the speech                                                            Consistency — of our method compared to prior works in
+and quotes that are important to describe the context of                                                           Table 6. The comparison is done on the VICO subset that
+the conversation. However, those do not directly affect the                                                             includes only videos longer than 4 seconds. Our method
+appearance of the listener; sometimes, the VLM lists what                                                      shows consistent and smooth generation while maintaining
+emotions are not present in the video. Therefore, an extra                                                                sharpness, measured by S3 [59]. No-reference naturalness
+step of text processing was needed to create a text control                                                    Image Quality Metric (NIQE) shows that our method pro-
+prompt from extracted information. We use Llama-3.3-                                                              vides better visual quality than prior methods.
+70B-Instruct Large Language Model (LLM) [55] with the
+following prompt:                                                    Table 6. Long Video Generation on VICO dataset
+
+ """
+                                                                                Method              Flow Consistency ↓  MHE ↓   S3↑  NIQE ↓
+Instructions:                                                            Prompt Travel                  1.37           0.655    1.62     6.6
+Given an analytical description of a                  Teacher Forcing                1.74           0.549    1.61     6.7
+dyadic conversation with a video of a               w/oOursDiTaiListener-Edit          1.352.01           0.2690.289    1.781.65     6.36.4
+listener, extract only information
+about the listener’s physical
+expressions and emotions, conversation                                                    12. CTM-adapter Ablation
+emotions. Discard conversation quotes,
+reasoning thoughts, and any general       We provide additional ablation results on the scaling pa-
+explanations or definitions of                  rameters (α, β, γ) within CTM-Adapter in Table 7. β  and γ variations have a larger impact on performance. Re-
+  moving speaker motion or speech degrades performance,
+  consistent with prior works (e.g., DIM[56], L2L[39]).
+
+Table 7. Quantitative ablation on VICO. We report 3DMM FD and
+P-FD comparison, as well as pixel space FID and FVD.
+
+
+                      FD↓        P-FD↓     FID↓  FVD↓
+   Method
+                     Exp   Pose   Exp   Pose
+
+   Ours w/o Motion Enc.   18.73   0.05   21.49   0.06   10.66   55.73
+   Ours w/o Speech Enc.   18.73   0.05   21.49   0.05   10.69   54.35
+   α = 0.5, β = 1, γ = 1   17.77   0.05   20.62   0.06   12.00   55.02
+   α = 1, β = 0.5, γ = 1   20.54   0.05   23.30   0.06   10.44   55.15
+   α = 1, β = 1, γ = 0.5   19.32   0.05   22.06   0.06   11.19   56.09
+   Ours                  17.49   0.04   20.53   0.05   10.14   53.54

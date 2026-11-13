@@ -1,0 +1,46 @@
+Dyadic Interaction Modeling
+9
+4
+Experiments
+4.1
+Experimental Settings
+Listener Behavior Generation. We evaluate the speaker-driven listener mo-
+tion generation of DIM-Listener on ViCo [80] and LM_Listener [48] dataset.ViCo [80]
+consists of 483 video sequences featuring 50 unique listeners. The dataset that
+was proposed in LM_Listener [48] is an extended version of the dataset intro-
+duced in Learning2Listen [47] (L2L), which contains 2366 training segments, 222
+validation segments, and 543 test segments of a single listener (Trevor Noah).
+Speaker Behavior Generation. We evaluate the speech-driven speaker mo-
+tion generation on BiWi [23]. BiWi [23] comprises affective speech recordings
+and the associated high-resolution, dynamic 3D facial geometry data. It fea-
+tures recordings from 14 participants who were instructed to read 40 sentences
+in English, recorded at a frame rate of 25 frames per second. On average, each
+recorded sequence is approximately 4.67 seconds.
+Dyadic Interaction Modeling is performed on CANDOR [54] dataset. It con-
+sists of a collection of 1,656 conversations in English. With a total duration of
+over 850 hours, this large corpus includes more than 7 million words, encom-
+passing rich audio, video, and speech transcripts. It enables detailed moment-to-
+moment analysis of vocal and facial expressions as well as semantic and conver-
+sational contexts. CANDOR provides speech diarization and alignment, which
+was used for speaker/listener designation at the utterance level. The dataset also
+provides separate speech tracks, so there is no overlapping speech.
+Implementation Details For the pre-training stage, we use an Adam opti-
+mizer with a learning rate of 1e−5 and train the model on CANDOR [54] for
+100 epochs. We use a masking ratio p = 75%, which is determined with hyper-
+parameter tuning with respect to the pre-training validation reconstruction loss.
+We use HuBERT [31] as our audio feature extractor. We use the same archi-
+tectures for the Transformer encoders and decoders of DIM-Listener and VQ-
+VAE, which consists of a transformer with 8 hidden layers, 8 attention heads and
+an intermediate size of 768. For pre-processing of CANDOR, we use the provided
+transcript with the dataset to extract utterance-level samples of speaker-listener
+behaviors. For pre-processing of ViCo [2] and LM_Listener [48], we follow the
+pre-processing guidelines and train-test splits from prior works [2, 47, 62] for
+fair comparisons. For all experiments, we extract EMOCA [16], an expressive
+3DMMs parameter set, from visual data and adopt it as facial representation
+for all methods and re-train them for the sake of fair comparison. We follow
+previous work [47,62,80] and adopt expression code (Exp) and pose code (Pose)
+of EMOCA [16] parameters as the description of the speaker and listener’s mo-
+tions. We use HuBERT [31] to extract audio features. Since HuBERT is already
+a robust pre-trained speech encoder, we do not use the audio features in our en-
+coders and directly feed them into our model’s decoder. For the implementation
+source code of our method, please see supplementary materials.

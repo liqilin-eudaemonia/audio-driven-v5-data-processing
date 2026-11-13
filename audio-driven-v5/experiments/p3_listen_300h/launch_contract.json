@@ -1,0 +1,161 @@
+{
+  "config": {
+    "version": "p3-listen-fixed-v1",
+    "reuse_root": "../audio-driven-v4-p3-autoselect-20261013",
+    "manifest": "data_corpora/seamless_listen_300h/selected.json",
+    "output": "experiments/p3_listen_300h",
+    "frozen_splits": null,
+    "seed": 20261021,
+    "data": {
+      "fps": 25,
+      "size": 512,
+      "max_frames": 201,
+      "min_seconds": 4,
+      "stride_seconds": 4,
+      "dev_groups": 2,
+      "test_groups": 2
+    },
+    "planner": {
+      "vision_fps": 8,
+      "vision_max_pixels": 50176,
+      "seed": 20261021,
+      "max_duration": 8.04,
+      "lora_rank": 16,
+      "lora_alpha": 32,
+      "planning_steps": 25,
+      "denoising_steps": 5
+    },
+    "renderer": {},
+    "online": {
+      "mask_alpha": 10,
+      "mask_beta": 1,
+      "planner_warmup_steps": 50,
+      "feature_video_weight": 1,
+      "feature_audio_weight": 1
+    },
+    "training": {
+      "batch": 24,
+      "planner_lr": 1e-05,
+      "heads_lr": 0.0001,
+      "connector_lr": 3e-05,
+      "dit_lr": 5e-06,
+      "lora_rank": 8,
+      "lora_alpha": 8,
+      "warmup_fraction": 0.05,
+      "grad_clip": 1,
+      "save_every": 250,
+      "validate_every": 500,
+      "P": {
+        "epochs": 2,
+        "steps": 40000
+      },
+      "C0": {
+        "epochs": 1,
+        "steps": 20000
+      },
+      "A": {
+        "epochs": 1,
+        "steps": 10000
+      },
+      "dev_limit": 240
+    },
+    "generation": {
+      "steps": 30,
+      "video_cfg": 3,
+      "audio_cfg": 7,
+      "seeds": [
+        137,
+        251,
+        389
+      ]
+    },
+    "corpus": {
+      "training_unique_hours": 300,
+      "dev_unique_hours": 3,
+      "max_subturn_seconds": 10,
+      "only_official_train": true,
+      "normalization_lufs": -18
+    }
+  },
+  "cluster": {
+    "python": "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+    "ssh_key": "/private/ssh_keys/root_dedicated-developjob-zhizhou-avgen-1-zzdsg_ed25519",
+    "master_port": 29951,
+    "network": {
+      "NCCL_SOCKET_IFNAME": "eth0",
+      "GLOO_SOCKET_IFNAME": "eth0",
+      "NCCL_IB_DISABLE": "0",
+      "NCCL_IB_HCA": "mlx5_0",
+      "NCCL_IB_GID_INDEX": "3",
+      "NCCL_IB_TIMEOUT": "20",
+      "NCCL_IB_RETRY_CNT": "7",
+      "NCCL_NET_GDR_LEVEL": "0",
+      "NCCL_DEBUG": "WARN",
+      "TORCH_NCCL_ASYNC_ERROR_HANDLING": "1"
+    },
+    "nodes": [
+      {
+        "name": "avgen-2",
+        "node": "node17",
+        "host": "172.29.15.91",
+        "ssh_user": "root",
+        "ssh_port": 22,
+        "external_port_note": 20342,
+        "role": "master",
+        "gpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "name": "js-public",
+        "node": "node12",
+        "host": "172.29.252.11",
+        "ssh_user": "root",
+        "ssh_port": 22,
+        "external_port_note": 20382,
+        "role": "slave",
+        "gpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "name": "avgen-1",
+        "node": "node16",
+        "host": "172.29.112.17",
+        "ssh_user": "root",
+        "ssh_port": 22,
+        "external_port_note": 20392,
+        "role": "slave",
+        "gpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ]
+  },
+  "stages": [
+    "P",
+    "C0"
+  ],
+  "training_unique_hours": 300
+}

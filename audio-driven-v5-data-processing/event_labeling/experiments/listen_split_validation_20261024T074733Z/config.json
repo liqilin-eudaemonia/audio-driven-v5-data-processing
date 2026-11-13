@@ -1,0 +1,79 @@
+{
+  "schema": "listen-benchmark-v1",
+  "media": {
+    "fps": 8,
+    "max_frames": 128,
+    "max_edge": 768,
+    "max_audio_seconds": 16
+  },
+  "generation": {
+    "max_new_tokens": 4096,
+    "context_limit": 65536,
+    "max_generation_seconds": 600,
+    "guided_json": true
+  },
+  "systems": [
+    {
+      "name": "visual_windows",
+      "backend": "qwen3_vl",
+      "branch": "visual",
+      "model_path": "/private/ckpts/Qwen3-VL-8B-Instruct",
+      "python": "/private/software/conda/envs/qwenomni/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "main",
+      "prompt_variant": "backchannel_visual_simple_v2",
+      "annotation_stages": [
+        "discovery"
+      ],
+      "guided_json": true
+    },
+    {
+      "name": "visual_full",
+      "backend": "qwen3_vl",
+      "branch": "visual",
+      "model_path": "/private/ckpts/Qwen3-VL-8B-Instruct",
+      "python": "/private/software/conda/envs/qwenomni/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "main",
+      "prompt_variant": "backchannel_visual_simple_v2",
+      "annotation_stages": [
+        "discovery"
+      ],
+      "guided_json": true
+    },
+    {
+      "name": "audio_windows",
+      "backend": "qwen3_omni",
+      "branch": "audio",
+      "model_path": "/private/ckpts/Qwen3-Omni/Instruct",
+      "python": "/private/software/conda/envs/vllm/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "main",
+      "runtime_engine": "vllm-0.19.0-audio-batched",
+      "prompt_variant": "backchannel_audio_simple_v2",
+      "annotation_stages": [
+        "discovery"
+      ],
+      "guided_json": true
+    },
+    {
+      "name": "audio_full",
+      "backend": "qwen3_omni",
+      "branch": "audio",
+      "model_path": "/private/ckpts/Qwen3-Omni/Instruct",
+      "python": "/private/software/conda/envs/vllm/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "main",
+      "runtime_engine": "vllm-0.19.0-audio-batched",
+      "prompt_variant": "backchannel_audio_simple_v2",
+      "annotation_stages": [
+        "discovery"
+      ],
+      "guided_json": true
+    }
+  ]
+}

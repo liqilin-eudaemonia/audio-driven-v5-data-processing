@@ -1,0 +1,27 @@
+{
+  "schema": "glare-official-cache-cluster-v1",
+  "work": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/glare_cache_28gpu_20261110/run",
+  "source_plan": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/glare_current500h_prosody_subset_20261110/full",
+  "shared_lia": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/glare_current500h_shared_cache_20261110",
+  "ssh_config": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_current500h_av_only31_20261107/cluster.json",
+  "python": "/private/liqi_workspace/project_code/audio-driven-v5/compare/.envs/avatarforcing/bin/python",
+  "pythonpath": [
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/glare_current500h_nonprosody_cache_20261110/runtime_deps",
+    "/private/liqi_workspace/project_code/audio-driven-v5/compare/.envs/glare-deps",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src",
+    "/private/liqi_workspace/project_code/audio-driven-v5/scripts"
+  ],
+  "nodes": [
+    {"name":"node8","host":"172.29.104.237","ssh_user":"root","ssh_port":22,"access_port":20491,"gpus":[0,1,2,3,4,5,6,7],"prosody_preferred_gpus":[0,1],"cpu_budget":128},
+    {"name":"node12","host":"172.29.252.37","ssh_user":"root","ssh_port":22,"access_port":20356,"gpus":[0,1,2,3,4,5,6,7],"prosody_preferred_gpus":[0,1],"cpu_budget":128},
+    {"name":"node4","host":"172.29.225.51","ssh_user":"root","ssh_port":22,"access_port":20359,"gpus":[0,1,2,3,4,5,6,7],"prosody_preferred_gpus":[0,1],"cpu_budget":128},
+    {"name":"node11","host":"172.29.189.119","ssh_user":"root","ssh_port":22,"access_port":20476,"gpus":[0,1,2,3],"prosody_preferred_gpus":[0,1],"cpu_budget":64}
+  ],
+  "tasks_per_stage":224,
+  "execution":{"lia_workers_per_gpu":1,"async_lia":false,"async_prosody":false,"lia_write_operations":16,"prosody_write_operations":128},
+  "prosody":{"batch_size":64,"loaders":2,"queue_chunks":128,"max_memory_gib":96,"reserve_memory_gib":4},
+  "lia":{"execution":"fused2","decode_workers_cap":8,"detector_services_cap":6,"inflight_groups_cap":12},
+  "preflight":{"require_empty_assigned_gpus":true,"max_used_gpu_memory_mib":2048},
+  "automatic_start":false,
+  "official_policy":{"generation":"official_complete","normalization":"official","NULL":"zero intensity; keep pair","strict_audit":"diagnostic only","early_stop":false}
+}

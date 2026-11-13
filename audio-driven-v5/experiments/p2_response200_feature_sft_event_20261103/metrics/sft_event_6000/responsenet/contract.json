@@ -1,0 +1,3525 @@
+{
+  "shard_contracts": [
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/00.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/00",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/00/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "f72c9947981020b2c8efb8755c80e41cfe4a6109f8dce6886e38f678bcc0eb4e",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/01.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/01",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/01/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "317c4fa206983dc1f193905343b9a50b173afcd2dd08a6b03795f2c65e3013a1",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/02.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/02",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/02/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "bef00f515ddff516f4cc21201695a31c87e48a60161d8acbf6968bdde28d0e43",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/03.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/03",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/03/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "b2c7dd4b51c2352a87057ba4c4d474e0a88b1f235de618a050830796835dc6c6",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/04.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/04",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/04/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "661f9dd0b5f90c6b777664e63fabd4fea34f8b76cede71ba3c11bf02f06a12bb",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/05.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/05",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/05/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "894382994c388d64dc132d36c3c86765bf88738ef3f96006027dd56e1a6fbc56",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/06.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/06",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/06/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "729fd056b26cfee400ddb2349663ec1d0b37ada1db6ed0bc5d2756958fa9c794",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/07.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/07",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/07/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "55dea8db6ce2946c3bfe96536f1195cb2bd395c5ab4a170408cd2bc7330f7c80",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/08.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/08",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/08/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "780af5fd3cbc7f53c2a19b7dc8fec9feeb362265b109839a6ee57bab39541165",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/09.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/09",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/09/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "241321910cbbf8d77f271636a4f72c70413936bf7a7522d965fd3ce10822d936",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/10.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/10",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/10/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "9ef76d3b959203b57fd398a4c38ee74994909e83174a7b4c7d64613959225ec2",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/11.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/11",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/11/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "f72b2777d7cc41a3dba2ad83902615e47079bfe37a56126a8fecedf02d6a8b4c",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/12.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/12",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/12/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "ba162fc94e87eaa21ca468d373ced924b74b48404e03373ac49797e98d79e1df",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/13.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/13",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/13/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "342d033a1c3449df1e3e7a47b7922b6657a9fc9d2d8085fb64e75024747016ed",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/14.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/14",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/14/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "cb099778c767cff6861bfd1094d40813d4c24d22f1247bccb3ea8b77b62016a4",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/15.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/15",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/15/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "97a8d81066a1998b2d909f9e8f36a89c7bcfadb6d5388a0dd1627bc975e9c47e",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/16.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/16",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/16/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "d04bb9966aae125555d419444d9be401e9aa0442a5c21535fe2c939643ce9fcc",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/17.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/17",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/17/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "1880583fbe470538520d57f19af2c9ae7bf48a3eace53b1bb5b6406c3a242170",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/18.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/18",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/18/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "94d08090604c6c6095fd63f5eef0acb03914feb1c9be6cd11dac2b58ad4e1fff",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/19.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/19",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/19/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "6c1121d32c4feb762e82151ef69a70a7c73d3b9fc12d5caf63520661e86a080f",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/20.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/20",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/20/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "680ddf2a27a22463d48fb1898bca08da8320cbe7b8befa8afec6a11caee3174e",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/21.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/21",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/21/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "21ed986340b1e43d0b3c1ecc02170f75ba774f7083e85008f08e130dba95b44e",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/22.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/22",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/22/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "02abca37ea6066e811842f96395e09f7a36fdc23318fd806bc3c44ca9feff8e3",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/23.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/23",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/23/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "0b5f30287e3af697311dc6eb261f34e3adf353b374e1a7e88c024ca12cbb924b",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/24.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/24",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/24/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "522b420deac606c8f86bd3cd20bcfa04dbb6d438d4baddf5ad737123dc5640eb",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/25.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/25",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/25/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "6ea04c98633a91f88bbab25472615de9e9507aeba0d071cc99737e086ab7a8b4",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/26.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/26",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/26/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "b41c7de83d4abc533962c6a64d3a832f63bb16d7da91b20c228204c95fdb9c4a",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/27.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/27",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/27/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "e854d41565c359f1889a288002952142393bb9824c147b7f9cf38a056ee3cd16",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/28.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/28",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/28/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "8fc2470425d4bc16a5028177bf8178ab00b9e1e76bff4fffb27ba84950deb372",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/29.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/29",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/29/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "9bdd71ced851e95ab75bb08b30c895c9e9622405fb9616ef00b817e1c680cad6",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/30.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/30",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/30/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "9f6251e459a9a6e4810672397177876c4aee095bc7372dc4941366782c4f6762",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    },
+    {
+      "schema": "omniresponse-paired-video-v1",
+      "implementation_revision": "2026-11-02-seamless-lazy-gt",
+      "datasets": [
+        "responsenet-j-paired-evaluation-v1"
+      ],
+      "arguments": {
+        "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_manifests/sft_event_6000/responsenet/31.jsonl",
+        "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/31",
+        "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+        "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+        "device": "cuda:0",
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "pixel_workers": 4,
+        "threads": 4,
+        "batch_size": 64,
+        "face_padding": 64,
+        "fid_frames": 32,
+        "fvd_frames": 32,
+        "fvd_stride": 1,
+        "whole_clip_listening": false,
+        "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_response200_feature_sft_event_20261103/metric_shards/sft_event_6000/responsenet/31/features.npz",
+        "allow_partial": true
+      },
+      "manifest_sha256": "86b1080b155e747b00c5554d22e5a1b3d254b1f541437bf2f06ad5a3bbe2f62d",
+      "emotion_labels": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "sad",
+        "surprise",
+        "neutral"
+      ],
+      "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+      "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+      "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+      "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+      "assets": {
+        "alexnet": {
+          "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+          "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+        },
+        "fid_inception": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+          "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+        },
+        "i3d": {
+          "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+          "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+        },
+        "emotion": {
+          "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+          "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+        },
+        "insightface_root": {
+          "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+          "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+        }
+      },
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.15.3",
+        "torch": "2.6.0+cu126",
+        "torchvision": "0.21.0+cu126",
+        "opencv-python": "4.11.0.86",
+        "scikit-image": "0.25.2",
+        "lpips": "0.1.4",
+        "pytorch-fid": "0.3.0",
+        "deepface": "0.0.99",
+        "tensorflow": "2.21.0",
+        "insightface": "0.7.3",
+        "onnxruntime": null,
+        "onnxruntime-gpu": "1.22.0",
+        "av": "17.0.1"
+      },
+      "code": {
+        "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+        "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+        "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+        "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+        "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+        "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+        "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+        "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+        "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+        "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+        "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+      },
+      "execution": {
+        "face_device": "cuda:0",
+        "emotion_device": "cuda:0",
+        "pixel_workers": 4,
+        "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+        "face_backend": {
+          "face_device": "cuda:0",
+          "emotion_device": "cuda:0",
+          "detector_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "landmark_providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ]
+        }
+      }
+    }
+  ],
+  "protocol_sha256": "61b2ccd2bf90b13d1b11b265849d2e540c4eecd9db249eb79fe723dc22bb50b2"
+}

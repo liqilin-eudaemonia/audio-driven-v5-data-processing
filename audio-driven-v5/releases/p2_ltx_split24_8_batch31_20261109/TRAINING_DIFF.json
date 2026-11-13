@@ -1,0 +1,78 @@
+{
+  "full": {
+    "native": "/private/liqi_workspace/project_code/audio-driven-v5/src/p2_ltx_all_lora/training.py",
+    "native_sha256": "9cbbd5c3c6108bbb5e3a38e6c764a0aa09a75464a5f101e8a00aab3281567544",
+    "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_split24_8_batch31_20261109/training_full.py",
+    "output_sha256": "c7e75640a7675549a16f9a127a0100f7cfb7ff2f34c24870a46df8fcab6d9686",
+    "edits": [
+      {
+        "old": "    from .schedule import Schedule\n",
+        "new": "    # Schedule is injected by the separately hashed split runtime.\n",
+        "count": 1
+      },
+      {
+        "old": "    if t['global_batch']%world:raise ValueError('World must divide fixed global batch')",
+        "new": "    if t['global_batch']!=31 or world!=8:raise ValueError('Require approved batch31/world8')",
+        "count": 1
+      },
+      {
+        "old": "loss,event_parts,event=objective(values,c,counts,len(chosen),world)",
+        "new": "loss,event_parts,event=objective(values,c,counts,31,1)",
+        "count": 1
+      },
+      {
+        "old": "/len(chosen)",
+        "new": "/t['global_batch']",
+        "count": 3
+      },
+      {
+        "old": "record[k]=v if k.startswith('event') else v/world",
+        "new": "record[k]=v",
+        "count": 1
+      },
+      {
+        "old": "        if execution['optimizer_state_cpu_offload']:move_adam_moments(optimizer)\n        def save(step):",
+        "new": "        if execution['optimizer_state_cpu_offload']:raise ValueError('Split requires existing GPU Adam')\n        split_canary(c=c,model=model,optimizer=optimizer,dataset=dataset,strategy=strategy,sampler=sampler,\n            pos=pos,effective=effective,names=names,device=device,local=local,rank=rank,world=world,\n            resume_path=resume_path,identity=identity,start=start)\n        def save(step):",
+        "count": 1
+      }
+    ]
+  },
+  "noevent": {
+    "native": "/private/liqi_workspace/project_code/audio-driven-v5/src/p2_ltx_all_lora_noevent/training.py",
+    "native_sha256": "1b0d684196c4e37f26bbf3e1556d2aeb095b2c6074158abffc9e72dd045d742e",
+    "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_split24_8_batch31_20261109/training_noevent.py",
+    "output_sha256": "a041de51e2105531f89577f5918964785720305de639572db15d57871a32c1ec",
+    "edits": [
+      {
+        "old": "    from .schedule import Schedule\n",
+        "new": "    # Schedule is injected by the separately hashed split runtime.\n",
+        "count": 1
+      },
+      {
+        "old": "    if t['global_batch']%world:raise ValueError('World must divide fixed global batch')",
+        "new": "    if t['global_batch']!=31 or world!=24:raise ValueError('Require approved batch31/world24')",
+        "count": 1
+      },
+      {
+        "old": "loss,event_parts,event=objective(values,c,counts,len(chosen),world)",
+        "new": "loss,event_parts,event=objective(values,c,counts,31,1)",
+        "count": 1
+      },
+      {
+        "old": "/len(chosen)",
+        "new": "/t['global_batch']",
+        "count": 3
+      },
+      {
+        "old": "record[k]=v if k.startswith('event') else v/world",
+        "new": "record[k]=v",
+        "count": 1
+      },
+      {
+        "old": "        if execution['optimizer_state_cpu_offload']:move_adam_moments(optimizer)\n        def save(step):",
+        "new": "        if execution['optimizer_state_cpu_offload']:raise ValueError('Split requires existing GPU Adam')\n        split_canary(c=c,model=model,optimizer=optimizer,dataset=dataset,strategy=strategy,sampler=sampler,\n            pos=pos,effective=effective,names=names,device=device,local=local,rank=rank,world=world,\n            resume_path=resume_path,identity=identity,start=start)\n        def save(step):",
+        "count": 1
+      }
+    ]
+  }
+}

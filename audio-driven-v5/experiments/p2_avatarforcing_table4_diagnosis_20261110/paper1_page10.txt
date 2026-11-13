@@ -1,0 +1,44 @@
+10
+M. Tran et al.
+of EMOCA [16] parameters as the description of the speaker and listener’s mo-
+tions. We use HuBERT [32] to extract audio features. Since HuBERT is already
+a robust pre-trained speech encoder, we do not use the audio features in our en-
+coders and directly feed them into our model’s decoder. For the implementation
+source code of our method, please see supplementary materials.
+Baselines We compare the performance of DIM-Listener on Listener Gener-
+ation with random and nearest neighbor baselines in addition to the following
+state-of-the-art methods.
+– RLHG [84] is a regression method. We use their released official code for a
+fair comparison.
+– L2L [50] utilizes a discrete codebook to synthesize motion patterns. We use
+their released official code for a fair comparison.
+– ELP [66] extracts speaker-style features and emotion vectors. Due to the
+unavailability of the source code, we re-implement the baseline following the
+paper. We provide our re-implementation in the supplementary materials.
+The random and nearest neighbor baselines are also widely reported in pre-
+vious work [50,66,84], which include:
+– We randomly select the facial and head motion parameters in the training
+data, and inject random small perturbations into the normal distribution.
+– We use the smoothed speaker’s motion as the listener’s motion.
+– For arbitrary input speaker motion or audio input, we find its nearest neigh-
+bor from the training set and use its corresponding listener motion as output.
+Metrics We re-implement all baselines and train them with EMOCA 3DMM
+as output motion representation. We then evaluate them using the metrics re-
+ported in LM_Listener [51] and ELP [66], namely the Frechet Distance (FD),
+Paired FD (P-FD) for synchrony , Mean Squared Error (MSE), SI for Diversity
+(SID), Variance (Var), and Residual Pearson Correlation Coefficient (rPCC).
+We provide more details about the used metrics in the supplementary materials.
+4.2
+Benchmark Performances
+Quantitative Results. We retrain RLHG [84], L2L [50] and ELP [66] on the
+ViCo dataset [84]. Since the Dyadic Interaction Modeling of our pipeline is con-
+ducted on CANDOR [57], we also pre-train L2L [50], a recent state-of-the-art
+method, which adopts a similar approach using VQ-VAE [53] in the model, on
+CANDOR [57], for fair comparison. Table 1 shows the quantitative comparison
+of Listener Generation on ViCo [84]. Based on the metrics presented in Table 1,
+it is clear that our proposed DIM-Listener outperforms existing methods by a
+significant margin. Our method is about 1.5 times better than the current state-
+of-the-art method L2L [50] in terms of the most important metrics FD and P-FD
+of expressions in the Listener Generation task. The performance gain of L2L af-
+ter being trained on CANDOR [57] remains limited compared to the gain of our
+method, which shows that the effectiveness of Dyadic Interaction Modeling is as

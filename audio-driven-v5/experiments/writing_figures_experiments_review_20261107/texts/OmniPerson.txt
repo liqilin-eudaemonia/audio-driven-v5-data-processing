@@ -1,0 +1,1541 @@
+
+=== PDF PAGE 1 ===
+       Under review as a conference paper at ICLR 2027
+
+
+000  OMNIPERSONA: PERSONA-EMBODIED AGENTS FOR001
+
+002   MULTIMODAL CONVERSATIONAL INTERACTION
+003
+004
+005     Anonymous authors
+006      Paper under double-blind review
+007
+
+008
+009                            ABSTRACT
+010
+011             Current interactive talking avatar models remain fundamentally unaware of dia-
+012             logue context, requiring explicit textual or audio driving signals for each response,
+013             thereby functioning more like video renderers than autonomous avatar agents.
+014              Inspired by recent advances in unified understanding and generation frameworks,
+            we present OmniPersona, an agentic model that integrates a pretrained multimodal015
+                  large language model (MLLM) with an adapted joint audio-video generator. Our
+016
+              framework unifies dialogue understanding with synchronized audio-video avatar
+017
+                 generation within a single architecture. Central to this design are learnable queries
+018               that compress historical multimodal context into a fixed-size non-verbal memory.
+019             Together with verbal content, this memory enables our generator to produce more
+020              responsive avatar behaviors, particularly in the listening state, which remains under-
+021             explored in prior work centered on talking scenarios. Additionally, we incorporate
+022             a suite of anti-drifting techniques, including a masked fusion attention design, to
+023             support persona consistency (audio-visual identity and synchronization) across
+024              multi-turn conversations. This attention design enables customized voice condi-
+025              tioning without compromising audio-video consistency. Extensive experiments
+              on three datasets and human evaluation demonstrate that OmniPersona achieves026
+                 superior performance.
+027
+028
+029    1  INTRODUCTION
+030
+031    The emergence of talking avatars has opened new possibilities for human-agent interaction, spanning
+032     applications from virtual assistants to digital companions. Despite recent progress, current avatar
+033     systems (Huang et al., 2025b; Gan et al., 2025; Sun et al., 2026; Low et al., 2025) remain unaware of
+034     dialogue context: they treat conversation as a series of isolated lip-sync video generations, requiring
+035      explicit textual descriptions or pre-generated audio for each response rather than a continuous, context-
+036    aware dialogue. This limitation stems from an architectural disconnect: existing systems separate
+         conversational understanding from visual generation, preventing avatars from naturally adapting their037
+        behavior based on accumulated interaction history and non-verbal cues.
+038
+039     Recent breakthroughs in unified understanding and generation, exemplified by Omni-Video (Tan
+040      et al., 2025) and UniVid (Luo et al., 2025b), demonstrate the promise of integrating multimodal
+041     comprehension with visual generative capabilities within a unified architecture. However, none
+042     of these approaches is designed for conversational interaction: which requires interactive (face-
+         to-face dyadic communication), synchronized multimodal (text, audio, and video), and multi-turn043
+         identity-preserving (audio-visual persona) dialogue generation.
+044
+045     In this direction, OmniResponse (Luo et al., 2025a) takes an initial step by integrating visual and
+046     acoustic generation into an LLM pipeline via next-token prediction, enabling multimodal responses
+047     spanning text, audio, and video. However, its reliance on low-dimensional, animation-based visual
+048     representations and unsynchronized audio-video prediction substantially limits generation quality.
+       SpeakerVid-5M (Zhang et al., 2026) adopts an MLLM as a backbone and injects textual embeddings as049
+         conditions for joint audio-video generation; yet it focuses exclusively on speaking portrait generation,
+050
+        without modeling listener behavioral dynamics or supporting multi-turn dialogue.
+051
+052    To this end, we introduce OmniPersona, a unified model that seamlessly combines a pretrained
+053     multimodal large language model (MLLM) with an adapted audio-video generative model to create
+        identity-customizable avatars capable of context-aware, audio-synchronized, multi-turn interactions
+
+
+                                              1
+
+=== PDF PAGE 2 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+054                              Reference Inputs
+055                              Voice Reference
+                                                                      Yes, I really like it.
+056                                          Listening                                Listening
+057                                 Visual Reference
+058         Agent
+                         …           …       …059
+060
+061
+062          User               …           …       …
+063
+064
+                                                              Listening                             Listening065
+                                    So, have you tried that                             The lattes are
+066                          new coffee place?                                   amazing, right?
+067     Figure 1: OmniPersona supports context-aware conversational interaction. Given accumulated
+068     dialogue history, it generates synchronized text, audio and video responses while preserving audio-
+069     visual identity across turns, enabling natural long-form human-agent interaction.
+070
+071     (Fig. 1; Tab. 1). OmniPersona is built around two core design challenges that prior work has
+072      left unresolved: how to model the speaking and listening behavioral dynamics throughout natural
+073     conversation, and how to sustain identity consistency while mitigating temporal drift across multi-turn
+074     auto-regressive generations.
+075
+       Modeling such behavioral dynamics requires recognizing that speaking and listening are not mutu-
+076
+         ally exclusive: a natural agent produces backchannels (e.g., “uh-huh”, “mm”) with corresponding
+077      facial cues while listening, and exhibits natural pauses and rhythmic modulation while speaking.
+078    OmniPersona addresses this via two parallel streams: a verbal stream that autoregressively generates
+079      transcriptions from prior conversational context, and a non-verbal stream that distills affective cues
+080      (e.g., tone, prosody, behavioral tendencies) into a compact memory condition via learnable queries.
+081    Both streams jointly condition a downstream audio-video diffusion model, synchronizing what is
+082     said and how it is naturally expressed.
+083   A further challenge in auto-regressive diffusion generation is the drifting issue from teacher forc-
+084     ing (Chen et al., 2024; Huang et al., 2025a; Chen et al., 2025a; Yang et al., 2026b; Xiao et al.,
+085     2025; He et al., 2025). We address this through a suite of complementary anti-drifting techniques.
+086      First, Diffusion Forcing (Chen et al., 2024) is adopted to mitigate temporal drifting by imposing
+087     varying noise levels across sequential frames, reducing error propagation during auto-regressive
+088      synthesis. Second, to prevent mutual interference between the audio and video streams, we introduce
+089     a carefully designed Masked Fusion Cross Attention module within the cross-attention layers that
+090     connect audio and video modalities, enabling customized voice conditioning without compromising
+        audio-video consistency. Third, Strided RoPE augments rotary position embeddings with a strided091
+        encoding scheme, sustaining long-range visual coherence. Together, these techniques enable stable,
+092
+         identity-preserving avatar generation over long conversational interactions.
+093
+094     Overall, our contributions can be summarized as follows:
+095
+096              • We introduce OmniPersona, a unified framework that integrates multimodal understanding
+097             with synchronized text, audio, and visual generation, enabling context-aware conversational
+                   interactions.098
+099
+        Table 1: Comparisons with recent methods. Joint A&V: joint audio and video generation. Persona
+100     Control: reference face and voice conditioning. LiveAvatar (speech-to-video) and OVI (text-to-audio-
+101     video) rely on an external MLLM for driving conditions.
+102
+          Method                          Multi-Turn  Context-aware   Joint A&V  Persona Control
+103
+104        OmniResponse (Luo et al., 2025a)     ✓        ✓           ✗          Face only
+            SpeakerVid-5M (Zhang et al., 2026)      ✗        ✓        ✓          Face only
+105             LiveAvatar (Huang et al., 2025b)      ✓           ✗           ✗          Face only
+106       OVI (Low et al., 2025)               ✗           ✗        ✓          Face only
+107           OmniPersona                ✓        ✓        ✓         Face + Voice
+
+
+
+                                              2
+
+=== PDF PAGE 3 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+108
+                  • We establish a bridge between an MLLM and an adapted audio-video diffusion generator via
+109              learnable queries, which compress historical context into a non-verbal memory condition.
+110           Combined with verbal response, this design significantly enhances the naturalness and
+111             coherence of generated content.
+112
+113              • We develop a suite of anti-drifting techniques to ensure long-term generation stability,
+114              including diffusion forcing and strided RoPE to alleviate visual drifting, and a masked fusion
+115              cross-attention design that enables customized voice conditioning without compromising
+116             audio-video consistency.
+117
+118              • Extensive experiments on two existing benchmarks, complemented by dedicated multi-turn
+119              evaluations on listening behavior accuracy and long-term temporal stability, demonstrate
+120               that OmniPersona achieves superior performance in generating contextually responsive,
+121             audio-video consistent avatars ranging from single-turn to multi-turn conversations.
+122
+123
+124
+      2  RELATED WORK
+125
+126
+127     2.1  UNIFIED MODELS FOR UNDERSTANDING AND GENERATION
+128
+129     Recent advances have converged on architectures that unify visual understanding and generation
+130     within single models. Show-o (Xie et al., 2025a), Show-o2 (Xie et al., 2025b) and BAGEL (Deng
+131      et al., 2025) demonstrate that autoregressive and diffusion objectives can coexist in a single model,
+132     scaling to both image and video modalities. BLIP3-o (Chen et al., 2025b) takes a complementary
+133     route by generating semantically rich CLIP features via flow-matching diffusion transformers rather
+134     than discrete token prediction. On the video side, UniVideo (Wei et al., 2026), Omni-Video (Tan et al.,
+135     2025), and Omni-Video 2 (Yang et al., 2026a) establish that MLLMs can serve as semantic controllers
+136     for diffusion-based video generation, while MetaQueries (Pan et al., 2025) offers a lightweight
+        bridging mechanism that preserves a frozen MLLM’s understanding capabilities. Our work extends137
+          this unified paradigm to multi-turn audio-video generation, where the model must condition on an
+138
+        evolving multimodal dialogue history.
+139
+140
+141
+        2.2  FROM TALKING TO AGENTIC AVATAR142
+143
+144     Audio-driven talking avatar methods (Yang et al., 2025; Gao et al., 2025; Gan et al., 2025; Zhu
+145      et al., 2025; Huang et al., 2026) take a complete audio sequence as input and generate the full
+        video non-causally, making them unsuitable for interactive scenarios. Streaming systems (Guo et al.,146
+        2025; Ki et al., 2026; Huang et al., 2025b; Sun et al., 2026) also rely on complete audio input but
+147
+        generate video frames causally; since speech synthesis runs at low latency, these systems can be
+148
+       composed with an external MLLM to support low-latency interaction. In both cases, however, the
+149      avatar module remains a passive renderer that depends entirely on upstream models for language and
+150     speech decisions, with no access to dialogue history.
+151
+        This coupling bottleneck motivates agentic designs that integrate an MLLM into the generation152
+         pipeline, enabling contextual understanding and generation within a unified framework. Body of
+153
+       Her (Ao, 2024) extends an LLM to jointly model speech and upper-body motion via next-token
+154
+         prediction. OmniResponse (Luo et al., 2025a) introduces temporal alignment tokens to synchronize
+155      text and visual streams. SpeakerVid-5M (Zhang et al., 2026) pairs Qwen2.5-Omni (Xu et al.,
+156     2025) with a hybrid autoregressive-diffusion head for person-generic generation. X-Streamer (Xie
+157      et al., 2025c) separates conversational reasoning from video synthesis through a thinker-actor dual-
+158     transformer, sustaining consistent interactions over long sessions. MIDAS (Chen et al., 2025c) routes
+159     multimodal conditioning signals from a minimally modified LLM to a diffusion decoding head.
+160     Following this paradigm, our method conditions generation on the accumulated dialogue history
+161     to improve response accuracy while maintaining cross-turn audio-visual identity consistency and
+        synchronization.
+
+
+                                              3
+
+=== PDF PAGE 4 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+162    3  METHOD
+163
+164     3.1  TASK FORMULATION AND ARCHITECTURE OVERVIEW
+165
+166    Our goal is to automatically generate multi-round responses that are contextually coherent, cross-
+167     modally aligned, and consistent with the specified agent identity including voice and image reference.
+168    The conversational context is defined as
+169                        C = {(Tn,r Arn, Vnr )}Nn=1,   r ∈{user, agent},                        (1)
+170    where T n,r Arn, and V nr denote the text, audio, and video signals of the n-th turn for role r, respectively.
+171    The agent’s identity is specified by visual and vocal references:
+172
+                                     I = (V R, AR),                                         (2)
+173
+       where V R comprises one reference image and AR contains several seconds of reference speech. The174
+        reference audio is user-specified at inference time and can come from any speaker. The task is to
+175
+         learn a conditional generation function:
+176
+                                   ˆ177                                       (T S, ˆA, ˆV ) ∼p(T S, A, V  | C, I),                               (3)
+178          ˆ       where T S, ˆA, ˆV are the generated textual response, synthesized speech, and avatar video, respectively.
+179
+180      Fig. 2 illustrates the overall architecture of our model, which accepts multimodal inputs and produces
+181      joint audio-video responses alongside textual output. In the first turn, the MLLM generates a textual
+        response T S conditioned on the user’s input alone; from the second turn onward, prior dialogue is
+182                                                        n       encoded and compressed into a compact non-verbal memory M  via learnable queries Q (Pan et al.,
+183                                                       n                          5       2025) and a Transformer-based Connector. Concatenating M  with T5 embeddings ET  (Raffel
+184                  S          et al., 2020) of T  forms the conditioning signal for the Diffusion Transformer (DiT (Peebles & Xie,
+185     2023)), which further takes prefix frames V P , noised video V N, reference image V R, prefix audio
+186   AP , noised audio AN, and reference voice AR to synthesize synchronized audio-video responses
+187      that are appended to the dialogue history for coherent multi-turn interaction.
+188
+189                                                                       Condition
+                  MLLM Branch
+190
+                                            Alright. First, I am concern about the …
+191
+                                                                        ...              EmbedderT5192         ->
+193                 CLip                                                                            Concat         Prefix Video/Audio ReferenceImage/Audio                      Qwen2.5-Omni Thinker
+194                       Last                                                            Connector                                                                                                                       ET5     ...    Mn195                                                                ...                                                                                                       Text     Non-verbal
+196                                                                   learnable                                                  Response    Memory
+                                                                       queries Q
+197                                                                                   Inject
+                                                                                                                            GeneratedAgent198                       Agent          User        NoisyLatent                       Condition      OutputLatent                             Video/Audio     Video/Audio                                                                             Video/Audio
+199
+200
+201                                         Fusion-DiT
+202
+203                                        <- Loop back
+204           Historical Context
+205     Figure 2: Overview of our OmniPersona framework for multi-turn multimodal response generation.
+206    OmniPersona consists of three main modules: an MLLM Branch to understand the historical multi-
+207    modal context and generate the text response T S, a DiT-based diffusion generator for synchronized
+208     audio-video generation, and a connector to connect the MLLM and the diffusion model by compress-
+209     ing the long historical context into fixed-size non-verbal memory tokens M n and mapping them into
+210     the video diffusion latent space. The generated video, audio, and text are autoregressively fed back
+211      into the historical context for subsequent turns.
+212
+213      Specifically, we instantiate the MLLM with Qwen2.5-Omni (Xu et al., 2025) for multimodal dialogue
+214     understanding and response T S generation, and adopt OVI (Low et al., 2025) as the DiT-based
+215    backbone for joint audio–video synthesis. Sections 3.2–3.5 detail the connector, joint generation
+         architecture, drifting mitigation and training objective, respectively.
+
+
+                                              4
+
+=== PDF PAGE 5 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+216
+        3.2  CONNECTING MLLM WITH DIFFUSION MODEL
+217
+218   We build a connector that bridges the MLLM with the diffusion model by augmenting text condition-
+219     ing with a non-verbal memory compressed from the multimodal dialogue context C (historical text,
+220     video, and audio from both user and agent) via learnable queries.
+221      Specifically, learnable queries Q ∈RNq×dm serve as the compression bottleneck, where Nq controls
+222     the memory capacity and dm is the hidden dimension of Qwen2.5-Omni. We concatenate C and Q
+223     and feed them into Qwen2.5-Omni thinker backbone to obtain contextualized query representations:
+224
+                                       (ˆC, ˆQ) = Qwen(C, Q),   ˆQ ∈RNq×dm.                           (4)225
+226
+227     Next, we discard ˆC and map ˆQ to the T5 hidden dimension dT5 with a zero-initialized projection layer
+       and refine it with a K-layer Transformer encoder operating on the query sequence via self-attention:228
+229               M n = TransEnc ProjT5(ˆQ)  ∈RNq×dT5.                          (5)
+230
+231    The resulting M n is concatenated with the T5 embeddings ET5 of the speech transcription T S to
+232    form the augmented conditioning input for the diffusion generator:
+233
+                                                                           ˜e = [ET5; M n],                                        (6)
+234
+235    where [· ; ·] denotes sequence-dimension concatenation. This would be cross-attended by the noised
+236      latent with the prefix and reference latent in the later stage for denoising purposes.
+237
+238     3.3  AUDIO-VIDEO JOINT GENERATION
+239
+     We build on OVI (Low et al., 2025), a pretrained DiT with a dual-branch architecture with bidirectional240
+        cross-modal fusion for synchronized audio-video generation (Figure 3). Each modality branch has N
+241
+        transformer blocks with self-attention, text cross-attention, fusion cross-attention, and FFN.
+242
+243      Specifically, each branch concatenates its latents along the sequence dimension: [V P , V N, V R] for
+244     video and [AP , AN, AR] for audio. Self-attention is then applied within each branch, where AN
+245     attends to AR for timbre conditioning and AP for temporal continuity, while V N attends to V R for
+         identity and V P for frame consistency. Next, the latents cross-attend to the verbal and non-verbal246
+        condition embeddings ˜e, after which the two branches interact via fusion cross-attention.
+247
+248    The core design is asymmetric fusion cross-attention (Figure 3, right), where each branch cross-
+249     attends to the other:
+250                       Fusionvid = CrossAttn Q = [V P ; V N; V R], KV = [AP ; AN]  ,               (7)
+251
+252                      Fusionaud = CrossAttn Q = [AP ; AN], KV = [V P ; V N; V R]  .               (8)
+253
+254     Crucially, AR is excluded from all visual features in both fusion modules. This isolation serves a
+        dual purpose: (1) preventing irrelevant acoustic content of AR from leaking into the visual stream255
+256                                                                                                                  ΑΠ     ΑΞ    Α΢
+                                                                          ΤΣ   Νζ
+                                                                                ΑΠ     ΑΞ    Α΢        Q KV257                                        ΦΠ     ΦΞ    Φ΢
+258                                                                               ΦΠ            1     1    0
+259                                                                               ΦΞ           1      1    0
+                                                     Self Attn                              Self Attn260                                                                                                                                  1      1    0
+                                                                                  Φ΢
+261          N ×             Cross Attn                       Cross Attn                          ΦΠ     ΦΞ    Φ΢
+262                                                                Q KV
+263                              Fusion Cross Attn with Audio        Fusion Cross Attn with Video                                                                                  ΑΠ            1     1      1
+264
+                                 Norm+FFN                 Norm+FFN          ΑΞ           1      1      1265
+266                                     Output Video Latent             Output Audio Latent      Α΢       0    0    0
+267
+        Figure 3: Proposed network architecture for joint audio-video generation with context modeling (left)
+268
+       and cross-modal attention maps (right). Superscripts P, N, R denote prefix, noised, and reference
+269      entities; A and V denote audio and video (see Sec. 3.1 for the detailed denotations).
+
+
+
+                                              5
+
+=== PDF PAGE 6 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+270       and disrupting audio-video synchronization; (2) keeping the timbre representation encoded in AR
+271      free from visual semantics, enabling controllable voice customization where the target voice and face
+272     originate from distinct sources (See Appendix A and supplementary video for more details).
+273
+274     3.4  MITIGATING VIDEO AND AUDIO DRIFTING
+275
+276     3.4.1  VIDEO ANTI-DRIFTING
+277
+       To reduce the training–inference gap caused by autoregressive prefix conditioning in the video, we278
+        adopt Diffusion Forcing (Chen et al., 2024) and Strided RoPE in the video branch.
+279
+280     Diffusion Forcing.  Specifically, the noised video latent V N is partitioned into chunks of size c,
+                      N     N     N                        P281     resulting in C chunks V  = [V1  , . . . , VC  ], together with the prefix V   , finally forms ˜V =
+282     [V P , V1N , . . . , VCN ]. Note that the reference latent V R is kept clean throughout training to provide
+283      stable identity guidance. Each chunk Vi in ˜V is assigned an independently sampled diffusion timestep:
+284
+                                      Vi = αtiVi + σtiϵi, ϵi ∼N(0, I).                              (9)285
+286
+        This chunk-wise noising prevents the model from relying on clean historical latents, encouraging it to
+287                                                             R         extract only temporal continuity from the prefix while relying on the clean reference V   for identity
+288     information, thereby reducing identity and color drift in multi-turn autoregressive generation.
+289
+290     Strided RoPE for Reference Anchoring. Since the reference image V R is discontinuous from ˜V , we
+291      offset its RoPE positional index (Su et al., 2024). If the sequence length of ˜V is L, the reference
+292     position is set to pR = L + δ, where δ ∼U(20, 50). This offset prevents V R from being interpreted
+293     as a neighboring frame, allowing it to act as a global identity anchor that future frames converge to
+        while preserving temporal consistency. Appendix D.3 explains the choice of the training offset range294
+       and analyzes how different inference offsets affect identity consistency and pose variation across
+295
+        multiple turns.
+296
+297
+        3.4.2  AUDIO ANTI-DRIFTING
+298
+299   We empirically observe that audio drifting is less severe than video drifting and can be effectively
+300     mitigated with a simplified diffusion forcing strategy. During training, the noisy audio latent AN
+301      is treated as a single chunk and noised with a diffusion timestep, while the prefix audio AP  is
+302     independently noised and the reference audio AR remains clean. This training strategy improves
+303     robustness against noisy prefix audio and stabilizes multi-turn autoregressive audio generation.
+304     In addition, we isolate the reference audio AR from the visual stream in the fusion cross-attention
+305     as Sec.  3.3. Introducing AR into audio-video fusion would couple speaker timbre with visual
+306     generation and easily lead to audio-video misalignment. In practice, even short reference audio AR
+307     in Fusionvid can cause abnormal visual endings, which then propagate back through Fusionaud
+308     and corrupt the timbre representation. By restricting fusion to [AP , AN], while keeping AR only for
+309     audio self-attention, we prevent this feedback loop and stabilize both audio and video generation.
+310
+311     3.5  TRAINING OBJECTIVES
+
+312
+     We train the learnable queries and connector module with full parameters. To adapt the DiT backbone
+313
+        without disrupting its pre-trained priors, we apply LoRA (Hu et al., 2022) to all linear layers in its
+314
+        transformer blocks. The model is optimized with the standard diffusion objective defined as:
+315
+316
+317                              Ldiff = Ex0, ϵ∼N(0,I), t ∥ϵ −ϵθ(xt, t, P, T S, M n, I)∥22  ,               (10)
+318    and the final loss is a weighted combination of the audio and video losses:
+319
+                                                      Ldiff = λALAdiff + λV LVdiff,                               (11)320
+321    where λA and λV are the audio and video loss weights. Here P is the audio-video prefix from
+322     the previous turn, T S the speech transcript, M n the non-verbal memory defined in Sec. 3.2, and I
+323     the reference image and voice; ϵθ is the LoRA-adapted diffusion backbone. Additional details are
+        provided in Appendix B.
+
+
+                                              6
+
+=== PDF PAGE 7 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+324    4  EXPERIMENTS
+325
+
+326
+        4.1  DATASETS AND EVALUATION
+327
+328     Training Dataset. We use Seamless Interaction dataset (Agrawal et al., 2025) for training, which is a
+329     large-scale dyadic face-to-face interaction video dataset collected in laboratory setting. It contains
+330    4,000+ hours in-person human face-to-face interaction videos with 4,000+ participants, featuring
+331      naturalistic conversations between familiar pairs and professional actors. During training, we use all
+332     samples from the training set and crop them to participants’ facial regions, resulting in videos with
+333    448 × 448 resolution at 25 fps.
+334     Evaluation Setup. We evaluate our method following the protocols of OmniResponse (Luo et al.,
+335     2025a), SpeakerVid-5M (Zhang et al., 2026), and our introduced benchmark based on the Seam-
+336     lessInteraction (Agrawal et al., 2025). OmniResponse assesses text reply accuracy and serves as a
+337     multi-turn benchmark, yet lacks metrics for audio-video long-term consistency (e.g., identity preser-
+338     vation and voice similarity) as well as evaluation of listening-phase behavior. SpeakerVid-5M offers
+339    more comprehensive audio-video metrics, but is limited to short responder talking videos, making it
+340      insufficient for capturing the full dynamics of multi-turn interaction.
+341    To address these gaps, we introduce an additional evaluation on the SeamlessInteraction
+342      dataset (Agrawal et al., 2025), comprising 60 randomly selected video clips from the test set spanning
+343     three interaction states: mainly speaking, mainly listening, and rapid speaking–listening alternation,
+344     each around 50 seconds long. We adopt five metrics: FVD (Unterthiner et al., 2018) to measure
+345     long-term temporal video quality, ArcFace (Deng et al., 2019a) to evaluate identity consistency across
+346     frames, SIM-o (Chen et al., 2025d) to assess voice similarity between generated and reference speech,
+347    FIDemo (Deng et al., 2019b) and FD (Zhou et al., 2022; Zhu et al., 2025) to quantify the naturalness
+       and accuracy of facial expressions during the listening phase.
+348
+349     Inference Efficiency. On four H200 GPUs, OmniPersona generates a 5-second, 448 × 448 clip
+350     in 4.6 seconds using 10 diffusion steps, including MLLM encoding and VAE decoding. Timing
+351     comparisons and configurations are detailed in Appendix E.
+352
+353     4.2  QUANTITATIVE COMPARISONS
+354
+355    SpeakerVid-5M Benchmark. We follow the original evaluation protocol and compare against the
+356     SpeakerVid-5M baseline (Zhang et al., 2026) and a cascade pipeline Qwen2.5-Omni (Xu et al., 2025)
+      →Text Prompt →OVI (Low et al., 2025). All three approaches pair the same MLLM with a text-to-357
+        audio-video generator, differing only in how the MLLM is bridged: non-verbal memory with text
+358
+         (ours), text hidden states, or text-only conditioning. Tab. 2 shows strong overall performance, with
+359
+     FVD reduced from 28.82/18.50 to 5.18 and improvements in expression quality, synchronization, and
+360      identity preservation. When all methods use the same SpeakerVid-5M response text, OmniPersona
+361      retains the best scores on all four evaluated generation metrics (Appendix D.2).
+362
+363     Table 2: Comparison of different methods on the SpeakerVid-5M dataset. The best results are
+364     highlighted in bold.
+365       Method            FID ↓  FVD ↓  PSNR ↑  SSIM ↑  ArcFace ↑  CLIPdiag ↑   Syncconf ↑  FIDemo ↓  SIM-o ↑
+366        SpeakerVid-5M         32.35    28.82     17.55      0.66       0.772        0.643        2.698        3.22       0.65
+367       Qwen2.5-Omni + OVI   44.13    18.50     14.25      0.53       0.533        0.590        3.203        0.69       0.42
+          Ours                  20.66    5.18     17.65      0.68       0.774        0.764        3.935        0.20       0.65
+368
+369
+370    OmniResponse Benchmark. Following the OmniResponse (Luo et al., 2025a) protocol, we evaluate
+371      text with METEOR (Banerjee & Lavie, 2005), BERTScoreF 1 (Zhang et al., 2020), ROUGE-L (Lin,
+372     2004), and Distinct-2 (Li et al., 2016); audio with UTMOSv2 (Baba et al., 2024) and LSE-D (Prajwal
+          et al., 2020); video with FVD (Unterthiner et al., 2018). Qwen2.5-Omni + OVI is excluded, as OVI is373
+         limited to 10-second single-turn outputs while OmniResponse clips average ∼70 seconds, making
+374
+          fair comparison infeasible.
+375
+376     Tab. 3 shows improvements in text quality, acoustic naturalness, and video fidelity. LSE-D decreases
+377     to 5.59, below even Ground-Truth (8.96), whose audio-visual misalignment is illustrated in the
+        supplementary video.
+
+
+                                              7
+
+=== PDF PAGE 8 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+378     Table 3: Quantitative Results on OmniResponse (Luo et al., 2025a) benchmark. The best results are
+379     highlighted in bold and the second-best results are underlined.
+380
+           Model                                                              Text                                 Audio           Video
+381
+                                   METEOR ↑  BERTScoreF 1 ↑  ROUGE-L ↑   Distinct-2 ↑  LSE-D ↓  UTMOSv2 ↑  FVD ↓
+382        Ground-Truth                              –             –             –           0.835        8.96         1.56        –
+383      LSTM (Hochreiter & Schmidhuber, 1997)      0.042          0.716           0.000         0.000        9.72         1.21      320.92
+384         Audio-Visual LLM (Abdin et al., 2024)        0.030          0.662           0.020         0.155       10.03        1.32      681.55
+           OmniResponse (Luo et al., 2025a)             0.141          0.806           0.081         0.882        9.56         1.41      314.94
+385       OmniPersona (Ours)                       0.151          0.820           0.081         0.833        5.59         1.50      284.87
+386
+387     Table 4: Comparison and ablation study on the SeamlessIn-
+                                                                                 FIDemo
+388      teraction dataset for multi-turn interaction quality. The best
+389      results are highlighted in bold, and the second-best results    1.1        1.06
+390     are underlined.                                                                                            32 MQ
+                                                                                                    0.9                                  64 MQ
+391                                                           FD ↓                                             128 MQ
+             Method                FVD ↓  ArcFace ↑  SIM-o ↑FIDemo ↓                                                     192 MQ
+392                                                                     Exp  Pose        0.7
+393          F5-TTS (Chen et al., 2025d)       –       –        0.53       –       –     –
+                                                            0.81                 LiveAvatar                        (Huang                                          et                                                     al.,                                      2025b)  12.55                                                               –                                                                                0.55                                                                                      18.46                                                                                                0.06
+                                                                                                    0.5394               OmniAvatar                         (Gan et                                                    al.,                                     2025)                                                59.43                                                            0.68                                                               –                                                                                1.43                                                                                      22.17                                                                                                0.09
+395          Ours                           11.93     0.81      0.66      0.31    14.28  0.04
+                                                                                                    0.3      0.31                     Context length396          w/o DF                         21.72     0.74      0.65      0.34    16.92  0.05
+               w/o FM                         78.74     0.45      0.62      1.36    21.25  0.08             5 s   10 s        20 s
+397
+                                                                      0.66               w/o           MQ                        13.44                                                            0.77                                                                                0.62                                                                                      19.04                                                                                                0.07     Figure 4: FIDemo vs. MQ capacity and               SR                                                12.04                                                            0.73      0.65                                                                                0.36                                                                                      16.39                                                                                                0.05398          w/o
+                                                                   context length.
+399
+400
+       Evaluation on SeamlessInteraction Dataset. We evaluate multi-turn interaction quality on the
+401
+        SeamlessInteraction dataset. Since no existing model supports joint audio-video generation across
+402
+         turns, we assess video and audio separately. For video, we compare against LiveAvatar (Huang et al.,
+403     2025b) and OmniAvatar (Gan et al., 2025) on FVD, ArcFace, FIDemo and FD; for audio, we compare
+404     against F5-TTS (Chen et al., 2025d) on SIM-o.
+405
+        Table 4 shows the best overall performance in video fidelity and expression modeling, alongside406
+         strong visual identity and voice consistency. OmniPersona also outperforms LiveAvatar and w/o MQ
+407
+       on a 20-sample anger-dominant subset (Appendix D.4).
+408
+409    Ablation Study. Table 4 ablates diffusion forcing (DF), masked fusion (FM), memory queries
+410    (MQ), and strided RoPE (SR). Removing FM causes the largest degradation, raising FVD from
+411     11.93 to 78.74. Removing MQ doubles FIDemo from 0.31 to 0.62; complementary probes show that
+       combining MQ with text improves emotion and arousal prediction over text alone (Appendix D.1).412
+       Removing SR weakens identity preservation, while removing DF degrades temporal quality. Figure 4
+413
+       shows diminishing returns from increasing query capacity and context length; we use 128 queries
+414
+       and a 10s context for their balance of quality and computation.
+415
+416   Human Evaluation. We invite 20 participants to evaluate 20  Table 5: Mean Opinion Score
+417     pairs randomly sampled from the 60 pairs used in our Seam- (MOS) user study on Seamless-
+         lessInteraction evaluation, comparing our method against Om-  Interaction. Best in bold.418
+        niAvatar and LiveAvatar. Participants rate each video on a 1–5
+419                                                                    Method    EA ↑  AVS ↑  OQ ↑
+         scale (higher is better) across three dimensions following the
+420                                                                             OmniAvatar   2.76    3.86    2.55      Mean Opinion Scores (MOS) rating protocol: listening expres-
+421                                                                                      LiveAvatar    3.62    4.31    3.74        sion appropriateness (EA), talking audio-visual synchronization
+422                                                                      Ours         4.21    4.65    3.98        (AVS), and overall quality (OQ). As shown in Tab. 5, our method
+423     achieves superior scores across all evaluated dimensions (evaluation protocol in Appendix C).
+424
+425
+        4.3  QUALITATIVE COMPARISON
+426
+427     Fig. 5 presents qualitative comparisons on the SpeakerVid-5M benchmark. The SpeakerVid-5M
+428     baseline produces blurry frames with artifacts around the mouth and eyes. Qwen2.5-Omni + OVI
+429     pipeline may introduce unintended scene transitions due to scene-level prompt generation.  In
+430      contrast, our method maintains stable identity and preserves fine-grained facial shading across
+431     frames. Fig. 6 presents qualitative comparisons against baseline methods and ablation variants on
+        SeamlessInteraction dataset, consistent with the quantitative results in Table 4. Comparisons with
+
+
+                                              8
+
+=== PDF PAGE 9 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+432                                                        Initiator: To be born under, with hallucinogenic drugs                                 Initiator: People in the meeting telling you that now you're going after Marco
+                                                                            is mental to me, you know?                                                    Rubio, this is an opportunity for Dorsey.
+433                              Ref Image                                                                Ref Image
+434
+435          SpeakerVid-5M
+436
+                                          R: would that work? Cause wouldn't you need to be at home and not be earning?                        R：Alex Jones down, he just went off a republican. That's how dumb they are. I mean, it...
+437
+438          Qwen + Ovi
+439
+440                                           R: It's not just about the physical effects, it's about the mental state too.         R: People in the meeting tell me that now you're going after Marco Rubio, this is an opportunity for you to show...
+441
+                    Ours
+442
+443                                      R: That's a valid concern. I'll make sure to address it directly in my campaign.                  R: I don‘t think Alex Jones is just going after Marco Rubio because he’s a Republican. It seems more...
+444     Figure 5: Qualitative comparison on the SpeakerVid-5M benchmark. See the supplementary video
+445      for clearer visual and acoustic comparisons.
+446
+447                                              5s                        25s                       50s                              5s                       25s                    50s
+448
+449
+                                                                                  Ours w/o MQ
+450              GT
+
+451
+452
+453
+                        Live Avatar                                                    Ours w/o DF
+454
+455
+456
+457                                                                              Ours w/o SR
+                    OmniAvatar
+458
+459
+460
+461                  Ours                                                       Ours w/o FM
+462
+
+463
+        Figure 6: Qualitative comparison with other methods and ablation study. MQ, DF, SR, and FM464
+        denote non-verbal memory query, diffusion forcing, strided RoPE offset, and the fusion attention
+465
+       mask, respectively.
+466
+467
+       OmniResponse and concurrent methods (MIDAS (Chen et al., 2025c) and X-Streamer (Xie et al.,
+468
+        2025c)) are included in the supplementary video.
+469
+470    5  LIMITATION AND CONCLUSION
+471
+472     In this paper, we present OmniPersona, a unified framework that bridges pre-trained MLLMs with
+473      joint audio–visual generation for interactive avatar agents. By compressing dialogue history into
+474    compact non-verbal memory queries and combining them with the textual response, our system
+475     enables coherent multi-turn conversations with natural listening and speaking behaviors. Together
+476     with masked fusion attention and anti-drifting mechanisms, OmniPersona achieves stable iden-
+          tity preservation, synchronized audio–visual generation, and temporally consistent long-horizon477
+         interactions.
+478
+479     Despite these advantages, several limitations remain.  First, although our model achieves faster-
+480     than-real-time clip generation on four H200 GPUs (Appendix E), limited computational resources
+481     prevented us from training a distilled block-causal variant, which could further reduce latency and
+482      better support streaming. Second, the current system focuses primarily on facial regions. We leave
+        streaming-oriented interaction and full-body digital human generation for future work. Overall, we483
+       hope OmniPersona can provide useful insights toward building more interactive and responsive digital
+484
+         agents.
+485
+
+
+
+                                              9
+
+=== PDF PAGE 10 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+486
+      AI USE STATEMENT
+487
+488     Generative AI tools were used to assist with implementing the proposed method, as well as translation
+489    and language polishing of the manuscript. The research ideas originated from the authors. AI
+490     tools were not used to generate research data or analyze experimental results. The authors take
+491      responsibility for the final content of the paper and the implementation.
+492
+493    ETHICS STATEMENT
+494
+495    OmniPersona uses publicly available human video datasets in accordance with their respective
+496     licenses and usage conditions. Human participants were involved only in rating generated dialogue
+497     videos, and no private information about the participants is disclosed. The evaluation procedure is
+498     described in Appendix C. Realistic identity-conditioned speech and facial animation can be misused
+499      for impersonation, deceptive synthetic media, harassment, or non-consensual identity replication. We
+        advocate authorized use of real-person identities and clear disclosure of synthetic content. Appendix F500
+        discusses these risks and planned release safeguards, including usage restrictions, documentation of
+501
+        intended uses and limitations, and consideration of staged release or access controls for high-risk
+502
+         assets.
+503
+504
+505   REFERENCES
+506
+       Marah Abdin, Jyoti Aneja, Hany Awadalla, Ahmed Awadallah, Ammar Ahmad Awan, Nguyen507
+          Bach, Amit Bahree, Arash Bakhtiari, Jianmin Bao, Harkirat Behl, Alon Benhaim, Misha Bilenko,
+508
+          Johan Bjorck, Sébastien Bubeck, Martin Cai, Qin Cai, Vishrav Chaudhary, Dong Chen, Dongdong
+509       Chen, Weizhu Chen, Yen-Chun Chen, Yi-Ling Chen, Hao Cheng, Parul Chopra, Xiyang Dai,
+510      Matthew Dixon, Ronen Eldan, Victor Fragoso, Jianfeng Gao, Mei Gao, Min Gao, Amit Garg,
+511        Allie Del Giorno, Abhishek Goswami, Suriya Gunasekar, Emman Haider, Junheng Hao, Russell J.
+512       Hewett, Wenxiang Hu, Jamie Huynh, Dan Iter, Sam Ade Jacobs, Mojan Javaheripi, Xin Jin,
+513       Nikos Karampatziakis, Piero Kauffmann, Mahoud Khademi, Dongwoo Kim, Young Jin Kim, Lev
+514       Kurilenko, James R. Lee, Yin Tat Lee, Yuanzhi Li, Yunsheng Li, Chen Liang, Lars Liden, Xihui
+515        Lin, Zeqi Lin, Ce Liu, Liyuan Liu, Mengchen Liu, Weishung Liu, Xiaodong Liu, Chong Luo,
+516       Piyush Madan, Ali Mahmoudzadeh, David Majercak, Matt Mazzola, Caio César Teodoro Mendes,
+517      Arindam Mitra, Hardik Modi, Anh Nguyen, Brandon Norick, Barun Patra, Daniel Perez-Becker,
+        Thomas Portet, Reid Pryzant, Heyang Qin, Marko Radmilac, Liliang Ren, Gustavo de Rosa,518
+         Corby Rosset, Sambudha Roy, Olatunji Ruwase, Olli Saarikivi, Amin Saied, Adil Salim, Michael
+519
+           Santacroce, Shital Shah, Ning Shang, Hiteshi Sharma, Yelong Shen, Swadheen Shukla, Xia Song,
+520
+         Masahiro Tanaka, Andrea Tupini, Praneetha Vaddamanu, Chunyu Wang, Guanhua Wang, Lijuan
+521      Wang, Shuohang Wang, Xin Wang, Yu Wang, Rachel Ward, Wen Wen, Philipp Witte, Haiping
+522      Wu, Xiaoxia Wu, Michael Wyatt, Bin Xiao, Can Xu, Jiahang Xu, Weijian Xu, Jilong Xue, Sonali
+523       Yadav, Fan Yang, Jianwei Yang, Yifan Yang, Ziyi Yang, Donghan Yu, Lu Yuan, Chenruidong
+524       Zhang, Cyril Zhang, Jianwen Zhang, Li Lyna Zhang, Yi Zhang, Yue Zhang, Yunan Zhang, and
+525       Xiren Zhou. Phi-3 technical report: A highly capable language model locally on your phone, 2024.
+526     URL https://arxiv.org/abs/2404.14219.
+527
+528    Vasu Agrawal, Akinniyi Akinyemi, Kathryn Alvero, Morteza Behrooz, Julia Buffalini, Fabio Maria
+529        Carlucci, Joy Chen, Junming Chen, Zhang Chen, Shiyang Cheng, Praveen Chowdary, Joe Chuang,
+         Antony D’Avirro, Jon Daly, Ning Dong, Mark Duppenthaler, Cynthia Gao, Jeff Girard, Martin530
+           Gleize, Sahir Gomez, Hongyu Gong, Srivathsan Govindarajan, Brandon Han, Sen He, Denise
+531
+          Hernandez, Yordan Hristov, Rongjie Huang, Hirofumi Inaguma, Somya Jain, Raj Janardhan,
+532
+         Qingyao Jia, Christopher Klaiber, Dejan Kovachev, Moneish Kumar, Hang Li, Yilei Li, Pavel
+533        Litvin, Wei Liu, Guangyao Ma, Jing Ma, Martin Ma, Xutai Ma, Lucas Mantovani, Sagar Miglani,
+534       Sreyas Mohan, Louis-Philippe Morency, Evonne Ng, Kam-Woh Ng, Tu Anh Nguyen, Amia
+535       Oberai, Benjamin Peloquin, Juan Pino, Jovan Popovic, Omid Poursaeed, Fabian Prada, Alice
+536       Rakotoarison, Rakesh Ranjan, Alexander Richard, Christophe Ropers, Safiyyah Saleem, Vasu
+537       Sharma, Alex Shcherbyna, Jia Shen, Jie Shen, Anastasis Stathopoulos, Anna Sun, Paden Tomasello,
+538      Tuan Tran, Arina Turkatenko, Bo Wan, Chao Wang, Jeff Wang, Mary Williamson, Carleigh
+539      Wood, Tao Xiang, Yilin Yang, Julien Yao, Chen Zhang, Jiemin Zhang, Xinyue Zhang, Jason
+         Zheng, Pavlo Zhyzheria, Jan Zikes, and Michael Zollhoefer.  Seamless Interaction: Dyadic
+
+
+                                              10
+
+=== PDF PAGE 11 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+540
+          Audiovisual Motion Modeling and Large-Scale Dataset. arXiv preprint arXiv:2506.22554, 2025.
+541     URL https://arxiv.org/abs/2506.22554.
+542
+543     Tenglong Ao. Body of Her: A Preliminary Study on End-to-End Humanoid Agent. arXiv preprint
+544       arXiv:2408.02879, 2024. URL https://arxiv.org/abs/2408.02879.
+545     Kaito Baba, Wataru Nakata, Yuki Saito, and Hiroshi Saruwatari. The t05 system for the VoiceMOS
+546       Challenge 2024: Transfer learning from deep image classifier to naturalness MOS prediction
+547       of high-quality synthetic speech. In IEEE Spoken Language Technology Workshop (SLT), pp.
+548       818–824, 2024. doi: 10.1109/SLT61566.2024.10832315.
+549
+        Satanjeev Banerjee and Alon Lavie. Meteor: An automatic metric for mt evaluation with improved
+550
+           correlation with human judgments. In Proceedings of the acl workshop on intrinsic and extrinsic
+551
+           evaluation measures for machine translation and/or summarization, pp. 65–72, 2005.
+552
+553    Boyuan  Chen,  Diego  Martí Monsó,  Yilun Du, Max  Simchowitz,  Russ  Tedrake,  and
+554       Vincent  Sitzmann.     Diffusion  forcing:   Next-token  prediction  meets  full-sequence
+555        diffusion.     Advances  in  Neural  Information  Processing  Systems,  37:24081–24125,
+556       2024.  URL https://proceedings.neurips.cc/paper_files/paper/2024/
+        hash/2aee1c4159e48407d68fe16ae8e6e49e-Abstract-Conference.html.557
+558     Jinnan Chen, Lingting Zhu, Zeyu Hu, Shengju Qian, Yugang Chen, Xin Wang, and Gim Hee
+559       Lee.   MAR-3D:  Progressive Masked  Auto-regressor  for High-Resolution 3D Genera-
+560         tion.    In Proceedings  of the IEEE/CVF Conference on Computer Vision and Pattern
+561       Recognition (CVPR), pp. 11083–11092, 2025a.    doi:  10.1109/CVPR52734.2025.01035.
+562     URL    https://openaccess.thecvf.com/content/CVPR2025/html/Chen_
+563     MAR-3D_Progressive_Masked_Auto-regressor_for_High-Resolution_3D_
+        Generation_CVPR_2025_paper.html.564
+565     Jiuhai Chen, Zhiyang Xu, Xichen Pan, Yushi Hu, Can Qin, Tom Goldstein, Lifu Huang, Tianyi
+566       Zhou, Saining Xie, Silvio Savarese, Le Xue, Caiming Xiong, and Ran Xu. BLIP3-o: A family
+567       of fully open unified multimodal models—architecture, training and dataset.  arXiv preprint
+568       arXiv:2505.09568, 2025b.
+569
+      Ming Chen, Liyuan Cui, Wenyuan Zhang, Haoxian Zhang, Yan Zhou, Xiaohan Li, Songlin Tang,
+570
+         Jiwen Liu, Borui Liao, Hejia Chen, Xiaoqiang Liu, and Pengfei Wan. MIDAS: Multimodal
+571        Interactive Digital-humAn Synthesis via Real-time Autoregressive Video Generation.  arXiv
+572        preprint arXiv:2508.19320, 2025c. URL https://arxiv.org/abs/2508.19320.
+573
+574     Yushen Chen, Zhikang Niu, Ziyang Ma, Keqi Deng, Chunhui Wang, Jian Zhao, Kai Yu, and Xie Chen.
+575      F5-TTS: A Fairytaler that Fakes Fluent and Faithful Speech with Flow Matching. In Proceedings
+           of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long576
+           Papers), pp. 6255–6271. Association for Computational Linguistics, 2025d. doi: 10.18653/v1/
+577
+           2025.acl-long.313. URL https://aclanthology.org/2025.acl-long.313/.
+578
+579     Chaorui Deng, Deyao Zhu, Kunchang Li, Chenhui Gou, Feng Li, Zeyu Wang, Shu Zhong, Weihao Yu,
+580       Xiaonan Nie, Ziang Song, Guang Shi, and Haoqi Fan. Emerging properties in unified multimodal
+581        pretraining. arXiv preprint arXiv:2505.14683, 2025.
+
+582
+        Jiankang Deng, Jia Guo, Niannan Xue, and Stefanos Zafeiriou. Arcface: Additive angular margin
+583        loss for deep face recognition. In 2019 IEEE/CVF Conference on Computer Vision and Pattern
+584       Recognition (CVPR), pp. 4685–4694, 2019a. doi: 10.1109/CVPR.2019.00482.
+585
+586    Yu Deng, Jiaolong Yang, Sicheng Xu, Dong Chen, Yunde Jia, and Xin Tong. Accurate 3d face
+587        reconstruction with weakly-supervised learning: From single image to image set. In Proceedings
+            of the IEEE/CVF conference on computer vision and pattern recognition workshops, 2019b. URL588
+        https://openaccess.thecvf.com/content_CVPRW_2019/html/AMFG/Deng_
+589
+       Accurate_3D_Face_Reconstruction_With_Weakly-Supervised_Learning_
+590     From_Single_Image_CVPRW_2019_paper.html.
+591
+592     Qijun Gan, Ruizi Yang, Jianke Zhu, Shaofei Xue, and Steven Hoi. Omniavatar: Efficient audio-driven
+593        avatar video generation with adaptive body animation, 2025. URL https://arxiv.org/
+        abs/2506.18866.
+
+
+                                              11
+
+=== PDF PAGE 12 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+594
+       Xin Gao, Li Hu, Siqi Hu, Mingyang Huang, Chaonan Ji, Dechao Meng, Jinwei Qi, Penchong
+595       Qiao, Zhen Shen, Yafei Song, Ke Sun, Linrui Tian, Guangyuan Wang, Qi Wang, Zhongjian
+596      Wang, Jiayu Xiao, Sheng Xu, Bang Zhang, Peng Zhang, Xindi Zhang, Zhe Zhang, Jingren
+597       Zhou, and Lian Zhuo. Wan-s2v: Audio-driven cinematic video generation, 2025. URL https:
+598     //arxiv.org/abs/2508.18621.
+599
+       Ying Guo, Xi Liu, Cheng Zhen, Pengfei Yan, and Xiaoming Wei.   ARIG: Autoregres-
+600
+           sive  interactive head  generation  for  real-time  conversations.    In  Proceedings  of  the
+601
+        IEEE/CVF International Conference on Computer Vision (ICCV), pp. 12956–12965, 2025.
+602     URL     https://openaccess.thecvf.com/content/ICCV2025/html/Guo_
+603     ARIG_Autoregressive_Interactive_Head_Generation_for_Real-time_
+604     Conversations_ICCV_2025_paper.html.
+605
+       Xianglong He, Chunli Peng, Zexiang Liu, Boyang Wang, Yifan Zhang, Qi Cui, Fei Kang, Biao606
+           Jiang, Mengyin An, Yangyang Ren, Baixin Xu, Hao-Xiang Guo, Kaixiong Gong, Size Wu, Wei
+607
+            Li, Xuchen Song, Yang Liu, Yangguang Li, and Yahui Zhou. Matrix-game 2.0: An open-source
+608
+           real-time and streaming interactive world model. arXiv preprint arXiv:2508.13009, 2025. URL
+609     https://arxiv.org/abs/2508.13009.
+610
+611    Sepp Hochreiter and Jürgen Schmidhuber. Long short-term memory. Neural computation, 9(8):
+612       1735–1780, 1997.
+613    Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang,
+614      and Weizhu Chen. LoRA: Low-Rank Adaptation of Large Language Models. In International
+615       Conference on Learning Representations, 2022. URL https://openreview.net/forum?
+616     id=nZeVKeeFYf9.
+617
+      Xun Huang, Zhengqi Li, Guande He, Mingyuan Zhou, and Eli Shechtman. Self Forcing: Bridging
+618
+           the Train-Test Gap in Autoregressive Video Diffusion.  In Advances in Neural Information
+619
+          Processing Systems, volume 38, pp. 167283–167308, 2025a.  doi: 10.52202/085713-5576.
+620     URL  https://proceedings.neurips.cc/paper_files/paper/2025/hash/
+621     f4823f831af67a3ef15e41a85434422a-Abstract-Conference.html.
+622
+623    Yubo Huang, Hailong Guo, Fangtai Wu, Weiqiang Wang, Shifeng Zhang, Shijie Huang, Qijun Gan,
+          Lin Liu, Sirui Zhao, Enhong Chen, Jiaming Liu, and Steven Hoi. Live Avatar: Streaming Real-time624
+         Audio-Driven Avatar Generation with Infinite Length, 2025b. URL https://arxiv.org/
+625
+        abs/2512.04677.
+626
+627    Yubo Huang, Weiqiang Wang, Sirui Zhao, Tong Xu, Lin Liu, and Enhong Chen.  Bind-Your-
+628       Avatar: Multi-Character-Talking Video Generation with Dynamic 3D-mask-based Embedding
+629        Router. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+630      (CVPR) Findings, pp. 4440–4449, 2026. URL https://yubo-shankui.github.io/
+        bind-your-avatar/.631
+632    Taekyung Ki, Sangwon Jang, Jaehyeong Jo, Jaehong Yoon, and Sung Ju Hwang. Avatar forcing:
+633       Real-time interactive head avatar generation for natural conversation.  In Proceedings of the
+634      IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 18074–18084,
+635       2026. URL https://openaccess.thecvf.com/content/CVPR2026/html/Ki_
+636     Avatar_Forcing_Real-Time_Interactive_Head_Avatar_Generation_for_
+637     Natural_Conversation_CVPR_2026_paper.html.
+638     Jiwei Li, Michel Galley, Chris Brockett, Jianfeng Gao, and Bill Dolan. A diversity-promoting
+639        objective function for neural conversation models.  In Proceedings of the 2016 Conference
+640        of the North American Chapter of the Association for Computational Linguistics: Human
+641      Language Technologies, pp. 110–119, 2016.  doi: 10.18653/v1/N16-1014. URL https:
+642     //aclanthology.org/N16-1014/.
+643
+       Chin-Yew Lin. ROUGE: A package for automatic evaluation of summaries. In Text Summarization
+644
+          Branches Out, pp. 74–81, Barcelona, Spain, July 2004. Association for Computational Linguistics.
+645     URL https://aclanthology.org/W04-1013/.
+646
+647    Chetwin Low, Weimin Wang, and Calder Katyal.  Ovi: Twin backbone cross-modal fusion for
+          audio-video generation, 2025. URL https://arxiv.org/abs/2510.01284.
+
+
+                                              12
+
+=== PDF PAGE 13 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+648
+       Cheng  Luo,  Jianghui  Wang,  Bing  Li,  Siyang  Song,  and  Bernard  Ghanem.   Om-
+649       niResponse:    Online  multimodal  conversational  response  generation  in  dyadic  in-
+650        teractions.      In  Advances  in  Neural  Information  Processing  Systems  (NeurIPS),
+651      volume  38,  pp.  125869–125891,  2025a.      doi:   10.52202/085713-4196.   URL
+652     https://proceedings.neurips.cc/paper_files/paper/2025/hash/
+653     b734c30b9c955c535e333f0301f5e45c-Abstract-Conference.html.
+654
+         Jiabin Luo, Junhui Lin, Zeyu Zhang, Biao Wu, Meng Fang, Ling Chen, and Hao Tang. Univid: The655
+          open-source unified video model. arXiv preprint arXiv:2509.24200, 2025b.
+656
+657    Xichen Pan, Satya Narayan Shukla, Aashu Singh, Zhuokai Zhao, Shlok Kumar Mishra, Jialiang
+658      Wang, Zhiyang Xu, Jiuhai Chen, Kunpeng Li, Felix Juefei-Xu, Ji Hou, and Saining Xie. Transfer
+659       between modalities with metaqueries. arXiv preprint arXiv:2504.06256, 2025.
+660
+661     William Peebles and Saining Xie. Scalable diffusion models with transformers. In Proceedings of
+662        the IEEE/CVF international conference on computer vision, pp. 4195–4205, 2023.
+663
+     K R Prajwal, Rudrabha Mukhopadhyay, Vinay P. Namboodiri, and C.V. Jawahar. A lip sync
+664       expert is all you need for speech to lip generation in the wild. In Proceedings of the 28th ACM
+665        International Conference on Multimedia, MM ’20, pp. 484–492. ACM, October 2020.  doi:
+666       10.1145/3394171.3413532. URL http://dx.doi.org/10.1145/3394171.3413532.
+667
+668     Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena, Yanqi
+669       Zhou, Wei Li, and Peter J Liu. Exploring the limits of transfer learning with a unified text-to-text
+670        transformer. Journal of machine learning research, 21(140):1–67, 2020.
+671
+         Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. Roformer: Enhanced
+672       transformer with rotary position embedding. Neurocomputing, 568:127063, 2024.
+673
+674    Zhiyao Sun, Ziqiao Peng, Yifeng Ma, Yi Chen, Zhengguang Zhou, Zixiang Zhou, Guozhen
+675       Zhang, Youliang Zhang, Yuan Zhou, Qinglin Lu, and Yong-Jin Liu.  StreamAvatar: Stream-
+676       ing Diffusion Models for Real-Time Interactive Human Avatars.   In Proceedings of the
+677      IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 10887–
+         10897,  2026.   URL https://openaccess.thecvf.com/content/CVPR2026/678
+       html/Sun_StreamAvatar_Streaming_Diffusion_Models_for_Real-Time_
+679
+        Interactive_Human_Avatars_CVPR_2026_paper.html.
+680
+681     Zhiyu Tan, Hao Yang, Luozheng Qin, Jia Gong, Mengping Yang, and Hao Li. Omni-video: Democ-
+682        ratizing unified video understanding and generation. arXiv preprint arXiv:2507.06119, 2025.
+683
+684    Thomas Unterthiner, Sjoerd Van Steenkiste, Karol Kurach, Raphael Marinier, Marcin Michalski, and
+685       Sylvain Gelly. Towards accurate generative models of video: A new metric & challenges. arXiv
+           preprint arXiv:1812.01717, 2018.686
+687    Cong Wei,  Quande  Liu,  Zixuan  Ye,  Qiulin Wang,  Xintao Wang,  Pengfei Wan, Kun
+688       Gai, and Wenhu Chen.   UniVideo:  Unified understanding,  generation, and editing for
+689        videos.   In International Conference on Learning Representations,  pp. 113905–113933,
+690       2026. URL https://proceedings.iclr.cc/paper_files/paper/2026/hash/
+691     b940430f7acd23302bbaf0680f458e61-Abstract-Conference.html.
+692
+693     Lixing Xiao, Shunlin Lu, Huaijin Pi, Ke Fan, Liang Pan, Yueer Zhou, Ziyong Feng, Xiaowei Zhou,
+          Sida Peng, and Jingbo Wang. Motionstreamer: Streaming motion generation via diffusion-based694
+           autoregressive model in causal latent space.  In Proceedings of the IEEE/CVF International
+695
+          Conference on Computer Vision (ICCV), pp. 10086–10096, October 2025.
+696
+697     Jinheng Xie, Weijia Mao, Zechen Bai, David Junhao Zhang, Weihao Wang, Kevin Qinghong
+698        Lin,  Yuchao Gu,  Zhijie Chen,  Zhenheng Yang,  and Mike Zheng  Shou.    Show-o:
+699      One  Single  Transformer  to  Unify  Multimodal  Understanding  and  Generation.     In
+700        International  Conference  on  Learning  Representations,   pp.  28240–28264,   2025a.
+701     URL     https://proceedings.iclr.cc/paper_files/paper/2025/hash/
+        45f0d179ef7e10eb7366550cd4e574ae-Abstract-Conference.html.
+
+
+                                              13
+
+=== PDF PAGE 14 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+702
+        Jinheng Xie, Zhenheng Yang, and Mike Zheng Shou.   Show-o2:  Improved native uni-
+703        fied  multimodal  models.     In  Advances  in  Neural  Information  Processing  Systems
+704       (NeurIPS), volume 38,  pp. 47490–47518, 2025b.   doi:  10.52202/085713-1584.  URL
+705     https://proceedings.neurips.cc/paper_files/paper/2025/hash/
+706     43e8fd8b9581faa71a6a61602bc28435-Abstract-Conference.html.
+707
+708    You Xie, Tianpei Gu, Zenan Li, Chenxu Zhang, Guoxian Song, Xiaochen Zhao, Chao Liang, Jianwen
+            Jiang, Hongyi Xu, and Linjie Luo. X-Streamer: Unified Human World Modeling with Audiovisual709
+            Interaction.  arXiv preprint arXiv:2509.21574, 2025c. URL https://arxiv.org/abs/
+710
+        2509.21574.
+711
+712      Jin Xu, Zhifang Guo, Jinzheng He, Hangrui Hu, Ting He, Shuai Bai, Keqin Chen, Jialin Wang, Yang
+713       Fan, Kai Dang, Bin Zhang, Xiong Wang, Yunfei Chu, and Junyang Lin. Qwen2.5-omni technical
+714        report. arXiv preprint arXiv:2503.20215, 2025.
+715
+      Hao Yang, Zhiyu Tan, Jia Gong, Luozheng Qin, Hesen Chen, Xiaomeng Yang, Yuqing Sun, Yuetan716
+           Lin, Mengping Yang, and Hao Li. Omni-Video 2: Scaling MLLM-Conditioned Diffusion for
+717
+          Unified Video Generation and Editing. arXiv preprint arXiv:2602.08820, 2026a. URL https:
+718
+        //arxiv.org/abs/2602.08820.
+719
+720    Shaoshu Yang, Zhe Kong, Feng Gao, Meng Cheng, Xiangyu Liu, Yong Zhang, Zhuoliang Kang,
+721      Wenhan Luo, Xunliang Cai, Ran He, and Xiaoming Wei.  Infinitetalk: Audio-driven video
+722       generation for sparse-frame video dubbing, 2025. URL https://arxiv.org/abs/2508.
+723      14033.
+724
+        Shuai Yang, Wei Huang, Ruihang Chu, Yicheng Xiao, Yuyang Zhao, Xianbang Wang, Muyang Li,
+725
+         Enze Xie, Yingcong Chen, Yao Lu, Song Han, and Yukang Chen. LongLive: Real-time Interactive
+726      Long Video Generation. In International Conference on Learning Representations, pp. 90037–
+727       90059, 2026b. URL https://proceedings.iclr.cc/paper_files/paper/2026/
+728     hash/91a1610c6ed9e02d33f826b46f472b92-Abstract-Conference.html.
+729
+730     Tianyi Zhang, Varsha Kishore, Felix Wu, Kilian Q. Weinberger, and Yoav Artzi. BERTScore:
+731       Evaluating Text Generation with BERT. In International Conference on Learning Representations,
+732       2020. URL https://iclr.cc/virtual_2020/poster_SkeHuCVFDr.html.
+
+733
+        Youliang Zhang, Zhaoyang Li, Duomin Wang, Jiahe Zhang, Deyu Zhou, Zixin Yin, Xili Dai, Gang Yu,
+734       and Xiu Li. SpeakerVid-5M: A Large-Scale High-Quality Dataset for Audio-Visual Dyadic Inter-
+735        active Human Generation. In International Conference on Learning Representations, pp. 117896–
+736       117926, 2026. URL https://proceedings.iclr.cc/paper_files/paper/2026/
+737     hash/bf7dbac50ed7f6e12ad529c5b9396bc4-Abstract-Conference.html.
+738
+739    Mohan Zhou, Yalong Bai, Wei Zhang, Ting Yao, Tiejun Zhao, and Tao Mei. Responsive listening
+          head generation: A benchmark dataset and baseline. In Shai Avidan, Gabriel Brostow, Moustapha740
+           Cissé, Giovanni Maria Farinella, and Tal Hassner (eds.), Computer Vision – ECCV 2022, pp.
+741
+         124–142, Cham, 2022. Springer Nature Switzerland.
+742
+743    Yongming Zhu, Longhao Zhang, Zhengkun Rong, Tianshu Hu, Shuang Liang, and Zhipeng Ge.
+744      INFP: Audio-driven interactive head generation in dyadic conversations.  In Proceedings of
+745        the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 10667–10677,
+746       2025.    URL https://openaccess.thecvf.com/content/CVPR2025/html/
+747     Zhu_INFP_Audio-Driven_Interactive_Head_Generation_in_Dyadic_
+748     Conversations_CVPR_2025_paper.html.
+749
+750                     Appendix
+751
+752
+753   A  QUALITATIVE VIDEOS
+754
+755   We provide supplementary videos to better illustrate the qualitative performance of OmniPersona.
+       The videos include three categories of results:
+
+
+                                              14
+
+=== PDF PAGE 15 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+756
+         (1) Additional qualitative results. We present more examples demonstrating multi-turn conversa-
+757      tional interactions, where the avatar naturally switches between speaking and listening states. The
+758     examples cover both identities from the test set and in-the-wild identities, showing that our model
+759     can independently control the avatar’s appearance and voice characteristics from distinct sources.
+760
+         (2) Videos corresponding to qualitative comparisons in the main paper. We include the video
+761
+         results for all examples shown in the Qualitative Comparison section of the main paper, as well as
+762
+         selected examples from the OmniResponse benchmark to show obvious audio-visual misalignment
+763      in the ground-truth recordings.
+764
+765      (3) Visual comparisons with concurrent work. We further provide side-by-side comparisons with
+        concurrent methods to highlight the advantages of our approach in identity consistency, audio–visual766
+        synchronization, and conversational expressiveness.
+767
+768
+769   B  IMPLEMENTATION DETAILS
+770
+771
+       B.1  MODEL ARCHITECTURE
+772
+773    Our system combines a multimodal large language model (MLLM) with a diffusion-based joint
+774     audio–video generation backbone. Specifically, we adopt Qwen2.5-Omni-7B as the MLLM backbone,
+775    which provides high-level conversational reasoning. To bridge the MLLM and the diffusion generator,
+776    we introduce a learnable connector that first maps the MLLM query representations to the T5 hidden
+777     dimension through a zero-initialized projection layer and then refines them with Transformer encoder
+778      layers. This connector transforms the MLLM outputs into conditioning tokens suitable for the
+779     diffusion backbone.
+780    The diffusion backbone is initialized from the pretrained OVI-v1.1 model, a 960 × 960 resolution
+781     video diffusion model trained on 10-second clips. The generated video and audio latents are decoded
+782     using Wan2.2 VAE and MMAudio VAE, respectively. In addition, a separate T5-XXL text encoder
+783    (UMT5) provides textual conditioning signals for the diffusion process.
+784
+785                       Table 6: Architecture configuration of the proposed model.
+786                                      Component                   Configuration
+787
+                           MLLM backbone         Qwen2.5-Omni-7B
+788                                       Connector layers      8 Transformer encoder layers
+789                                            Projection layers    MLLM-to-T5 projection layers
+                                             Learnable queries        Q = 128
+790                                           Diffusion backbone    OVI-v1.1 (10s, 960 × 960)
+791                                      Video decoder              Wan2.2 VAE
+                                        Audio decoder          MMAudio VAE
+792                                              Text encoder          UMT5 (T5-XXL)
+793
+794
+795
+796    B.2  TRAINING SETUP
+797
+798     Training is conducted using bf16 mixed precision on 8× H200 GPUs for 48k steps, with a per-device
+        batch size of 5. The model is optimized using AdamW with a cosine learning rate schedule, where799
+        the learning rate decays to a minimum of 1 × 10−6 after a warmup of 100 steps. A weight decay
+800
+        of 0.1 is applied during optimization, and gradient clipping with a maximum norm of 1.0 is used to
+801
+          stabilize training. The loss weights for audio and video generation are set to λA = 0.5 and λV = 1.0,
+802      respectively.
+803
+804    LoRA is applied to both the video and audio branches of the diffusion model, with the LoRA rank and
+        alpha both set to 128. The LoRA parameters are trained with a learning rate of 1 × 10−5, while the805
+     MLLM backbone remains frozen and only the connector module together with the token embedding
+806
+         layer are updated using a learning rate of 5 × 10−5.
+807
+808    To better model conversational dynamics, the training data is sampled with a 4:1 ratio between mainly
+809     speaking segments and mainly listening segments. Furthermore, the loss for listening samples is
+        doubled to encourage the model to learn richer non-verbal reactions.
+
+
+                                              15
+
+=== PDF PAGE 16 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+810                                  Table 7: Training hyperparameters.
+811
+                                                                    Parameter               Value
+812
+                                             GPU configuration    8× H200
+813                                                                    Precision                bf16
+                                                                 Batch size (per GPU)       5
+814                                                                  Training steps           48k
+815                                                 Warmup steps           100
+                                                                    Scheduler                cosine
+816                                                 Minimum LR         1 × 10−6
+                                                                   Learning rate (LoRA)   1 × 10−5
+817                                                              Learning rate (others)   5 × 10−5
+818                                                           Weight decay              0.1
+                                                                     Gradient clipping           1.0
+819                                                        Audio loss weight λA       0.5
+                                                                Video loss weight λV       1.0
+820
+821
+822    B.3  CONDITIONING FOR THE DIFFUSION MODEL
+823
+824    The diffusion model is conditioned on seven inputs: the prefix video latent VP , the noised video latent
+825    VN, a reference video latent VR, the prefix audio latent AP , the noised audio latent AN, a reference
+826     audio latent AR, and a response embedding ˜e.
+827
+       Video latents are produced by a 3D Causal VAE. The first latent frame corresponds to 1 video frame,
+828
+        while each subsequent latent frame corresponds to 4 frames. For reference image VR, it is randomly
+829
+         selected from the whole video clip during training while provided by user during inference. During
+830      training, we either select the prefix latent length as 1 or 5 (1 or 17 frames, also 0.04 s or 0.68 s at
+831    25 FPS), so that the model can handle both scenarios at inference time: the first turn where only a
+832     single reference image is available, and later turns where a longer prefix segment can be extracted
+833     from already generated video to maintain temporal continuity. The target video latent VN is set as 31
+834      latent frames (about 4.96 s) for training.
+835
+       Audio and video latents are temporally aligned according to the downsampling of video and audio
+836    VAEs. Given a video frame rate of 25 FPS, audio sampling rate of 16 kHz, and audio VAE downsam-
+837                                                        25/4
+        pling factor of 512, the temporal ratio becomes 16000/512 = 0.2, meaning that 1 video latent frame838
+        corresponds to 5 audio latent frames. Since the first latent frame of the 3D Causal VAE represents
+839
+        only one frame rather than 4, we append 3 silent audio latent frames in addition to the true aligned
+840     audio to maintain the fixed audio–video temporal ratio.
+841
+842     For prefix audio latent AP and target audio latent AN at training, they are extracted from the whole
+        audio clip to temporally align with VP , VN respectively. As for the reference audio, a 4-6 s speaking843
+        audio clip is randomly selected from the whole audio during training while provided by the user
+844
+        during inference.
+845
+846    The response embedding ˜e concatenates non-verbal memory tokens and a T5-based verbal response
+847     representation. The memory tokens are produced by the MLLM encoding the audio–video context
+848     of the previous conversational turn from both the user and the agent (5–20s during training and
+         inference), while the verbal response is generated by the MLLM conditioned on the full dialogue849
+         history.
+850
+851     During training, classifier-free guidance is applied with a dropout ratio of 0.1 to both the response
+852    embedding ˜e and the reference audio latent AR.
+853
+854
+                          Table 8: Conditioning signals used by the diffusion models.
+855
+856         Condition                 Description                         Latent Length       CFG Drop
+857       VP                      prefix video context                     1 or 5                –
+858       VN               noised target video segment                   31                  –
+859       VR               reference video identity frame                   1                  –
+         AP                     prefix audio context                    5 or 25                –860
+        AN               noised target audio segment                   155                 –
+861
+        AR                    reference audio clip                4–6s * 16000 // 512            0.1
+862               ˜e           response embedding (memory + T5 text)   128 + T5 embedding sequence       0.1
+863
+
+
+
+                                              16
+
+=== PDF PAGE 17 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+
+
+864
+       B.4  INFERENCE
+865
+866    During inference, sampling is performed using UniPC with 10 steps. The response embedding ˜e
+867     guidance scales are set to 3.0 for video and 4.0 for audio, while the reference-audio guidance scale is
+868      set to 4.0. Negative prompts are applied to both video (“jitter, bad hands, blur, distortion”) and audio
+869     (“robotic, muffled, echo, distorted”) to improve generation quality.
+870
+871
+    C  HUMAN EVALUATION PROTOCOL
+872
+873
+     We invited 20 participants to evaluate 20 dialogue pairs randomly sampled from the 60 pairs in our874
+        SeamlessInteraction evaluation, comparing OmniPersona, LiveAvatar, and OmniAvatar. Participants
+875
+       viewed the full dialogue, with speaking and listening intervals explicitly marked, and rated each
+876
+         criterion on a 1–5 Mean Opinion Score (MOS) scale.
+877
+
+878
+       General instructions and evaluation scope.  Before rating, participants were instructed to judge
+879
+        each criterion independently, avoid carrying impressions from one criterion into another, and disregard
+880
+        personal preferences for the person’s appearance. Listening expression appropriateness (EA) assessed
+881     contextual appropriateness within the marked listening intervals. Audio-visual synchronization
+882    (AVS) assessed synchronization during speaking intervals. Overall quality (OQ) assessed audio-
+883     visual artifacts and identity consistency over the full video. This separation was intended to reduce
+884     interference between criteria; the three scores should be interpreted jointly, since high EA does not
+885     compensate for poor synchronization or identity consistency.
+886    The AVS and OQ criteria are similar to those commonly used in prior talking-avatar evaluations,
+887     so we do not elaborate on their scoring procedures here. We focus instead on EA, which evaluates
+888      listening behavior in its conversational context and requires explicit guidance on how to judge the
+889     appropriateness of a listener’s reactions. We therefore detail the EA instructions and rating anchors
+890     below.
+891
+892     Listening expression appropriateness. EA was a composite contextual-appropriateness rating,
+893      rather than separate subscores for emotion, timing, and intensity. It considered semantic and emotional
+894     congruence with the conversation, reaction timing, and reaction intensity and attentiveness. Image
+895      quality, identity consistency, and speaking lip synchronization were assessed through the other
+896      criteria rather than the EA score. After the general instructions, participants received the following
+897     EA-specific prompt:
+898
+                 Please focus only on the person while they are listening. Considering what the other
+899
+                person is saying, their tone of voice, and the surrounding dialogue context, how
+900
+                 appropriate is the listener’s facial reaction at that moment? Consider whether the re-
+901
+                  action matches the meaning and emotion of the conversation and whether its timing
+902            and intensity are appropriate rather than emotionally unrelated or unresponsive.
+903
+904     This prompt was specific to EA and was not the complete instruction set. Before the formal evaluation,
+905      participants viewed examples corresponding to different rating levels to calibrate their interpretation
+906     of the criterion and scale.
+907
+                        Table 9: Rating anchors for listening expression appropriateness.
+908
+909          Score   Criterion
+910          1     Completely inappropriate: the expression clearly conflicts with the context, such as an
+911                   opposite emotion or an evidently incorrect reaction time.
+912          2     Mostly inappropriate: the expression is largely inconsistent in emotion, timing, or intensity.
+913          3     Acceptable: the expression is generally plausible but may be neutral, ambiguous, weakly
+                       responsive, or occasionally mismatched.
+914
+             4     Appropriate: the expression aligns well with the conversational meaning, emotion, and timing,
+915                  with only minor imperfections.
+916          5     Highly appropriate: the expression is highly consistent with the context and convincingly
+917                 matches its emotion, timing, and intensity.
+
+
+
+                                              17
+
+=== PDF PAGE 18 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+918   D  MORE EXPERIMENTS
+919
+920    D.1  NON-VERBAL MEMORY ANALYSIS
+921
+922     Affective information in the memory.  We analyze the information that can be decoded from the
+923     verbal and non-verbal conditions over ten 5-second conversational turns. We separately average the
+924     Text and memory query (MQ) tokens and train linear probes using Text, MQ, or their combined
+925     features (Text+MQ). Probes are trained on the validation set and evaluated on the test set to predict
+926     eight emotion classes and arousal scores. The targets are derived by averaging the official Imitator
+        outputs provided with SeamlessInteraction over the video frames of each turn; they are automatically
+927
+        estimated affective annotations, not human emotion labels. Tables 10 and 11 report selected turns
+928
+       and the average over all ten turns.
+929
+930                      Table 10: Emotion linear probes: Macro-F1 (higher is better).
+931
+                              Feature     Turn 1   Turn 2   Turn 5   Turn 10   Avg. 1–10
+932
+                              Text        0.432    0.428    0.447    0.434      0.435933
+                MQ         0.578    0.559    0.553    0.541      0.554
+934
+                       Text+MQ   0.651    0.648    0.644    0.642      0.649
+935
+936                         Table 11: Arousal linear probes: MAE (lower is better).
+937
+                              Feature     Turn 1   Turn 2   Turn 5   Turn 10   Avg. 1–10938
+939                          Text        0.118    0.126    0.109    0.139      0.123
+940              MQ         0.061    0.056    0.064    0.072      0.066
+                       Text+MQ   0.035    0.039    0.040    0.043      0.040
+941
+942
+    MQ outperforms Text on both tasks, while Text+MQ performs best, indicating complementary
+943      affective information in the two conditions. Text+MQ Macro-F1 changes from 0.651 at Turn 1
+944     to 0.642 at Turn 10, and arousal MAE from 0.035 to 0.043. These probes characterize decodable
+945      affective information across the evaluated turns; they do not assign a semantic interpretation to
+946     individual memory tokens or establish a causal effect on generated expressions.
+947
+948   Memory capacity and context length.  Table 12 provides the exact values plotted in Fig. 4.
+949     Increasing the query count from 32 or 64 to 128 improves expression modeling, whereas 192 queries
+950     yield no further improvement in these settings. Increasing the context from 5 to 10 seconds also helps,
+951     with little benefit from extending it to 20 seconds. We therefore use 128 queries and a 10-second
+        context by default.952
+953             Table 12: FIDemo for different query counts and context lengths (lower is better).
+954
+                                             Queries   5 s   10 s   20 s
+955
+956                                     32        1.06   0.74   0.71
+                                        64        0.72   0.49   0.52957
+                                        128       0.49   0.31   0.32
+958
+                                        192       0.52   0.34   0.32
+959
+
+960
+961    D.2  SAME-RESPONSE-TEXT CONTROLLED COMPARISON
+962
+       The main SpeakerVid-5M comparison evaluates end-to-end systems, whose response texts can differ.
+963
+       To separate response-content differences from downstream generation performance, we additionally
+964     condition all three methods on the response text generated by SpeakerVid-5M, keeping the evaluation
+965      set and reference inputs unchanged. Table 13 shows that OmniPersona retains the best scores on all
+966     four evaluated generation metrics. This control fixes response text without assuming that the methods
+967     have identical generators or training procedures.
+968
+969    D.3  MULTI-TURN ROPE-OFFSET ANALYSIS
+970
+971     Placing the reference image at pR = L + δ separates the identity reference from adjacent prefix and
+         target frames. During training, sampling δ ∼U(20, 50) exposes the model to different positional
+
+
+                                              18
+
+=== PDF PAGE 19 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+972              Table 13: Controlled comparison using the same SpeakerVid-5M response text.
+973
+974                  Method           FVD ↓   ArcFace ↑   Syncconf ↑   FIDemo ↓
+975                    SpeakerVid-5M         28.82      0.772        2.698        3.22
+976                  Qwen2.5-Omni + OVI    18.39      0.541        3.256        0.67
+                      OmniPersona            5.25      0.773        3.944        0.21977
+978
+        gaps rather than a single fixed location. This empirical range balances identity anchoring and pose
+979
+          flexibility. At inference, smaller offsets strengthen anchoring but can constrain the generated pose
+980
+        toward the static reference. We progressively decrease the offset over turns to retain pose flexibility
+981     early and strengthen identity correction as autoregressive errors accumulate.
+982
+983    To examine the offset trade-off over longer generation, we evaluate fixed offsets using the same
+        checkpoint, conversations, and random seeds for ten autoregressive turns. Table 14 reports ArcFace984
+       and Poseref, where Poseref is the average frame-wise pose distance to the reference image. Higher
+985
+        Poseref indicates greater deviation from the reference pose, not necessarily better generation quality;
+986
+             it is a rigidity diagnostic and differs from the pose FD in Table 4.
+987
+988             Table 14: Fixed-offset results over ten turns. Each cell reports ArcFace / Poseref.
+989
+                            Offset     Turn 1     Turn 2     Turn 5     Turn 10   Avg. 1–10
+990
+                         δ = 20   .854/.023   .842/.024   .815/.026   .782/.027    .819/.024
+991
+                         δ = 30   .852/.026   .838/.026   .804/.029   .776/.031    .812/.029
+992                      δ = 40   .852/.027   .829/.028   .796/.032   .769/.034    .803/.031
+993                      δ = 50   .847/.031   .811/.033   .778/.036   .762/.042    .795/.037
+994
+995    ArcFace decreases from Turn 1 to Turn 10 for all offsets, while Poseref generally increases. Smaller
+996      offsets preserve higher identity similarity with less deviation from the reference pose. These observa-
+997      tions motivate the decreasing-offset strategy, but this fixed-offset comparison does not establish that a
+         particular dynamic schedule is optimal.998
+999
+       D.4  EMOTION-INTENSIVE SCENARIOS1000
+1001
+     We select 20 anger-dominant samples from the official SeamlessInteraction test set using its per-frame
+1002   Anger scores and arousal estimates. These annotations are automatically extracted by the dataset’s
+1003    Imitator model rather than manually assigned. We compare OmniPersona with LiveAvatar and the
+1004   same w/o-MQ checkpoint used in our ablation study. Table 15 shows that OmniPersona achieves
+1005    lower FIDemo and expression FD on this subset, while removing MQ degrades expression modeling.
+1006   The finding is limited to this selected subset and does not establish robustness across all high-intensity
+1007    emotions.
+1008                    Table 15: Expression modeling on 20 anger-dominant samples.
+1009
+                                Method       FIDemo ↓   Expression FD ↓1010
+1011                                 LiveAvatar       0.537          17.95
+1012                              Ours w/o MQ     0.689          19.81
+                                  Ours             0.323          14.46
+1013
+
+1014
+1015  E  INFERENCE EFFICIENCY
+1016
+1017
+     We distinguish complete-pipeline latency and post-MLLM generation latency for 5-second (125-
+1018    frame), 448 × 448 outputs. These measurements concern clip generation, rather than streaming time
+1019    to the first frame or interruption handling.
+1020
+1021   Complete inference pipeline.  Table 16 compares the methods on one H200, including their method-
+1022    specific context conditioning and prompt encoding, as well as final VAE decoding. OmniPersona
+1023    additionally includes MLLM-based contextual memory encoding. The row excluding MLLM
+1024    encoding retains the remaining generation pipeline and separates the cost of that stage; it is not
+1025    the w/o-MQ quality ablation. The methods accept different types of conditioning, so these timings
+       compare the listed generation pipelines under their respective input requirements.
+
+
+                                              19
+
+=== PDF PAGE 20 ===
+       Under review as a conference paper at ICLR 2027
+
+
+
+1026    Table 16: Complete-pipeline efficiency on one H200. The w/o MLLM encoding row excludes only
+1027     that stage.
+1028
+                    Method                               Total time (s) ↓   Peak VRAM (GB) ↓1029
+1030              OVI                                     31.5               41.8
+1031                 OmniAvatar                            110.4               43.3
+                       LiveAvatar                               14.2               77.3
+1032
+                     OmniPersona w/o MLLM encoding         8.6                45.7
+1033                 OmniPersona                            12.3               59.7
+1034
+1035   Hardware configuration and timing scope.  Table 17 separates complete inference from the
+1036   post-MLLM pipeline, which includes the connector, DiT, and VAE. On two H200s, the conditional
+1037    and unconditional classifier-free guidance (CFG) branches run on separate GPUs and the VAE layers
+1038    are sharded. Including sharded MLLM encoding gives 7.2 seconds for the complete pipeline. On four
+1039    H200s, the MLLM and VAE are sharded across the GPUs, and two GPUs are assigned to each CFG
+1040    branch, reducing complete-pipeline latency to 4.6 seconds. Thus, faster-than-real-time generation of
+1041    a 5-second clip is achieved with four H200s; the 4.8-second result on two H200s excludes MLLM
+        encoding. All OmniPersona settings use 10 diffusion steps.1042
+1043    Table 17: OmniPersona latency by timing scope and hardware configuration. Dashes denote unre-
+1044    ported measurements.
+1045
+                            Timing scope             1 H200   2 H200s   4 H200s1046
+1047                     Post-MLLM generation (s)     8.6        4.8        –
+1048                        Complete pipeline (s)         12.3       7.2        4.6
+1049
+1050
+     F  IMPACT AND RESPONSIBLE RELEASE1051
+1052
+       Broader impact.  OmniPersona aims to make multimodal human-agent interaction more natural and1053
+         accessible by combining dialogue understanding, speech generation, and expressive avatar animation
+1054
+         in a unified system. Potential positive uses include educational assistants, remote communication,
+1055
+         accessibility support, and interactive digital services where visual and spoken feedback can improve
+1056    user engagement. At the same time, realistic talking-avatar generation may also create risks, including
+1057    impersonation, misleading synthetic media, harassment, and privacy or consent violations. These
+1058     risks are especially important when a generated avatar resembles a real person or is used in sensitive
+1059    contexts. We therefore view consent, transparency, and careful deployment boundaries as necessary
+1060    conditions for practical use.
+1061
+1062    Responsible release safeguards.  Upon acceptance, we plan to release code, models, and examples
+1063    with safeguards that reduce misuse while supporting reproducible research. The release will include
+1064    clear usage terms prohibiting impersonation, deception, harassment, and non-consensual identity
+         replication; documentation describing intended uses, limitations, and known risks; and examples1065
+        based on consent-respecting or synthetic identities. For components that could increase misuse
+1066
+          risk, we will consider staged release, access control, or withholding high-risk assets. We will
+1067
+         also recommend visible disclosure and provenance practices for generated avatar content so that
+1068    downstream users can distinguish synthetic outputs from real recordings.
+1069
+1070
+1071
+1072
+1073
+
+1074
+1075
+1076
+1077
+1078
+1079
+
+
+
+                                              20

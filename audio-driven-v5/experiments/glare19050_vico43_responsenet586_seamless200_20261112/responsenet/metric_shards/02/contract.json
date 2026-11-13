@@ -1,0 +1,418 @@
+{
+  "schema": "omniresponse-paired-video-v1",
+  "implementation_revision": "2026-11-02-seamless-lazy-gt",
+  "datasets": [
+    "responsenet-j-paired-evaluation-v1"
+  ],
+  "arguments": {
+    "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/glare19050_vico43_responsenet586_seamless200_20261112/responsenet/metric_manifests/02.jsonl",
+    "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/glare19050_vico43_responsenet586_seamless200_20261112/responsenet/metric_shards/02",
+    "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+    "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+    "device": "cuda:0",
+    "face_device": "cuda:0",
+    "emotion_device": "cuda:0",
+    "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_combined_whisper_eval_20261106/gt_cache",
+    "pixel_workers": 4,
+    "threads": 4,
+    "batch_size": 64,
+    "face_padding": 64,
+    "fid_frames": 32,
+    "fvd_frames": 32,
+    "fvd_stride": 1,
+    "whole_clip_listening": false,
+    "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/glare19050_vico43_responsenet586_seamless200_20261112/responsenet/metric_shards/02/features.npz",
+    "allow_partial": true
+  },
+  "manifest_sha256": "a41e253745f47c72d595f7d00d08f77649159209280a1ed821fa171245623aea",
+  "emotion_labels": [
+    "angry",
+    "disgust",
+    "fear",
+    "happy",
+    "sad",
+    "surprise",
+    "neutral"
+  ],
+  "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+  "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+  "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+  "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+  "assets": {
+    "alexnet": {
+      "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+      "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+    },
+    "fid_inception": {
+      "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+      "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+    },
+    "i3d": {
+      "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+      "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+    },
+    "emotion": {
+      "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+      "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+    },
+    "insightface_root": {
+      "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+      "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+    }
+  },
+  "versions": {
+    "numpy": "1.26.4",
+    "scipy": "1.15.3",
+    "torch": "2.6.0+cu126",
+    "torchvision": "0.21.0+cu126",
+    "opencv-python": null,
+    "scikit-image": "0.25.2",
+    "lpips": "0.1.4",
+    "pytorch-fid": "0.3.0",
+    "deepface": "0.0.99",
+    "tensorflow": "2.21.0",
+    "insightface": "0.7.3",
+    "onnxruntime": null,
+    "onnxruntime-gpu": "1.22.0",
+    "av": "17.0.1"
+  },
+  "code": {
+    "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+    "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+    "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+    "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+    "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+    "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+    "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+    "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+    "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+    "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+    "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6"
+  },
+  "execution": {
+    "face_device": "cuda:0",
+    "emotion_device": "cuda:0",
+    "pixel_workers": 4,
+    "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_combined_whisper_eval_20261106/gt_cache",
+    "face_backend": {
+      "face_device": "cuda:0",
+      "emotion_device": "cuda:0",
+      "detector_providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "landmark_providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    "cpu_pipeline": {
+      "schema": "native-video-metrics-cpu-pipeline-v1",
+      "wrapper_sha256": "e1859a2d88a088c0d1e490f93a9db15711bb5eea01af7683afbf8dd6789b01af",
+      "prefetch_depth": 2,
+      "pixel_workers": 4,
+      "compute_pixels": true,
+      "events": [
+        {
+          "id": "84oJQVu_local_2e59e4ce9585",
+          "decode_cpu_seconds": 2.6493728272616863,
+          "pixels_cpu_seconds": 8.985774498432875,
+          "wait_seconds": 2.972439743578434,
+          "pixel_frames": 188,
+          "pixel_error": null
+        },
+        {
+          "id": "87qRqu5_local_79cd35d509d0",
+          "decode_cpu_seconds": 3.0028922967612743,
+          "pixels_cpu_seconds": 7.465928498655558,
+          "wait_seconds": 0.4165014587342739,
+          "pixel_frames": 293,
+          "pixel_error": null
+        },
+        {
+          "id": "87qRqu5_local_1ec67b8dc764",
+          "decode_cpu_seconds": 0.8493732996284962,
+          "pixels_cpu_seconds": 2.6344423852860928,
+          "wait_seconds": 3.515556454658508e-05,
+          "pixel_frames": 108,
+          "pixel_error": null
+        },
+        {
+          "id": "87qRqu5_local_5abb8ff42947",
+          "decode_cpu_seconds": 2.4635128639638424,
+          "pixels_cpu_seconds": 7.79055130854249,
+          "wait_seconds": 5.89149210229516,
+          "pixel_frames": 321,
+          "pixel_error": null
+        },
+        {
+          "id": "87qRqu5_local_b9194f76ea95",
+          "decode_cpu_seconds": 2.347457852214575,
+          "pixels_cpu_seconds": 6.991664461791515,
+          "wait_seconds": 4.676671430468559,
+          "pixel_frames": 295,
+          "pixel_error": null
+        },
+        {
+          "id": "8zCQ67V_local_f1454e08c5ac",
+          "decode_cpu_seconds": 0.9004227295517921,
+          "pixels_cpu_seconds": 2.7570304311811924,
+          "wait_seconds": 5.380064249038696e-05,
+          "pixel_frames": 114,
+          "pixel_error": null
+        },
+        {
+          "id": "9Reve57_local_5f881cfea3ee",
+          "decode_cpu_seconds": 1.49420902505517,
+          "pixels_cpu_seconds": 2.9951304234564304,
+          "wait_seconds": 4.495680332183838e-05,
+          "pixel_frames": 116,
+          "pixel_error": null
+        },
+        {
+          "id": "9U3k7Wy_local_488ad7edcc51",
+          "decode_cpu_seconds": 2.7018128260970116,
+          "pixels_cpu_seconds": 7.459220070391893,
+          "wait_seconds": 7.254088539630175,
+          "pixel_frames": 320,
+          "pixel_error": null
+        },
+        {
+          "id": "9U3k7Wy_local_e1042e43d4b8",
+          "decode_cpu_seconds": 2.2809069752693176,
+          "pixels_cpu_seconds": 6.122851837426424,
+          "wait_seconds": 3.3572947420179844,
+          "pixel_frames": 257,
+          "pixel_error": null
+        },
+        {
+          "id": "9U3k7Wy_local_e5fef22f671c",
+          "decode_cpu_seconds": 0.6012861058115959,
+          "pixels_cpu_seconds": 1.9078760780394077,
+          "wait_seconds": 3.625825047492981e-05,
+          "pixel_frames": 78,
+          "pixel_error": null
+        },
+        {
+          "id": "9U3k7Wy_local_04646e1d4046",
+          "decode_cpu_seconds": 2.1335831992328167,
+          "pixels_cpu_seconds": 6.226856268942356,
+          "wait_seconds": 5.892538130283356,
+          "pixel_frames": 264,
+          "pixel_error": null
+        },
+        {
+          "id": "9U3k7Wy_local_6487c59a36f2",
+          "decode_cpu_seconds": 2.596466686576605,
+          "pixels_cpu_seconds": 7.484281834214926,
+          "wait_seconds": 5.8511271215975285,
+          "pixel_frames": 315,
+          "pixel_error": null
+        },
+        {
+          "id": "9UB94rx_local_bd8d4937dcad",
+          "decode_cpu_seconds": 0.5895826257765293,
+          "pixels_cpu_seconds": 1.9048354923725128,
+          "wait_seconds": 3.333389759063721e-05,
+          "pixel_frames": 78,
+          "pixel_error": null
+        },
+        {
+          "id": "9lhidn7_local_7b80d3f7ffb1",
+          "decode_cpu_seconds": 2.115197964012623,
+          "pixels_cpu_seconds": 5.926667030900717,
+          "wait_seconds": 3.911456871777773,
+          "pixel_frames": 242,
+          "pixel_error": null
+        },
+        {
+          "id": "A6urxiC_local_e428d239c109",
+          "decode_cpu_seconds": 0.7273326925933361,
+          "pixels_cpu_seconds": 1.843057494610548,
+          "wait_seconds": 3.676116466522217e-05,
+          "pixel_frames": 75,
+          "pixel_error": null
+        },
+        {
+          "id": "A6urxiC_local_ef8e876a1cca",
+          "decode_cpu_seconds": 1.1373736187815666,
+          "pixels_cpu_seconds": 3.5189515352249146,
+          "wait_seconds": 1.4075919948518276,
+          "pixel_frames": 148,
+          "pixel_error": null
+        },
+        {
+          "id": "A6urxiC_local_1a558e95faf3",
+          "decode_cpu_seconds": 1.1293922439217567,
+          "pixels_cpu_seconds": 2.4222909659147263,
+          "wait_seconds": 1.451396718621254,
+          "pixel_frames": 100,
+          "pixel_error": null
+        },
+        {
+          "id": "A6urxiC_local_0d61393f1088",
+          "decode_cpu_seconds": 2.7068441323935986,
+          "pixels_cpu_seconds": 7.861291635781527,
+          "wait_seconds": 8.481656156480312,
+          "pixel_frames": 335,
+          "pixel_error": null
+        },
+        {
+          "id": "AfHzPEl_local_d5b2c22d3cf6",
+          "decode_cpu_seconds": 2.3208430148661137,
+          "pixels_cpu_seconds": 6.425055887550116,
+          "wait_seconds": 2.5289890989661217,
+          "pixel_frames": 269,
+          "pixel_error": null
+        },
+        {
+          "id": "AfHzPEl_local_5f46098435ed",
+          "decode_cpu_seconds": 2.74256856366992,
+          "pixels_cpu_seconds": 8.038213707506657,
+          "wait_seconds": 5.4991836324334145,
+          "pixel_frames": 334,
+          "pixel_error": null
+        },
+        {
+          "id": "AfHzPEl_local_2975a9ff3d0f",
+          "decode_cpu_seconds": 2.148947596549988,
+          "pixels_cpu_seconds": 6.441601686179638,
+          "wait_seconds": 3.8185059130191803,
+          "pixel_frames": 269,
+          "pixel_error": null
+        },
+        {
+          "id": "AfHzPEl_local_5cdea3230846",
+          "decode_cpu_seconds": 1.598108846694231,
+          "pixels_cpu_seconds": 4.706653628498316,
+          "wait_seconds": 2.7876037545502186,
+          "pixel_frames": 195,
+          "pixel_error": null
+        },
+        {
+          "id": "Ano4Jkc_local_f5613a6f0738",
+          "decode_cpu_seconds": 1.8031286671757698,
+          "pixels_cpu_seconds": 4.272261049598455,
+          "wait_seconds": 2.201813843101263,
+          "pixel_frames": 180,
+          "pixel_error": null
+        },
+        {
+          "id": "Ano4Jkc_local_edc40dffa436",
+          "decode_cpu_seconds": 1.785403873771429,
+          "pixels_cpu_seconds": 5.651945177465677,
+          "wait_seconds": 2.3782338835299015,
+          "pixel_frames": 237,
+          "pixel_error": null
+        },
+        {
+          "id": "Aud2Wt4_local_af85130ce43a",
+          "decode_cpu_seconds": 1.241963792592287,
+          "pixels_cpu_seconds": 3.4655847027897835,
+          "wait_seconds": 1.9191779531538486,
+          "pixel_frames": 146,
+          "pixel_error": null
+        },
+        {
+          "id": "B5zW2Mg_local_0b9b392f69fa",
+          "decode_cpu_seconds": 1.4250199310481548,
+          "pixels_cpu_seconds": 3.9869937747716904,
+          "wait_seconds": 3.113683022558689,
+          "pixel_frames": 165,
+          "pixel_error": null
+        },
+        {
+          "id": "B5zW2Mg_local_bf6fa4a9ff00",
+          "decode_cpu_seconds": 1.51245629042387,
+          "pixels_cpu_seconds": 4.488835517317057,
+          "wait_seconds": 3.391867134720087,
+          "pixel_frames": 187,
+          "pixel_error": null
+        },
+        {
+          "id": "BPzouDn_local_a0a600657bf2",
+          "decode_cpu_seconds": 2.7962319143116474,
+          "pixels_cpu_seconds": 6.113059721887112,
+          "wait_seconds": 4.697040639817715,
+          "pixel_frames": 254,
+          "pixel_error": null
+        },
+        {
+          "id": "BPzouDn_local_85a9e8327a48",
+          "decode_cpu_seconds": 1.7452681139111519,
+          "pixels_cpu_seconds": 4.660857882350683,
+          "wait_seconds": 1.8208026997745037,
+          "pixel_frames": 197,
+          "pixel_error": null
+        },
+        {
+          "id": "BPzouDn_local_934f8216be24",
+          "decode_cpu_seconds": 1.2771636210381985,
+          "pixels_cpu_seconds": 4.221658423542976,
+          "wait_seconds": 2.6112763322889805,
+          "pixel_frames": 174,
+          "pixel_error": null
+        },
+        {
+          "id": "BPzouDn_local_20111651415f",
+          "decode_cpu_seconds": 1.5825566798448563,
+          "pixels_cpu_seconds": 4.575202621519566,
+          "wait_seconds": 3.7423478849232197,
+          "pixel_frames": 192,
+          "pixel_error": null
+        },
+        {
+          "id": "BPzouDn_local_609238ad9900",
+          "decode_cpu_seconds": 2.0193032138049603,
+          "pixels_cpu_seconds": 6.008234944194555,
+          "wait_seconds": 5.049595985561609,
+          "pixel_frames": 255,
+          "pixel_error": null
+        },
+        {
+          "id": "BPzouDn_local_1add86501057",
+          "decode_cpu_seconds": 1.335983231663704,
+          "pixels_cpu_seconds": 3.5815725177526474,
+          "wait_seconds": 0.7222667708992958,
+          "pixel_frames": 147,
+          "pixel_error": null
+        },
+        {
+          "id": "DUpeSZx_local_2eb9261f9993",
+          "decode_cpu_seconds": 2.2381619960069656,
+          "pixels_cpu_seconds": 6.153440326452255,
+          "wait_seconds": 5.219148233532906,
+          "pixel_frames": 260,
+          "pixel_error": null
+        },
+        {
+          "id": "DUpeSZx_local_ec6c7187c1a0",
+          "decode_cpu_seconds": 1.759628426283598,
+          "pixels_cpu_seconds": 5.5595989264547825,
+          "wait_seconds": 3.645863000303507,
+          "pixel_frames": 233,
+          "pixel_error": null
+        },
+        {
+          "id": "DUpeSZx_local_ca5c4d19fd74",
+          "decode_cpu_seconds": 1.5668608658015728,
+          "pixels_cpu_seconds": 4.669812738895416,
+          "wait_seconds": 2.246489804238081,
+          "pixel_frames": 194,
+          "pixel_error": null
+        },
+        {
+          "id": "DUpeSZx_local_1839b1e03537",
+          "decode_cpu_seconds": 1.5264532454311848,
+          "pixels_cpu_seconds": 4.034298028796911,
+          "wait_seconds": 2.283726532012224,
+          "pixel_frames": 170,
+          "pixel_error": null
+        }
+      ],
+      "native_loader_and_pixel_formulas_unchanged": true,
+      "native_metric_frame_and_aggregation_order_unchanged": true,
+      "closed": true
+    }
+  }
+}

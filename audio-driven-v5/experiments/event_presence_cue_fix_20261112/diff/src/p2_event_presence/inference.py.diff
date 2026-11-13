@@ -1,0 +1,50 @@
+--- before/src/p2_event_presence/inference.py
++++ src/p2_event_presence/inference.py
+@@ -10,6 +10,7 @@
+ from .contracts import CLASSES, digest, read, save, sha
+ from .media import ROOT, verify
+ from .prompts import ASR_PROMPT, ASR_SCHEMA, VERSION, parse_label_response, prompt, schema
++from .hints import audio_hints, visual_hints
+ 
+ 
+ def model_identity(path):
+@@ -58,7 +59,9 @@
+     identity_hash = digest(identity)
+     save(work/'detector_contract.json',dict(identity=identity,identity_hash=identity_hash,
+         detector_based=True,human_calibrated=False,pilot_only=True,source_pipeline='native-av-first-plus-nod-vocal-reaction-v1',
+-        adaptations=['separate video-only/audio-only views','explicit class status JSON','own ASR on each waveform','no GT gate for generated audio']))
++        adaptations=['separate video-only/audio-only views','explicit class status JSON','own ASR on each waveform',
++                     'annotation-normalized ASR hints only','window-local movement and smile hints',
++                     'window-local face coverage','no GT gate for generated audio']))
+     processor = AutoProcessor.from_pretrained(policy['model'],trust_remote_code=True,local_files_only=True)
+     llm = LLM(model=policy['model'],trust_remote_code=True,dtype='bfloat16',tensor_parallel_size=1,
+         gpu_memory_utilization=policy['gpu_memory_utilization'],cpu_offload_gb=policy['cpu_offload_gb'],
+@@ -107,24 +110,19 @@
+                     if mod=='visual':
+                         if sha(window['frames'])!=window['frames_sha256']:raise ValueError('Video window changed')
+                         data=np.load(window['frames'],allow_pickle=False)
+-                        hints={k:v for k,v in candidates.items() if k in ['frame_coverage','cues','missing_candidates_are_not_absence']}
+-                        hints['cues']=[dict(type=c['type'],start=max(0.,c['start']-window['start_s']),
+-                            end=min(window['end_s'],c['end'])-window['start_s']) for c in candidates.get('cues',[])
+-                            if max(c['start'],window['start_s'])<min(c['end'],window['end_s'])]
++                        hints=visual_hints(candidates, window)
+                         asr=None
+                     else:
+                         if sha(media['audio'])!=media['audio_file_sha256']:raise ValueError('Audio changed')
+                         wave,sr=sf.read(media['audio'],dtype='float32');assert sr==16000
+                         data=wave[round(window['start_s']*sr):round(window['end_s']*sr)]
+-                        asr=generate(request(processor,mod,data,ASR_PROMPT,opaque+f'-audio-{wi}'),ASR_SCHEMA,folder/f'audio_{wi:03d}_asr_raw.json')
+-                        normalized=[normalize_asr_cue_for_english_prompt(text,None,'candidate vocalization')[0]
+-                                    for text in [asr['transcript'],*asr['nonlexical_syllables']]]
+-                        asr=dict(asr,normalized_candidate_texts=normalized,official_transcript_used=False);hints=None
++                        raw_asr=generate(request(processor,mod,data,ASR_PROMPT,opaque+f'-audio-{wi}'),ASR_SCHEMA,folder/f'audio_{wi:03d}_asr_raw.json')
++                        asr=audio_hints(raw_asr, normalize_asr_cue_for_english_prompt);hints=None
+                     text=prompt(mod,window['end_s']-window['start_s'],hints,asr)
+                     (folder/f'{mod}_{wi:03d}_prompt.txt').write_text(text+'\n')
+                     raw=generate(request(processor,mod,data,text,opaque+f'-{mod}-{wi}'),schema(mod),folder/f'{mod}_{wi:03d}_raw.json')
+                     parsed=parse_label_response(raw,mod)
+-                    if mod=='visual' and candidates.get('frame_coverage',0.) < 1:
++                    if mod=='visual' and hints.get('frame_coverage',0.) < 1:
+                         for label in parsed['classes'].values():
+                             if label['state']=='absent':label.update(state='unknown',evidence='incomplete_face_detection; '+label['evidence'])
+                     windows.append(parsed);auxiliary.append(dict(modality=mod,window=window,asr=asr,response=parsed))

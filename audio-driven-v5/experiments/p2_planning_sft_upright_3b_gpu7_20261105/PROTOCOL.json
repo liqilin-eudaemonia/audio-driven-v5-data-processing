@@ -1,0 +1,32 @@
+{
+  "scope": "fresh Qwen2.5-Omni-3B planning language LoRA after final full-pool screening",
+  "upstream": "experiments/listen_j_upright_response_sft_20261105/COMPLETE.json",
+  "train_source": "final accepted train only; all sizes, no AV500h/224px threshold",
+  "conditions": [
+    "paired speaker audio resampled to16k",
+    "listener final-crop first frame"
+  ],
+  "target": "latest listener caption verbatim, assistant tokens plus EOS only",
+  "resource": {
+    "host": "172.29.104.237",
+    "physical_gpu": 7,
+    "micro_batch": 8,
+    "gradient_accumulation": 32,
+    "effective_batch": 256
+  },
+  "stages": [
+    "wait for final all-stage selection receipt and GPU7 release",
+    "all accepted train/dev index + row + SHA seal; independent test stays upstream",
+    "12 accepted real-media, native/fast, processor and labels checks",
+    "GPU smoke forward/backward and complete checkpoint save",
+    "reload original base plus saved smoke adapter and exact tensor verification",
+    "fresh 1epoch training; periodic checkpoint every500 steps; final adapter"
+  ],
+  "preflight": [
+    "REGRESSION_TESTS.json",
+    "PRELIMINARY_INPUT_EQUIVALENCE.json",
+    "GRADIENT_ACCUMULATION_VALIDATION.json"
+  ],
+  "training_started": false,
+  "created_at": 1793888340.1357036
+}

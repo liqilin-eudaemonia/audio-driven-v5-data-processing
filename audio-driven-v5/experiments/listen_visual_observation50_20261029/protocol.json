@@ -1,0 +1,48 @@
+{
+  "seed": 20261029,
+  "samples": 50,
+  "subset": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_train50h_postprocessed_reselected_20261027",
+  "model": "/private/ckpts/Qwen3-VL-8B-Instruct",
+  "addition": null,
+  "temperature": 0,
+  "max_tokens": 4096,
+  "window_seconds": 3,
+  "stride_seconds": 1,
+  "fps": 8,
+  "original_crop": true,
+  "arms": [
+    "baseline",
+    "observation_v1"
+  ],
+  "production_modified": false,
+  "media_truth_available": false,
+  "runtime": {
+    "host": "172.29.252.11",
+    "gpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "workers": 4,
+    "gpu_memory_utilization_per_worker": 0.2,
+    "max_model_len": 49152,
+    "max_num_seqs": 2,
+    "max_num_batched_tokens": 4096,
+    "dtype": "bfloat16",
+    "enforce_eager": true,
+    "skip_mm_profiling": true,
+    "seed": 20261029,
+    "engine": "vllm 0.19.0",
+    "system_prompt": null,
+    "template": "model tokenizer chat_template, enable_thinking=False",
+    "legacy_runtime_differences": "Legacy full run used larger concurrent batches and CUDA graphs; this is a new paired comparison, not exact replay of historical responses.",
+    "baseline_and_candidate_same_batch": true
+  },
+  "target_manifest_sha256": "f90beb2f264402a578f5e41194a631d0e51daaa832a100cb618db1a7ff767a71",
+  "sample_manifest_sha256": "f8b3dff427171c721054718f9ceef1dfc44467eefe87d6fa8b37d6121edf4b3b",
+  "previous_experiment": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_visual_observable50_20261029",
+  "change": "Replace backchannel interpretation task with physical observations; specify continuous-event grouping",
+  "prompt_example": "Watch this 6-second listener clip. Describe all directly visible movements and facial-expression changes you recognize.\nFor each occurrence, give its start time, end time (seconds from clip start), and a brief description of what visibly changes.\nDescribe physical observations only, without interpreting their psychological or communicative meaning.\nRepresent a continuous action or state as one interval, not separate entries for successive frames. Keep genuinely separate occurrences separate.\nReturn JSON with an events array. Each event has start, end, modality (\"visual\"), and behavior (description).",
+  "prompt_example_duration_s": 6
+}

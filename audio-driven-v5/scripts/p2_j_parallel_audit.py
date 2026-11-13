@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""Bounded parallel execution of the unchanged per-sample teacher audit checks."""
+import argparse
+from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor,as_completed
+import multiprocessing
+import os
+import signal
+from pathlib import Path
+import sys
+import time
+ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'src'))
+from p2_listen.contracts import atomic_json,read,digest,sha
+_reader=None
+
+
+def check_process(index,ids):return check_block(_reader,index,ids)
+
+
+def check_block(reader,index,ids):
+    work=reader.work
+    receipt=read(work/'done'/f'{index:06d}.json')
+    if not receipt['success'] or receipt['sample_ids']!=ids or receipt['protocol_sha256']!=reader.protocol_sha:
+        raise ValueError('Wrong task completion receipt')
+    if len(receipt['receipts'])!=len(ids) or {r['sample_id'] for r in receipt['receipts']}!=set(ids):
+        raise ValueError('Invalid per-sample receipts')
+    total=0
+    for r in receipt['receipts']:
+        sid=r['sample_id'];folder=work/'cache'/getattr(reader,'audit_part','')/sid;marker=read(folder/'complete.json')
+        expected=reader.identity(reader.item(sid))
+        if (marker['contract']!=expected or marker['identity']!=digest(expected)
+                or marker['payload_sha256']!=r['payload_sha256'] or marker['identity']!=r['identity']
+                or (folder/'payload.pt').stat().st_size!=r['bytes']):
+            raise ValueError('Invalid teacher cache: '+sid)
+        total+=r['bytes']
+    return len(ids),total
+
+
+def main():
+    global _reader
+    p=argparse.ArgumentParser();p.add_argument('--work',required=True);p.add_argument('--threads',type=int,default=16)
+    p.add_argument('--processes',type=int,default=0)
+    p.add_argument('--kind',choices=['teacher','hidden'],default='teacher')
+    p.add_argument('--watch',action='store_true');p.add_argument('--finish-chain',action='store_true')
+    a=p.parse_args()
+    work=Path(a.work).resolve()
+    if a.watch:
+        while True:
+            s=read(work/'cluster_status.json')
+            if s['failures']:raise ValueError('Extraction has unresolved failures')
+            atomic_json(work/'parallel_audit_wait.json',dict(time=time.time(),samples=s['samples'],total=s['total'],pid=os.getpid()))
+            if s['samples']==s['total']:break
+            time.sleep(15)
+    if a.kind=='teacher':
+        from p2_j_teacher.core import Reader
+        reader=Reader(work)
+    else:
+        from p2_j_sft_hidden import Reader,require_ready
+        reader=Reader(work);require_ready(reader);reader.audit_part='input_plan'
+    jobs=read(work/'jobs.json');seen=set();start=time.time()
+    if list((work/'failed').glob('*.json')):raise ValueError('Extraction has unresolved failures')
+    for ids in jobs:
+        if seen & set(ids) or len(set(ids))!=len(ids):raise ValueError('Duplicate completed members')
+        seen.update(ids)
+    if seen!=reader.ids:raise ValueError('Teacher membership differs')
+    count=total_bytes=blocks=0
+    _reader=reader
+    executor=(ProcessPoolExecutor(max_workers=a.processes,mp_context=multiprocessing.get_context('fork')) if a.processes
+              else ThreadPoolExecutor(max_workers=a.threads))
+    with executor as pool:
+        futures=([pool.submit(check_process,i,ids) for i,ids in enumerate(jobs)] if a.processes else
+                 [pool.submit(check_block,reader,i,ids) for i,ids in enumerate(jobs)])
+        for f in as_completed(futures):
+            n,b=f.result();count+=n;total_bytes+=b;blocks+=1
+            if blocks%16==0 or blocks==len(jobs):
+                atomic_json(work/'parallel_audit_progress.json',dict(samples=count,total=len(seen),blocks=blocks,
+                            seconds=time.time()-start,threads=0 if a.processes else a.threads,processes=a.processes,time=time.time()))
+    result=dict(success=True,samples=len(seen),payload_bytes=total_bytes,protocol_sha256=reader.protocol_sha,
+                writer_validation='per-payload SHA256 and exact tensor roundtrip')
+    if a.kind=='teacher':
+        result.update(finished_at=time.time(),source=reader.protocol['source'],
+            final_validation='complete member coverage, source identity, per-sample receipt/hash binding and byte size')
+    else:result.update(time=time.time(),adapter=reader.protocol['adapter'],reused_parts=reader.protocol['reuse_parts'])
+    atomic_json(work/'parallel_audit_result.json',dict(**result,seconds=time.time()-start,threads=0 if a.processes else a.threads,processes=a.processes,audit_code_sha256=sha(__file__)))
+    if (work/'COMPLETE.json').exists():
+        old=read(work/'COMPLETE.json')
+        for key in ('success','samples','payload_bytes','protocol_sha256',*(['source'] if a.kind=='teacher' else ['adapter','reused_parts'])):
+            if old[key]!=result[key]:raise ValueError('Independent audit mismatch: '+key)
+    else:atomic_json(work/'COMPLETE.json',result,immutable=True)
+    if a.finish_chain:
+        if a.kind!='hidden':raise ValueError('Only the hidden continuation has a managed chain')
+        # Stop only our now-redundant serial auditor, after the full audit passed.
+        for _ in range(12):
+            state=read(work/'chain_status.json')
+            if state['stage']=='complete':break
+            if state['stage']=='auditing':
+                pid=read(work/'chain_launch.json')['pid']
+                try:cmd=(Path('/proc')/str(pid)/'cmdline').read_bytes().split(b'\0')
+                except FileNotFoundError:cmd=[]
+                if (str(ROOT/'scripts/p2_j_sft_hidden.py').encode() in cmd and b'chain' in cmd
+                        and str(work).encode() in cmd):os.kill(pid,signal.SIGTERM)
+                atomic_json(work/'chain_status.json',dict(stage='complete',time=time.time(),result=read(work/'COMPLETE.json'),
+                            auditor='parallel_cpu',serial_auditor_pid=pid))
+                break
+            time.sleep(5)
+    print(dict(success=True,samples=count,seconds=time.time()-start),flush=True)
+
+
+if __name__=='__main__':main()

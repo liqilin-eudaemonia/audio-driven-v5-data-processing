@@ -1,0 +1,239 @@
+Table 1. Quantitative comparison results on RealTalk [17]. Best results highlighted in bold. ∗denotes the reproduced version that is
+publicly unavailable. We also report the results from a non-interactive talking head model [28], shown in gray, for reference.
+Interaction
+Reactiveness
+Motion Richness
+Visual Quality
+Lip Synchronization
+Method
+User Input
+Latency ↓rPCC-Exp ↓
+rPCC-Pose ↓
+SID ↑
+Var ↑
+FID ↓
+FVD ↓
+CSIM ↑
+LSE-D ↓
+LSE-C ↑
+FLOAT [28]
+✗
+2.4s
+0.054
+0.182
+2.785
+2.778
+81.297 438.817
+0.845
+8.135
+6.361
+INFP∗[70]
+✓
+3.4s
+0.035
+0.064
+2.343
+1.638
+24.551
+159.000
+0.867
+8.027
+6.536
+Ours
+✓
+0.5s
+0.003
+0.036
+2.442
+1.734
+24.328 170.874
+0.833
+8.060
+6.723
+GT
+N/A
+N/A
+0.000
+0.000
+3.972
+1.658
+N/A
+N/A
+0.796
+7.790
+6.940
+Table 2. Human preference study on interactive avatar generation models, comparing Avatar Forcing and INFP∗.
+73.0%
+14.4%
+13%
+(a) Reactiveness
+76.0%
+11.5% 13%
+(d) Non-verbal Alignment
+78.6%
+12%
+(b) Motion Richness
+80.3%
+14%
+(e) Overall Preference
+56.7%
+28.8%
+14%
+(c) Verbal Alignment (Lip-sync)
+Ours
+Tie
+INFP*
+Table 3. Comparison with talking head generation models on the
+HDTF [67] dataset. Second-best results are underlined.
+Visual Quality
+Lip Synchronization
+Method
+FID ↓
+FVD ↓
+CSIM ↑
+LSE-D ↓
+LSE-C ↑
+SadTalker [66]
+64.744
+342.996
+0.697
+8.046
+7.171
+Hallo3 [10]
+32.794
+184.341
+0.865
+8.498
+7.487
+FLOAT [28]
+25.110
+167.463
+0.881
+7.553
+8.006
+INFP* [70]
+27.155
+187.977
+0.840
+7.810
+7.325
+Ours
+20.332
+149.798
+0.870
+7.700
+7.560
+Table 4. Comparison with listening head generation models on
+the ViCo [68] dataset. † denotes results inherited from DIM [55].
+FD ↓
+rPCC ↓
+SID ↑
+Var ↑
+Method
+Exp
+Pose
+Exp
+Pose
+Exp
+Pose
+Exp
+Pose
+RLHG† [68]
+39.02
+0.07
+0.08
+0.02
+3.62
+3.17
+1.52
+0.02
+L2L† [40]
+33.93
+0.06
+0.06
+0.08
+2.77
+2.66
+0.83
+0.02
+DIM† [55]
+23.88
+0.06
+0.06
+0.03
+3.71
+2.35
+1.53
+0.02
+INFP* [70]
+17.52
+0.07
+0.01
+0.07
+2.19
+3.20
+2.10
+0.03
+Ours
+16.64
+0.05
+0.01
+0.01
+3.12
+3.00
+2.80
+0.03
+16 kHz. Additionally, we randomly select 50 videos from
+the talking-head dataset HDTF [67] to evaluate the perfor-
+mance of talking-head generation.
+5.2. Implementation Details
+We use the Adam optimizer [29] with a learning rate of
+10−4 and a batch size of 8. We retrain the motion latent
+auto-encoder from Ki et al. [28] on our dataset. The latent
+dimension is set to d = 512. For our model vθ, we use 8 at-
+tention heads with a hidden dimension of h = 1024 and 1D
+RoPE [52]. It is trained with N = 50 frames over B = 5
+blocks (i.e., 10 frames per block) and l = 2 look-ahead
+frames. For audio encoding, we extract 12 multi-scale fea-
+tures from Wav2Vec2.0 [1]. For motion sampling, we use
+10 NFEs with the Euler solver and a classifier-free guid-
+ance [22]. All the experiments are conducted on a single
+NVIDIA H100 GPU.
+5.3. Interactive Avatar Evaluation
+Metrics
+We evaluate our model across five aspects of
+interactive avatar generation: Latency, Reactiveness, Mo-
+tion Richness, Visual Quality, and Lip Synchronization.
+For Latency, we assume that the pre-extracted audio fea-
+tures and measure motion generation time using 10 NFEs.
+For Reactiveness, we measure the motion synchronization
+between the user and the avatar by utilizing the residual
+Pearson correlation coefficients (rPCC) on facial expression
+(rPCC-exp) and head pose (rPCC-pose) [11]. For Mo-
+tion Richness, we measure the Similarity Index for diversity
+(SID) [40] and variance (Var), following the previous stud-
+ies [55, 70]. For Visual Quality, we compute the Frechet in-
+ception distance (FID) [48] and the Frechet video distance
+(FVD) [56] for the generated videos. We also assess the
+identity preservation using the cosine similarity of identity
+embeddings (CSIM) [12] between the reference avatar im-
+age and the generated videos. In Lip Synchronization, we
+compute the lip sync error distance and confidence (LSE-C
+and LSE-D) using the generated video and the avatar’s au-
+dio. Please refer to Appendix D for details on the metrics.
+Comparison with Interactive Head Avatar
+We compare
+our model with the reproduced state-of-the-art dyadic talk-
+ing avatar model, INFP* [70], since its official implementa-
+tion is not publicly available. For reference, we also include
+a talking avatar generation model [28] which does not use
+user motion or audio.
+In Tab. 1, we provide a quantitative comparison on the
+RealTalk [17] dataset. Avatar Forcing significantly outper-
+forms INFP* in terms of Reactiveness and Motion Rich-
+ness, indicating that our generated avatar is much more re-
+active and expressive compared to the baselines. Notably,
+Avatar Forcing achieves a latency of 0.5s, enabling real-
+time interaction, and maintains Visual Quality and Lip Syn-
+chronization comparable to INFP*. In contrast, INFP*’s
+6

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ResponseNet / Seamless · 指标与消融增减</title>
+<style>
+:root{--bg:#f3f6fa;--ink:#172c42;--muted:#62768a;--line:#dbe4ee;--blue:#155e96}*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--bg);font:14px/1.65 system-ui,-apple-system,"Microsoft YaHei",sans-serif}main{max-width:1510px;margin:0 auto;padding:22px 28px 50px}h1{font-size:28px;margin:14px 0 6px}h2{font-size:20px;margin:0 0 8px}a{color:var(--blue)}nav{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}.tabs{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 12px}button{font:inherit;cursor:pointer;border:1px solid #c9d7e6;border-radius:7px;padding:9px 15px;background:white;color:#155e96}button.active{background:#155e96;color:white;border-color:#155e96}.card{background:white;border:1px solid var(--line);border-radius:10px;padding:17px;margin:15px 0;min-width:0}.muted{color:var(--muted);font-size:12px}.description{max-width:1100px}.legend{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.pill{border-radius:5px;padding:3px 8px;background:#edf2f7}.rank1{color:#08735b;background:#edf8f3;font-weight:700}.rank2{color:#1d4ed8;background:#edf2ff;font-weight:700}.good{color:#08735b;background:#edf8f3}.bad{color:#a64b16;background:#fff3e9}.scroll{max-width:100%;overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}th,td{border-bottom:1px solid #e5ebf2;padding:9px 10px;text-align:right;font-variant-numeric:tabular-nums}th{background:#f1f5fa;color:#52677e}th:first-child,td:first-child{text-align:left}table.main th:first-child,table.main td:first-child{position:sticky;left:0;z-index:1;background:white;min-width:225px}table.main th:first-child{background:#f1f5fa;z-index:2}.links{display:flex;gap:18px;flex-wrap:wrap}.jump{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.jump a{text-decoration:none;background:#e8eff7;border-radius:5px;padding:5px 9px;font-size:12px}.note{border-left:3px solid #2b7b70;padding:11px 14px;background:#eaf4f1}.error{color:#a33422}details summary{cursor:pointer;font-weight:650}#notice,#sources{overflow-wrap:anywhere}.dataset-name{font-weight:700;color:#155e96}#coverage{font-size:12px}.footer{font-size:12px;color:var(--muted)}@media(max-width:700px){main{padding:14px 11px 32px}h1{font-size:23px}.card{padding:12px}nav{gap:10px}table.main th:first-child,table.main td:first-child{min-width:180px;max-width:215px;white-space:normal}.tabs button{flex:1;min-width:140px}}
+</style></head>
+<body><main>
+<nav><strong id="systemCount">评测 · 原值与消融</strong><a href="../p2_seamless200_20261105/">Seamless典型生成视频</a><a href="../p2_responsenet200_demo_20261103/">历史ResponseNet精选视频</a></nav>
+<h1>各方案提升了多少？</h1>
+<p class="muted">同一测试集内部比较，两个测试集分别排名。所有差值来自已完成评测的未舍入数值，不重新推理或改动评分。</p>
+<div class="tabs"><button data-dataset="responsenet">ResponseNet · 随机200</button><button data-dataset="seamless">Seamless · 固定200</button></div>
+<div id="error" class="error" role="alert"></div>
+<section class="card"><h2 id="datasetTitle">正在载入…</h2><p id="description" class="description"></p><p id="protocol" class="muted"></p><p id="coverage"></p><div id="downloadLinks" class="links"></div></section>
+<section class="card" id="jointAnalysis"><h2>最新Feature／Whisper与联合方案：如何读这次消融</h2><div id="jointAnalysisText"></div><p class="muted">单种子固定200条的点估计；训练batch与时长分组存在差异，未完成显著性检验，不能将细小变化视为确定收益。</p></section>
+<section class="card"><h2 id="overallTitle">总体指标</h2><div class="legend muted"><span class="pill rank1">第一名</span><span class="pill rank2">第二名</span><span>按未舍入值、并列同色；Emo-Div按与GT的绝对差距排序。颜色不是显著性证明。</span></div><div class="scroll"><table class="main" id="overall"></table></div><p class="muted">Emo-Div原值为生成类别数／GT类别数；“距GT”是二者均值的绝对差。该指标不等于行为种类数量。</p></section>
+<details class="card" id="audioPanel"><summary>音频回应与有效覆盖</summary><p id="audioNote" class="muted"></p><div class="scroll"><table id="audio"></table></div></details>
+<section id="ablations"><h2>七组消融：变化量一眼比较</h2><p class="note"><b>所有增减＝B−A。</b>绿色表示按该指标方向改善，橙色表示退化。Emo-Acc、活动F1与发声比例的差值使用 <b>pp（百分点）</b>，例如40%→42%为+2 pp。每行可展开查看基线A、对照B及完整音频变化。</p><div id="jump" class="jump"></div><div id="ablationTables"></div></section>
+<details class="card"><summary>数据来源与比较限制</summary><p id="notice" class="muted"></p><div id="sources" class="muted"></div><p class="muted">现有训练的时长分组启用时刻、batch不完全一致，属于既有pipeline比较，不能全部归因于单个组件。点估计来自一个生成随机种子。细小差距需要更多样本或多种子确认。所有组已通过Qwen间接接收speaker音频；Whisper比较的是额外直连分支。自然倾听回应不是唯一答案，像素接近GT不等于行为一定更合理。</p></details>
+<p class="footer">页面仅展示既有结果；UTMOS无有效窗口时为N/A，不计0、不参与排名。所有生成视频、原始标签、权重与评测JSON保持原样。</p>
+</main>
+<script src="ablation_tables.js?v=20261106-joint"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);let DATA=null,current=null;
+const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function rank(value,metric,rows){if(typeof value!=='number'||!Number.isFinite(value))return 0;const values=[...new Set(rows.map(r=>r[metric.key]).filter(v=>typeof v==='number'&&Number.isFinite(v)))].sort((a,b)=>metric.direction>0?b-a:a-b);return values.indexOf(value)+1;}
+function metricCell(row,m){const value=row[m.key],r=rank(value,m,current.rows);return '<td class="'+(r===1?'rank1':r===2?'rank2':'')+'" data-arm="'+row.arm+'" data-metric="'+m.key+'" data-raw-value="'+(value==null?'':value)+'" data-rank="'+r+'">'+P2Ablations.format(m,value)+'</td>';}
+function show(key){
+ current=DATA.datasets[key];if(!current)throw Error('未知测试集');document.querySelectorAll('[data-dataset]').forEach(b=>b.classList.toggle('active',b.dataset.dataset===key));
+ $('systemCount').textContent=current.rows.length+'组评测 · 原值与消融';$('overallTitle').textContent=current.rows.length+'组总体指标';
+ $('datasetTitle').textContent=current.title+' · '+current.rows.length+'组完成';$('description').textContent=current.description;$('jointAnalysisText').innerHTML=current.analysis.map(t=>'<p>'+esc(t)+'</p>').join('');
+ $('protocol').textContent=`200条 · ${(current.duration_s/60).toFixed(2)}分钟 · 512×512 / 原帧率 ${current.fps_values.join(" / ")} fps · seed ${current.seed} · ${current.generation.steps}步Euler · videoCFG ${current.generation.video_cfg} / audioCFG ${current.generation.audio_cfg}`;
+ const first=current.rows[0],em=current.rows.map(r=>r.coverage.emotion.video_identities),motion=current.rows.map(r=>r.coverage.delta_resp.valid_phases);
+ $('coverage').textContent=`每组PSNR／SSIM／LPIPS／FID／FVD均200条；表情有效${Math.min(...em)}–${Math.max(...em)}条，运动有效${Math.min(...motion)}–${Math.max(...motion)}条。声学GT有活动${first.gt_active_clips}条、无活动${first.gt_silent_clips}条；UTMOS均N/A。`;
+ $('downloadLinks').innerHTML='<a download href="'+key+'_all_summary.csv">下载'+current.rows.length+'组原始数值CSV</a><a download href="'+key+'_ablation_deltas.csv">下载全部消融增减CSV</a><a download href="dashboard.json">下载完整数值JSON</a>';
+ const main=DATA.metrics.slice(0,8);
+ $('overall').innerHTML='<thead><tr><th>配置</th>'+main.map(m=>'<th>'+esc(m.label)+' '+(m.direction>0?'↑':'↓')+'</th>').join('')+'<th>Emo-Div 生成／GT</th><th>UTMOS</th></tr></thead><tbody>'+current.rows.map(row=>'<tr><td>'+esc(row.label)+'</td>'+main.map(m=>metricCell(row,m)).join('')+'<td>'+row.emo_div_generated.toFixed(4)+' / '+row.emo_div_gt.toFixed(4)+'</td><td>N/A</td></tr>').join('')+'</tbody>';
+ const audio=DATA.metrics.slice(8,11);
+ $('audioNote').textContent=`有声GT整段漏声率分母${first.gt_active_clips}，静音GT误发声率分母${first.gt_silent_clips}。声学活动按既有阈值计算，不验证说词是否正确；发声条数只作数量展示，不按越多越好排序。`;
+ $('audio').innerHTML='<thead><tr><th>配置</th><th>生成有活动／200</th>'+audio.map(m=>'<th>'+esc(m.label)+' '+(m.direction>0?'↑':'↓')+'</th>').join('')+'<th>整段漏声数</th><th>静音误发声数</th></tr></thead><tbody>'+current.rows.map(row=>'<tr><td>'+esc(row.label)+'</td><td>'+row.generated_active_clips+'/200</td>'+audio.map(m=>metricCell(row,m)).join('')+'<td>'+row.missed_clips+'/'+row.gt_active_clips+'</td><td>'+row.false_sound_clips+'/'+row.gt_silent_clips+'</td></tr>').join('')+'</tbody>';
+ P2Ablations.render($('ablationTables'),DATA,key);
+ $('jump').innerHTML=DATA.groups.map(g=>'<a href="#ablation-'+g.id+'">'+esc(g.title)+'</a>').join('');
+ $('notice').textContent='当前测试集参考清单SHA256：'+current.references_sha256+'。每一组比较都使用同一套200条；两个测试集不混合平均。';
+ $('sources').innerHTML=Object.entries(current.sources).map(([p,h])=>'<p>'+esc(p)+'<br>SHA256 '+esc(h)+'</p>').join('');
+ const url=new URL(location);url.searchParams.set('dataset',key);history.replaceState(null,'',url);window.dashboardData=DATA;window.dashboardDataset=key;
+}
+async function init(){const response=await fetch('dashboard.json',{cache:'no-cache'});if(!response.ok)throw Error('数值HTTP '+response.status);DATA=await response.json();document.querySelectorAll('[data-dataset]').forEach(b=>b.onclick=()=>show(b.dataset.dataset));const params=new URL(location).searchParams;show(params.get('dataset')||'responsenet');if(params.get('embed')==='1'){document.querySelector('nav').hidden=true;}const ablation=params.get('ablation');if(ablation){const target=document.getElementById('ablation-'+ablation);if(target)target.scrollIntoView();}}
+init().catch(e=>{$('error').textContent='页面加载失败：'+e.message;});
+</script></body></html>

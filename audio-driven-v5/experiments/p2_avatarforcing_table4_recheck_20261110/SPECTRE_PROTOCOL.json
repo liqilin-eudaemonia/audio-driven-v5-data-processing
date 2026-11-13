@@ -1,0 +1,930 @@
+{
+  "encoder": {
+    "checkpoint_sha256": "ce159eb714f9f988156c5168b1f61e043f022a7fcc8700be29d67dad763b4651",
+    "strict_encoder_tensors": {
+      "E_flame": 322,
+      "E_expression": 323
+    },
+    "source": {
+      "/private/liqi_workspace/project_code/audio-driven-v5/compare/deployment/vendor/spectre/src/spectre.py": "f1168845847fba1d2d5a4321937b74caa350dbb2ae33f4715b09bfbdfec3729e",
+      "/private/liqi_workspace/project_code/audio-driven-v5/compare/deployment/vendor/spectre/src/models/encoders.py": "4c8d3da5b3b240faf3f09b2fab4588e726e7c89df7619d822f7830c6bde939f0",
+      "/private/liqi_workspace/project_code/audio-driven-v5/compare/deployment/vendor/spectre/src/models/resnet.py": "59908cc685a074727ab173644eed14f37a4f38456e7bc112014d8ce088b2fd02",
+      "/private/liqi_workspace/project_code/audio-driven-v5/compare/deployment/vendor/spectre/demo.py": "ad9609b77a2dda0cec5034903fd85a1ab108e5ef05579c935e6ad02ae7fc1b59"
+    },
+    "precision": "float32; no autocast/TF32",
+    "residual": "official demo adds initial DECA exp and jaw once",
+    "mobilenet": "torchvision MobileNetV2 architecture; all state keys/shapes loaded strictly",
+    "flame_mesh_renderer_loaded": false,
+    "temporal_context": 2
+  },
+  "implementation_sha256": "df9fc32685a9ca40a6eeaac7160ad9b756624767f04fbdd72300072b839b9bea",
+  "generation_protocol_sha256": "7c42a1db7e9e03a5b8fc1cb3f4cbdb09da446e1ae6361f8336ac75b9ac0e446a",
+  "temporal": "2frame edge replication; exact context around each32 valid frames",
+  "fps": 25,
+  "batch": 32,
+  "tasks": [
+    {
+      "id": "ClNUxPsUByg_000210_000221.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/ClNUxPsUByg_000210_000221.0.speaker.mp4",
+      "frames": 275,
+      "video_sha256": "bd51db5a3d94386c441eeb3ad51b76828b34619d75869fae904bf1645d342e60"
+    },
+    {
+      "id": "ClNUxPsUByg_000210_000221.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/ClNUxPsUByg_000210_000221.0.listener.mp4",
+      "frames": 275,
+      "video_sha256": "56fd7db5cfb70b423abfc5830428c552fd1af4cef13fd5a0fe3a31b6c6a3897b"
+    },
+    {
+      "id": "ClNUxPsUByg_000210_000221.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/ClNUxPsUByg_000210_000221.0/generated.mp4",
+      "frames": 275,
+      "video_sha256": "eadf375c7ab8d8093c9ef87fbc7f6bb649a24ff11fabc7366f61f8d45f855217"
+    },
+    {
+      "id": "Ew2z_sYABE0_000063_000083.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/Ew2z_sYABE0_000063_000083.0.speaker.mp4",
+      "frames": 500,
+      "video_sha256": "4f55e4a05a94f5500e1beca95723701bfed3c80a201295f02ea875e71b27aafc"
+    },
+    {
+      "id": "Ew2z_sYABE0_000063_000083.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/Ew2z_sYABE0_000063_000083.0.listener.mp4",
+      "frames": 500,
+      "video_sha256": "0e3c51352fb36f89a3b905dedd629c3da7cc45174a2745f3ca8b3fe3d320e43e"
+    },
+    {
+      "id": "Ew2z_sYABE0_000063_000083.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/Ew2z_sYABE0_000063_000083.0/generated.mp4",
+      "frames": 500,
+      "video_sha256": "3de4348b28172c2b3a8699812152c0527741cff5afd794f77f167beecd9fb6b9"
+    },
+    {
+      "id": "Ew2z_sYABE0_000143_000162.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/Ew2z_sYABE0_000143_000162.1.speaker.mp4",
+      "frames": 475,
+      "video_sha256": "de1e4f3b2543d3217688e87377cab14df7d3701d13bed8e28720219093fd409b"
+    },
+    {
+      "id": "Ew2z_sYABE0_000143_000162.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/Ew2z_sYABE0_000143_000162.1.listener.mp4",
+      "frames": 475,
+      "video_sha256": "a403be6101b87180a5cd93b445b9acb3991a10f6c0085dcea3963dc60b22ba37"
+    },
+    {
+      "id": "Ew2z_sYABE0_000143_000162.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/Ew2z_sYABE0_000143_000162.1/generated.mp4",
+      "frames": 475,
+      "video_sha256": "b5f481ee6cfd473042ac783ee240da51f6b0137cc782acdf98897854294a9308"
+    },
+    {
+      "id": "Rdrevvd0UwQ_001828_001854.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/Rdrevvd0UwQ_001828_001854.1.speaker.mp4",
+      "frames": 650,
+      "video_sha256": "e284766824d3dfaeb9802215dbb81ecb3903f4971f32b629393d9b0edb25d1ae"
+    },
+    {
+      "id": "Rdrevvd0UwQ_001828_001854.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/Rdrevvd0UwQ_001828_001854.1.listener.mp4",
+      "frames": 650,
+      "video_sha256": "9cc042692f94251d32fc78c8eb37796cfa5f660eda3bce3c64fd15c190806120"
+    },
+    {
+      "id": "Rdrevvd0UwQ_001828_001854.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/Rdrevvd0UwQ_001828_001854.1/generated.mp4",
+      "frames": 650,
+      "video_sha256": "0fe870f9189105c6e4a0cec67074fdd97b35fed432fac330bbedf45a814fbe35"
+    },
+    {
+      "id": "Rdrevvd0UwQ_001889_001917.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/Rdrevvd0UwQ_001889_001917.0.speaker.mp4",
+      "frames": 700,
+      "video_sha256": "25d9ed79ec73aca3d70a806b2191821ac3a1ec297bb6c461f2a5069b276d7f9c"
+    },
+    {
+      "id": "Rdrevvd0UwQ_001889_001917.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/Rdrevvd0UwQ_001889_001917.0.listener.mp4",
+      "frames": 700,
+      "video_sha256": "2cf78297e61d54e128e56170ccdeeaa0419606144a36df49bbf9fdd04d255ff6"
+    },
+    {
+      "id": "Rdrevvd0UwQ_001889_001917.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/Rdrevvd0UwQ_001889_001917.0/generated.mp4",
+      "frames": 700,
+      "video_sha256": "5026c4710581b413f2268bc2737b86653e49f031294ecb3ce5bd6625ea14505b"
+    },
+    {
+      "id": "YFhkBtIUgBM_000087_000091.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/YFhkBtIUgBM_000087_000091.0.speaker.mp4",
+      "frames": 100,
+      "video_sha256": "1adbd1f02fda6949d037b2f177107291987ec0213b4e65b7747f2fd22b180673"
+    },
+    {
+      "id": "YFhkBtIUgBM_000087_000091.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/YFhkBtIUgBM_000087_000091.0.listener.mp4",
+      "frames": 100,
+      "video_sha256": "844f1cd29480bf7f65109384576daad262b58ad34c4dcb95f83422ae0dd28588"
+    },
+    {
+      "id": "YFhkBtIUgBM_000087_000091.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/YFhkBtIUgBM_000087_000091.0/generated.mp4",
+      "frames": 100,
+      "video_sha256": "3141d94cb86b26456a1399cc649dfbc1adbc4ad72b769900f2d394f266ffb5fa"
+    },
+    {
+      "id": "YFhkBtIUgBM_000106_000107.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/YFhkBtIUgBM_000106_000107.0.speaker.mp4",
+      "frames": 25,
+      "video_sha256": "71c571ed6563b15a48ae1da987c67b0df8e4e6e69ce3948512f9f3ad16fbc67a"
+    },
+    {
+      "id": "YFhkBtIUgBM_000106_000107.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/YFhkBtIUgBM_000106_000107.0.listener.mp4",
+      "frames": 25,
+      "video_sha256": "4e8f34e6db44ec2697f8db9310bc952cbd6c6b6bcfd90c084492bd98d16b1955"
+    },
+    {
+      "id": "YFhkBtIUgBM_000106_000107.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/YFhkBtIUgBM_000106_000107.0/generated.mp4",
+      "frames": 25,
+      "video_sha256": "ba3e53095ec2940ce82c0b1db5ea8da726b1032f8a469ff6385fc93c0517c824"
+    },
+    {
+      "id": "bPiofmZGb8o_002969_002986.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/bPiofmZGb8o_002969_002986.1.speaker.mp4",
+      "frames": 425,
+      "video_sha256": "4b849d3e18815f0ccf1bae90193157fa70a90a9444e4617649ed82b5357804da"
+    },
+    {
+      "id": "bPiofmZGb8o_002969_002986.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/bPiofmZGb8o_002969_002986.1.listener.mp4",
+      "frames": 425,
+      "video_sha256": "eaccd24239cd724190aaa42cbd92a766b86a3d3e636ef95112df669975b8dfa1"
+    },
+    {
+      "id": "bPiofmZGb8o_002969_002986.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/bPiofmZGb8o_002969_002986.1/generated.mp4",
+      "frames": 425,
+      "video_sha256": "ab3fd8f39c25c84902fe79c860fe91606058b87e81a196fde7496a037b24178e"
+    },
+    {
+      "id": "bPiofmZGb8o_004758_004767.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/bPiofmZGb8o_004758_004767.1.speaker.mp4",
+      "frames": 225,
+      "video_sha256": "c108cf3f0b70782b02e1808f6295d2788c6e6d8ec5635c35fe1ddff110f6a47b"
+    },
+    {
+      "id": "bPiofmZGb8o_004758_004767.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/bPiofmZGb8o_004758_004767.1.listener.mp4",
+      "frames": 225,
+      "video_sha256": "5289fecb0558d5d07a48cf30eb88b39ac223e229851ef276e5c69d16ee75e755"
+    },
+    {
+      "id": "bPiofmZGb8o_004758_004767.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/bPiofmZGb8o_004758_004767.1/generated.mp4",
+      "frames": 225,
+      "video_sha256": "f3bb560cb188bbff0c0c98b597a754a86d52d6b487c4a3afcb47f79ab7262ac0"
+    },
+    {
+      "id": "hDMPqh310dQ_000382_000397.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/hDMPqh310dQ_000382_000397.0.speaker.mp4",
+      "frames": 375,
+      "video_sha256": "ff588c8cdd9d9cecb3781c48d13b6de5444f4c648fa13b6384f46bc16640551c"
+    },
+    {
+      "id": "hDMPqh310dQ_000382_000397.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/hDMPqh310dQ_000382_000397.0.listener.mp4",
+      "frames": 375,
+      "video_sha256": "f48c6d5000a3ad197998f27346ed5fabfd8cfca1129ec18f0da959056be0d832"
+    },
+    {
+      "id": "hDMPqh310dQ_000382_000397.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/hDMPqh310dQ_000382_000397.0/generated.mp4",
+      "frames": 375,
+      "video_sha256": "b83e91055773f166878d3182bcf788875762ec7c95dfd45f3f2d6a7429c95c6c"
+    },
+    {
+      "id": "hDMPqh310dQ_000444_000463.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/hDMPqh310dQ_000444_000463.0.speaker.mp4",
+      "frames": 475,
+      "video_sha256": "6cd3f0b0066e4196785b3a1806f79277fa4e28880f233beb4779b7aecdf3eec2"
+    },
+    {
+      "id": "hDMPqh310dQ_000444_000463.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/hDMPqh310dQ_000444_000463.0.listener.mp4",
+      "frames": 475,
+      "video_sha256": "7386155a3fb7df26523ca537456d80ab0652e87390b741da2c428023322a60c2"
+    },
+    {
+      "id": "hDMPqh310dQ_000444_000463.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/hDMPqh310dQ_000444_000463.0/generated.mp4",
+      "frames": 475,
+      "video_sha256": "020a0f7fc7fbeecfc9f56891c0f0a68c5c01b8b6bb3ca1a0589d572d6252f891"
+    },
+    {
+      "id": "rSM89vRNq4Y_000661_000669.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/rSM89vRNq4Y_000661_000669.1.speaker.mp4",
+      "frames": 200,
+      "video_sha256": "29395246da9b73b7c1928c360bda53b81c4999ffc09975166d03bdcb184faa0f"
+    },
+    {
+      "id": "rSM89vRNq4Y_000661_000669.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/rSM89vRNq4Y_000661_000669.1.listener.mp4",
+      "frames": 200,
+      "video_sha256": "014b503b26acf433e0dadf2069fb1988a1587253e1747b54577c3de87b48c61d"
+    },
+    {
+      "id": "rSM89vRNq4Y_000661_000669.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/rSM89vRNq4Y_000661_000669.1/generated.mp4",
+      "frames": 200,
+      "video_sha256": "f3506ef8bec6260905425a7fbe03293dadd479858428430c1186d81283d181b2"
+    },
+    {
+      "id": "rSM89vRNq4Y_000689_000699.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/rSM89vRNq4Y_000689_000699.0.speaker.mp4",
+      "frames": 250,
+      "video_sha256": "051e9a10f5c7eb54b9e30ebed5684807cc7698de45b3a66a834afcf3c543ad8c"
+    },
+    {
+      "id": "rSM89vRNq4Y_000689_000699.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/rSM89vRNq4Y_000689_000699.0.listener.mp4",
+      "frames": 250,
+      "video_sha256": "bf203230cc5c58889bd0433ad494123a418a5b7f10f747b1e42ba06681c29d4b"
+    },
+    {
+      "id": "rSM89vRNq4Y_000689_000699.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/rSM89vRNq4Y_000689_000699.0/generated.mp4",
+      "frames": 250,
+      "video_sha256": "adc0a02c704f2367563f57fb938d1ee46e9164bc4b6fd5904d63108c85913493"
+    },
+    {
+      "id": "rSM89vRNq4Y_001469_001473.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/rSM89vRNq4Y_001469_001473.1.speaker.mp4",
+      "frames": 100,
+      "video_sha256": "0fa4b801ba4a45e32d84db65c72383eae092c1976cf378ec669d21676976b985"
+    },
+    {
+      "id": "rSM89vRNq4Y_001469_001473.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/rSM89vRNq4Y_001469_001473.1.listener.mp4",
+      "frames": 100,
+      "video_sha256": "ca1a96ffd6568803192f5b9d7f051c34bcb24996ccab81e9a5698287ddb3e56e"
+    },
+    {
+      "id": "rSM89vRNq4Y_001469_001473.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/rSM89vRNq4Y_001469_001473.1/generated.mp4",
+      "frames": 100,
+      "video_sha256": "44024c4587c37ffdd1cc898dd7e7e0b5cb05a7ebdaf3f18cbccc65225ae7f958"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000318_000327.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000318_000327.0.speaker.mp4",
+      "frames": 225,
+      "video_sha256": "8184a0b768fbe3a7c96a670e7ab47fbf227a5c9b62404436154e2a32e6a21340"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000318_000327.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000318_000327.0.listener.mp4",
+      "frames": 225,
+      "video_sha256": "3d76c825b62c045b501fb5856fe4489deb4d347fa0afa6eb48602f0261692646"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000318_000327.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_000318_000327.0/generated.mp4",
+      "frames": 225,
+      "video_sha256": "dd9fb6fe5c3b2401bae6ac413bdd702c1418a11507c8a9045a6769e7aad9f145"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000353_000361.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000353_000361.0.speaker.mp4",
+      "frames": 200,
+      "video_sha256": "0faf93d227b74da751d085413473a2c7ad89041118c42294ae6782e3cea2d0d4"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000353_000361.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000353_000361.0.listener.mp4",
+      "frames": 200,
+      "video_sha256": "de1b45ba3bbf440fef678d037b23eef40ca0a6d22d8372764cc42f15e3e3fc7d"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000353_000361.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_000353_000361.0/generated.mp4",
+      "frames": 200,
+      "video_sha256": "5467bb068e9ed99f488c0b196f0aace4710ead9405beb420e21ccb2552d5b60b"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000610_000619.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000610_000619.1.speaker.mp4",
+      "frames": 225,
+      "video_sha256": "ef9e13888ebecff13390b38621ff23badc196e4d0dc2c40521c84fc45fc6341d"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000610_000619.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000610_000619.1.listener.mp4",
+      "frames": 225,
+      "video_sha256": "b1e5179d8279187b16df7bab65b8247ca6ca3fef83505fb8e681ec2acbf58901"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000610_000619.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_000610_000619.1/generated.mp4",
+      "frames": 225,
+      "video_sha256": "e806be54a4c9e77e921c5268f8c1a0f41270cfa57963fbd93936694778570ac2"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000690_000696.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000690_000696.0.speaker.mp4",
+      "frames": 150,
+      "video_sha256": "bbd03dec912b9df4650da8d1a41e0453d0efb786b097cd49211ae30349a8b40e"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000690_000696.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000690_000696.0.listener.mp4",
+      "frames": 150,
+      "video_sha256": "dbfe905d3f0b3fce5be06e44fe4a1138f7dcde406b9e4e892758c86fa21f5ac5"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000690_000696.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_000690_000696.0/generated.mp4",
+      "frames": 150,
+      "video_sha256": "d9c1ec027c1d9494932d7fdfb52113ef397dc9fe03d40044d5c57b4266966e8c"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000718_000726.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000718_000726.1.speaker.mp4",
+      "frames": 200,
+      "video_sha256": "8720394c441cea9a6963910b9a7f27ff9a0c7db97caff3669d0cb82afbb1ead6"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000718_000726.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000718_000726.1.listener.mp4",
+      "frames": 200,
+      "video_sha256": "804b9eea8487e8c027d48176f5e22d037d16b6a6c9ecd9173bbf898daf2deab2"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000718_000726.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_000718_000726.1/generated.mp4",
+      "frames": 200,
+      "video_sha256": "1b404e38f1d02f5f798fddd4ae842e7271968d99c8ed9f46266beae37f44d7d0"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000774_000787.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000774_000787.1.speaker.mp4",
+      "frames": 325,
+      "video_sha256": "c1192283acfa8645a12380f067aadadff31e2d64073dc85fc1c76f1a029ad828"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000774_000787.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_000774_000787.1.listener.mp4",
+      "frames": 325,
+      "video_sha256": "58f0808b1a68adce71e74d908741349d9b69f8f6d2653bb786c96d2076063eff"
+    },
+    {
+      "id": "UCA1A5GqCdQ_000774_000787.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_000774_000787.1/generated.mp4",
+      "frames": 325,
+      "video_sha256": "9aa0d2ecf69ee0f9aad275e67abc94b229f0747662a47ebb2a0af5c4e954b216"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001058_001061.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_001058_001061.0.speaker.mp4",
+      "frames": 75,
+      "video_sha256": "87cae2398538207702e32a02bbaf73591a56d67e9d0156b88944b386f38108f1"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001058_001061.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_001058_001061.0.listener.mp4",
+      "frames": 75,
+      "video_sha256": "a276062ee7e7fd7d80b9616b22fbb2d190e6def8184ae6550aa3e2a188416ffa"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001058_001061.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_001058_001061.0/generated.mp4",
+      "frames": 75,
+      "video_sha256": "9d49cabed21ebb347fc3f354daa73f55dcd9576c4a7b91cd5acc1821e31b8727"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001113_001119.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_001113_001119.0.speaker.mp4",
+      "frames": 150,
+      "video_sha256": "764fa73ea45b606d159b8acbba36222222024fe2d634e62b642299c55c60bf1d"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001113_001119.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_001113_001119.0.listener.mp4",
+      "frames": 150,
+      "video_sha256": "940dedd3d9e8bda04a2a28fde04be00f0f59232a5209286b4f36d01e4d90ec5f"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001113_001119.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_001113_001119.0/generated.mp4",
+      "frames": 150,
+      "video_sha256": "b93bde3ee1ae26830b5f301fe53e4c48e6d19d60372a208ac8d4b1ed30d95298"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001154_001162.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_001154_001162.1.speaker.mp4",
+      "frames": 200,
+      "video_sha256": "617e6113b3627d4c792bbe8948f8f234fb9a278bbe63ec4c130d0bda88a8ccbc"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001154_001162.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_001154_001162.1.listener.mp4",
+      "frames": 200,
+      "video_sha256": "61688ba5a66503d26ee8cd18fba9fcf943dbdd0d9454463ffad15837a3b28adf"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001154_001162.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_001154_001162.1/generated.mp4",
+      "frames": 200,
+      "video_sha256": "cf7388f52c4459d2e41f9aba848441da8c49b12832dd95781d721e3689f243ed"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001213_001223.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_001213_001223.1.speaker.mp4",
+      "frames": 250,
+      "video_sha256": "87fd2594aa9977eaa38b78d216742fc0c28a0f63fc425f0dd02764cb0fd80eb3"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001213_001223.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_001213_001223.1.listener.mp4",
+      "frames": 250,
+      "video_sha256": "538a92c1c57216a567e40b033e5367ff333e6752a771915333dfb3b302cd285a"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001213_001223.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_001213_001223.1/generated.mp4",
+      "frames": 250,
+      "video_sha256": "ce087afa4a30e02259cdbeb36083117a23370d20075d58e2b151df4bb61854b3"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001301_001308.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_001301_001308.1.speaker.mp4",
+      "frames": 175,
+      "video_sha256": "029c599eaaa8eefecfbec5342da840244e382b0eac2cd8bf336bf5d8249954a3"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001301_001308.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_001301_001308.1.listener.mp4",
+      "frames": 175,
+      "video_sha256": "993acb5a3d802ab93410aa4379f48af2cc379c5edab3222824bf22a4d7de8fe9"
+    },
+    {
+      "id": "UCA1A5GqCdQ_001301_001308.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_001301_001308.1/generated.mp4",
+      "frames": 175,
+      "video_sha256": "0972fc239af467095e2b14954c5d5f4686c5cb365eff0f8c895ade28dd073471"
+    },
+    {
+      "id": "UCA1A5GqCdQ_002627_002636.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_002627_002636.1.speaker.mp4",
+      "frames": 225,
+      "video_sha256": "197bbd7948691a01817bff35f65ef72106804a2b912712f11cba8194251a4f21"
+    },
+    {
+      "id": "UCA1A5GqCdQ_002627_002636.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_002627_002636.1.listener.mp4",
+      "frames": 225,
+      "video_sha256": "779dcc133291f7e2dd9bf4da4a1f800c5b9d142610d79da0dcc7d87bf6e65318"
+    },
+    {
+      "id": "UCA1A5GqCdQ_002627_002636.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_002627_002636.1/generated.mp4",
+      "frames": 225,
+      "video_sha256": "2f5865870b31b497f4b5a2ff59e53a09665b80e5a4b628c59c7c4b8e317eac3c"
+    },
+    {
+      "id": "UCA1A5GqCdQ_003373_003382.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_003373_003382.0.speaker.mp4",
+      "frames": 225,
+      "video_sha256": "6d0237987955a4106e650cf918154279ddc81b2d74af4fa606e10663ff51d4b6"
+    },
+    {
+      "id": "UCA1A5GqCdQ_003373_003382.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_003373_003382.0.listener.mp4",
+      "frames": 225,
+      "video_sha256": "9dc496451a5d5b6d4d7ddc0bda64d7983ce1f9d9731079d06046ebe1bba7f92a"
+    },
+    {
+      "id": "UCA1A5GqCdQ_003373_003382.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_003373_003382.0/generated.mp4",
+      "frames": 225,
+      "video_sha256": "dbd016434a00f3c9c73c2bd9ed13122bbcbde965397fdd2f36d42665513cb64c"
+    },
+    {
+      "id": "UCA1A5GqCdQ_003690_003700.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_003690_003700.0.speaker.mp4",
+      "frames": 250,
+      "video_sha256": "146e2a46bfd6a6ebf6bad43bce4e43ae3e67ad37cc2d030467cf5d5df14cda19"
+    },
+    {
+      "id": "UCA1A5GqCdQ_003690_003700.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_003690_003700.0.listener.mp4",
+      "frames": 250,
+      "video_sha256": "e865abee69c72bf0be20cb31962589b786cb5fa01297306935782f2a96df9dd5"
+    },
+    {
+      "id": "UCA1A5GqCdQ_003690_003700.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_003690_003700.0/generated.mp4",
+      "frames": 250,
+      "video_sha256": "f2485ad537c931b1a789620b3f2edab8923fe3182965960868dd5b0481ae6ba7"
+    },
+    {
+      "id": "UCA1A5GqCdQ_003785_003803.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_003785_003803.1.speaker.mp4",
+      "frames": 450,
+      "video_sha256": "0ed280b4ac0dcbe8041c838d4f52c2cf69b1e269e0995abc0df782fa01233928"
+    },
+    {
+      "id": "UCA1A5GqCdQ_003785_003803.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_003785_003803.1.listener.mp4",
+      "frames": 450,
+      "video_sha256": "b6a7bd0d10320d9f5f6f58293402c4930f90dde31376afc0b2b1f62a8bc942ed"
+    },
+    {
+      "id": "UCA1A5GqCdQ_003785_003803.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_003785_003803.1/generated.mp4",
+      "frames": 450,
+      "video_sha256": "1f897751f3d1a72668b493c77dceaad7ceb8d8c154a29f6f34e8a930e7ae4ea2"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004124_004130.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_004124_004130.1.speaker.mp4",
+      "frames": 150,
+      "video_sha256": "9e705f60eaf51b00e095071b8e0b7f90d7a4e565c1fb4b86df37b9aef6f36632"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004124_004130.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_004124_004130.1.listener.mp4",
+      "frames": 150,
+      "video_sha256": "af45f9c1ec2f0fe3130de479726a769d0db36f05478aab032e6158c01ac66306"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004124_004130.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_004124_004130.1/generated.mp4",
+      "frames": 150,
+      "video_sha256": "0a0f92f7dd9f9157e8ce83c2b424152feb7c69f368f154f5e0f0259d317c01d8"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004221_004229.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_004221_004229.0.speaker.mp4",
+      "frames": 200,
+      "video_sha256": "724e471fd0accff08258aff0f9b85d39c487efed3a58c413d0c5194ad9104816"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004221_004229.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_004221_004229.0.listener.mp4",
+      "frames": 200,
+      "video_sha256": "02ef00fb680d0f4303b826fd6e124dbadada8223093bb074ae66fc2056809943"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004221_004229.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_004221_004229.0/generated.mp4",
+      "frames": 200,
+      "video_sha256": "3f89a4d5c3519d83eecb0ef03c8687ac4b42ec9fc39f7741a38dea58518201e6"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004879_004893.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_004879_004893.0.speaker.mp4",
+      "frames": 350,
+      "video_sha256": "3b9d695aa86ff3bc19377a8e3e3f7fc698fb927c456f273689e285a74c88e837"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004879_004893.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_004879_004893.0.listener.mp4",
+      "frames": 350,
+      "video_sha256": "f4bef75fd794ede582b97685831706b368d3860b8714847288784234976d0bda"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004879_004893.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_004879_004893.0/generated.mp4",
+      "frames": 350,
+      "video_sha256": "940c18ae7b3f8b032e55ffec3ee656c8bbfdba08b51719aab6643a9a452bedc9"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004996_005013.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_004996_005013.1.speaker.mp4",
+      "frames": 425,
+      "video_sha256": "bc95a2ab44f94a89a98f318c56a20d6af447c9bac7c7dd2f65950a8fd48a6c18"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004996_005013.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_004996_005013.1.listener.mp4",
+      "frames": 425,
+      "video_sha256": "9415f68e004e50d29a812966e706d1452dfa6019629b7ced9db21bb262975f34"
+    },
+    {
+      "id": "UCA1A5GqCdQ_004996_005013.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_004996_005013.1/generated.mp4",
+      "frames": 425,
+      "video_sha256": "460742e3e10bbb3dcc16e0aae396fd6f97eb2594bd933213e115a8296f49e200"
+    },
+    {
+      "id": "UCA1A5GqCdQ_005365_005373.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_005365_005373.1.speaker.mp4",
+      "frames": 200,
+      "video_sha256": "82ce229dda95172fb3c3b8dbfe4453e455befd86592f22f8876df1bbdf3c2e9f"
+    },
+    {
+      "id": "UCA1A5GqCdQ_005365_005373.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/UCA1A5GqCdQ_005365_005373.1.listener.mp4",
+      "frames": 200,
+      "video_sha256": "d8fa2cb4bdaed13d822b2eb00a1e1cc432f961136f8ac9052e402aef02325850"
+    },
+    {
+      "id": "UCA1A5GqCdQ_005365_005373.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/UCA1A5GqCdQ_005365_005373.1/generated.mp4",
+      "frames": 200,
+      "video_sha256": "9c6c44e4f3026c2abeaa66d8b09c5b6573e9d4671d4c74c027461b449059a848"
+    },
+    {
+      "id": "yTInFHb_o1Q_000473_000485.2",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000473_000485.2.speaker.mp4",
+      "frames": 300,
+      "video_sha256": "53d670f41a88b0cb10e72f5186b8ef3c18b1de01c1c30d33953d29ec1ded1463"
+    },
+    {
+      "id": "yTInFHb_o1Q_000473_000485.2",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000473_000485.2.listener.mp4",
+      "frames": 300,
+      "video_sha256": "150af694f10bf5d6edde0e02702537b9055429ec8523439d93c2d7c1e4bced30"
+    },
+    {
+      "id": "yTInFHb_o1Q_000473_000485.2",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/yTInFHb_o1Q_000473_000485.2/generated.mp4",
+      "frames": 300,
+      "video_sha256": "b14209dd9d4be787c374745a5c34ddfed049b5b3ee76653edae9e8b49b077997"
+    },
+    {
+      "id": "yTInFHb_o1Q_000506_000516.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000506_000516.0.speaker.mp4",
+      "frames": 250,
+      "video_sha256": "8c213d6afff7c8a21eda983a4a15be59da478a43c331a0e8f61342b62e727192"
+    },
+    {
+      "id": "yTInFHb_o1Q_000506_000516.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000506_000516.0.listener.mp4",
+      "frames": 250,
+      "video_sha256": "38c2a9793f340d92934ec0f45ddbff7ffae8e5a316d59704a37b44d9922670e8"
+    },
+    {
+      "id": "yTInFHb_o1Q_000506_000516.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/yTInFHb_o1Q_000506_000516.0/generated.mp4",
+      "frames": 250,
+      "video_sha256": "46ba62bf6c31ee6327a635db576558b5a739d10d89b6d5f12e68768b1774f4aa"
+    },
+    {
+      "id": "yTInFHb_o1Q_000506_000516.2",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000506_000516.2.speaker.mp4",
+      "frames": 250,
+      "video_sha256": "8c213d6afff7c8a21eda983a4a15be59da478a43c331a0e8f61342b62e727192"
+    },
+    {
+      "id": "yTInFHb_o1Q_000506_000516.2",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000506_000516.2.listener.mp4",
+      "frames": 250,
+      "video_sha256": "24076d4268996dbf39a76ab637c882ebbd7811f79ff45af52010199e5d399c1d"
+    },
+    {
+      "id": "yTInFHb_o1Q_000506_000516.2",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/yTInFHb_o1Q_000506_000516.2/generated.mp4",
+      "frames": 250,
+      "video_sha256": "e3f05100f1f92090ed93cdcab0dbbbcee71f896036b1ccda11019ea7184a811d"
+    },
+    {
+      "id": "yTInFHb_o1Q_000516_000551.1",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000516_000551.1.speaker.mp4",
+      "frames": 875,
+      "video_sha256": "cd61f06fa9b0c297f9c3aea7f8f3b1dd0f34078109c2bcb3fd1d8ca724f294f6"
+    },
+    {
+      "id": "yTInFHb_o1Q_000516_000551.1",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000516_000551.1.listener.mp4",
+      "frames": 875,
+      "video_sha256": "703f8d0bedf7cf82c8bf41399e6e0cc5511cd3e72f29c84bab02f8ff3ef48de6"
+    },
+    {
+      "id": "yTInFHb_o1Q_000516_000551.1",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/yTInFHb_o1Q_000516_000551.1/generated.mp4",
+      "frames": 875,
+      "video_sha256": "7e90fc12b45135507b4cf527ef5b03e89ff8767af50ea2cb8c591e3ef0368418"
+    },
+    {
+      "id": "yTInFHb_o1Q_000516_000551.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000516_000551.0.speaker.mp4",
+      "frames": 875,
+      "video_sha256": "cd61f06fa9b0c297f9c3aea7f8f3b1dd0f34078109c2bcb3fd1d8ca724f294f6"
+    },
+    {
+      "id": "yTInFHb_o1Q_000516_000551.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000516_000551.0.listener.mp4",
+      "frames": 875,
+      "video_sha256": "c88d861a964aa2a661ce28e136b20539c4f6a321d892f4cbdbb88c5289484ea5"
+    },
+    {
+      "id": "yTInFHb_o1Q_000516_000551.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/yTInFHb_o1Q_000516_000551.0/generated.mp4",
+      "frames": 875,
+      "video_sha256": "c0323aa71f2602ac77c2e0d1b01fe3a65541658c202782f009ec69cb080eeedc"
+    },
+    {
+      "id": "yTInFHb_o1Q_000551_000558.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000551_000558.0.speaker.mp4",
+      "frames": 175,
+      "video_sha256": "08c351f9afe7a5c98e4d6ee15c551a3e2c1803e82c5024f7994ae86355d58437"
+    },
+    {
+      "id": "yTInFHb_o1Q_000551_000558.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000551_000558.0.listener.mp4",
+      "frames": 175,
+      "video_sha256": "b4ec1f28ddf5b9fbd10b0b5ed3e1e3ed8620f9aa4b3fb00ccc628185bb8288a8"
+    },
+    {
+      "id": "yTInFHb_o1Q_000551_000558.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/yTInFHb_o1Q_000551_000558.0/generated.mp4",
+      "frames": 175,
+      "video_sha256": "d369c597e538edd2ebaabed9c5faf67e04314ba16c01ec7a9a4c970e4c1947a3"
+    },
+    {
+      "id": "yTInFHb_o1Q_000551_000558.2",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000551_000558.2.speaker.mp4",
+      "frames": 175,
+      "video_sha256": "08c351f9afe7a5c98e4d6ee15c551a3e2c1803e82c5024f7994ae86355d58437"
+    },
+    {
+      "id": "yTInFHb_o1Q_000551_000558.2",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/yTInFHb_o1Q_000551_000558.2.listener.mp4",
+      "frames": 175,
+      "video_sha256": "e44ddbd361f3fb2bab70fe423d9a287bca2f37596ef9b856da4b592901ab40e8"
+    },
+    {
+      "id": "yTInFHb_o1Q_000551_000558.2",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/yTInFHb_o1Q_000551_000558.2/generated.mp4",
+      "frames": 175,
+      "video_sha256": "dd7f349b0c66da59b368488aaa7acec9b87d096e755c932db906975044267f83"
+    },
+    {
+      "id": "z5x1Nx2eiuQ_000111_000142.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/z5x1Nx2eiuQ_000111_000142.0.speaker.mp4",
+      "frames": 775,
+      "video_sha256": "6e204f4d5a80562de45b6fb3eab95508d938aad6064af723e6f30b3871e7d9e9"
+    },
+    {
+      "id": "z5x1Nx2eiuQ_000111_000142.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/z5x1Nx2eiuQ_000111_000142.0.listener.mp4",
+      "frames": 775,
+      "video_sha256": "e17c15720a84e418e7a466b4557542e9735205c643622a6ca9a14ad3de3d2185"
+    },
+    {
+      "id": "z5x1Nx2eiuQ_000111_000142.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/z5x1Nx2eiuQ_000111_000142.0/generated.mp4",
+      "frames": 775,
+      "video_sha256": "e3c3117f38b6322c3761c028e87112c422b0e3575f1fe0dfcdb47c0a81c8d230"
+    },
+    {
+      "id": "z5x1Nx2eiuQ_000177_000196.0",
+      "role": "speaker",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/z5x1Nx2eiuQ_000177_000196.0.speaker.mp4",
+      "frames": 475,
+      "video_sha256": "19cd30f8f14fdbd5a5fcf4b86151207a4ad229ea4c7c62b6920764ae997313f4"
+    },
+    {
+      "id": "z5x1Nx2eiuQ_000177_000196.0",
+      "role": "gt",
+      "video": "/public/0_DATA/2_Avatar/ViCo/dataset/by_split/test/videos/z5x1Nx2eiuQ_000177_000196.0.listener.mp4",
+      "frames": 475,
+      "video_sha256": "a63879f6c065c732ae75a320f79112a045fb2574e35a5ef474bb3f1201eb1581"
+    },
+    {
+      "id": "z5x1Nx2eiuQ_000177_000196.0",
+      "role": "avatarforcing",
+      "video": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_recheck_20261110/generated/z5x1Nx2eiuQ_000177_000196.0/generated.mp4",
+      "frames": 475,
+      "video_sha256": "2aa8d2adb92cccf5910ad86bb3a866b0e0f83d65cfdea07393defb383ca343f3"
+    }
+  ]
+}

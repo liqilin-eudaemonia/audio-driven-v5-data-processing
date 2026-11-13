@@ -1,0 +1,53 @@
+{
+  "schema": "listen-benchmark-v1",
+  "media": {
+    "fps": 8,
+    "max_frames": 128,
+    "max_edge": 768,
+    "max_audio_seconds": 16
+  },
+  "generation": {
+    "max_new_tokens": 4096,
+    "context_limit": 65536,
+    "max_generation_seconds": 600,
+    "guided_json": true
+  },
+  "systems": [
+    {
+      "name": "native_baseline",
+      "backend": "qwen3_omni",
+      "branch": "omni",
+      "model_path": "/private/ckpts/Qwen3-Omni/Instruct",
+      "python": "/private/software/conda/envs/vllm/bin/python",
+      "representation": "native",
+      "auxiliary": false,
+      "tier": "main",
+      "runtime_engine": "vllm-0.19.0-native-seq1-no-chunk-aligned-v7",
+      "second_per_grid_ts": [
+        0.25
+      ],
+      "prompt_variant": "baseline",
+      "annotation_stages": [
+        "discovery"
+      ]
+    },
+    {
+      "name": "native_occurrences_v1",
+      "backend": "qwen3_omni",
+      "branch": "omni",
+      "model_path": "/private/ckpts/Qwen3-Omni/Instruct",
+      "python": "/private/software/conda/envs/vllm/bin/python",
+      "representation": "native",
+      "auxiliary": false,
+      "tier": "main",
+      "runtime_engine": "vllm-0.19.0-native-seq1-no-chunk-aligned-v7",
+      "second_per_grid_ts": [
+        0.25
+      ],
+      "prompt_variant": "backchannel_occurrences_v1",
+      "annotation_stages": [
+        "discovery"
+      ]
+    }
+  ]
+}

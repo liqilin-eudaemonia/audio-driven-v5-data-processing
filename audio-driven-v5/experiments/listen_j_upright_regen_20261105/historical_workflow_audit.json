@@ -1,0 +1,131 @@
+{
+  "scope": "Historical workflow audit; no new inference, selection or cache rebuild executed",
+  "date": "2026-11-05",
+  "audit_document": "related/P2_新标签接续前历史处理流程核查_20261105.md",
+  "audit_document_sha256": "ff90b93075e007e209d3a0710779d6768436d808dcff734b8a6e05707375fe3c",
+  "evidence": [
+    {
+      "path": "experiments/listen_j_upright_regen_20261105/historical_workflow_receipts.json",
+      "sha256": "4560a2dbb6a211b66cb51355dad2dee2c949e368f7ddd88a28000ea3f8e358be"
+    },
+    {
+      "path": "experiments/listen_j_upright_regen_20261105/historical_selection_counts_and_receipts.json",
+      "sha256": "52e3bf7581d394ffa3746980070e5cf91acc92df3314de75eb8d8ec0dd3d2a08"
+    },
+    {
+      "path": "experiments/listen_j_upright_regen_20261105/historical_old_reader_probe.json",
+      "sha256": "28d7af693550947cf78e911d769094718d2adea1fbf8ee51298ea320792636e0"
+    }
+  ],
+  "receipt_reverification": [
+    {
+      "stage": "richness",
+      "marker_sha_matches": true,
+      "summary_sha_matches": true,
+      "marker_binds_summary_sha": false
+    },
+    {
+      "stage": "strict",
+      "marker_sha_matches": true,
+      "summary_sha_matches": true,
+      "marker_binds_summary_sha": true
+    },
+    {
+      "stage": "voiced",
+      "marker_sha_matches": true,
+      "summary_sha_matches": true,
+      "marker_binds_summary_sha": true
+    },
+    {
+      "stage": "voiced_combined",
+      "marker_sha_matches": true,
+      "summary_sha_matches": true,
+      "marker_binds_summary_sha": true
+    },
+    {
+      "stage": "train_dev_final",
+      "marker_sha_matches": true,
+      "summary_sha_matches": true,
+      "marker_binds_summary_sha": true
+    },
+    {
+      "stage": "test_initial",
+      "marker_sha_matches": true,
+      "summary_sha_matches": true,
+      "marker_binds_summary_sha": true
+    },
+    {
+      "stage": "test_final",
+      "marker_sha_matches": true,
+      "summary_sha_matches": true,
+      "marker_binds_summary_sha": true
+    },
+    {
+      "stage": "latest",
+      "marker_sha_matches": true,
+      "summary_sha_matches": true,
+      "marker_binds_summary_sha": true
+    }
+  ],
+  "old_actual_selection": {
+    "av500h": {
+      "sample_list": "experiments/p2_j_train500h_cache_20261101/sample_list.csv",
+      "total": 285638,
+      "groups": {
+        "main_face224": 264054,
+        "saved_audio_supplement": 21584
+      },
+      "hours": {
+        "main_face224": 462.62585148726674,
+        "saved_audio_supplement": 37.37443324074055
+      },
+      "sample_list_sha256": "60181807e653bcb41e3417b586294c0d11fe5744e6fda144faa9dec6159e350d"
+    },
+    "sft_final": {
+      "index": "experiments/listen_j_train_dev_response_prefixfix_20261102/current/index.sqlite",
+      "counts": {
+        "dev": 5238,
+        "train": 690337
+      }
+    },
+    "sft_test_final": {
+      "index": "experiments/listen_j_test_response_prefixfix_20261102/current/index.sqlite",
+      "counts": {
+        "test": 6624
+      }
+    }
+  },
+  "new_pool": {
+    "labels": 1107313,
+    "train": 1086207,
+    "dev": 8822,
+    "test": 12284,
+    "excluded_visual": 9,
+    "held": 1,
+    "review_flags_kept": 130347,
+    "labels_sha256": "0851714c52e17dec6c7b5145b82dc53998ab09af0cc7ceda0b9c807192c2b389"
+  },
+  "new_stages": {
+    "generation_and_manifest": "complete",
+    "lexical_wrapper_scan": "complete_only_lexical",
+    "statistics_v3": "not_run",
+    "av_selection": "not_run",
+    "sft_strict": "not_run",
+    "sft_train_dev_voiced_recovery": "not_run",
+    "sft_prefix_and_quote_rejudge": "not_run",
+    "sft_test_independent": "not_run",
+    "cache_rebuild": "not_run"
+  },
+  "confirmed_hazards": [
+    "legacy snapshot rejects restored video source",
+    "legacy review flags cannot define current admission",
+    "statistics generic default v4 differs from actual v3 production",
+    "legacy jobs/journal and SFT hardcoded source require adaptation",
+    "AV and SFT rules and test protocols differ"
+  ],
+  "boundaries": [
+    "No full historical media/tensor rerun",
+    "Old large-file full ID/hash coverage relies on original independent audit receipts",
+    "Old counts are not new target counts"
+  ]
+}

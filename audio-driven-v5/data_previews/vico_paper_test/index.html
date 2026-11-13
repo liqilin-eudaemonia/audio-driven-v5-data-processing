@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ViCo 论文测试集</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font: 15px/1.45 system-ui, sans-serif; color: #1c1c1c; background: #f6f5f3; }
+  header { padding: 16px 20px 8px; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  p { margin: 0; color: #555; }
+  main { display: grid; grid-template-columns: 280px 1fr; gap: 16px; padding: 12px 20px 24px; }
+  ol { list-style: none; margin: 0; padding: 0; max-height: calc(100vh - 120px); overflow: auto; border: 1px solid #ddd; background: #fff; }
+  button.row { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid #eee; background: #fff; padding: 8px 10px; cursor: pointer; font: inherit; }
+  button.row[aria-current="true"] { background: #e7f0e4; }
+  .meta { color: #666; font-size: 13px; }
+  .stage { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  figure { margin: 0; background: #fff; border: 1px solid #ddd; padding: 8px; }
+  figcaption { font-weight: 600; margin-bottom: 6px; }
+  video { width: 100%; background: #111; display: block; }
+  .bar { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
+  audio { width: min(480px, 100%); }
+  @media (max-width: 800px) {
+    main { grid-template-columns: 1fr; }
+    ol { max-height: 220px; }
+    .stage { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>ViCo 论文测试集</h1>
+  <p id="summary"></p>
+<p id="vico-generated-nav" style="margin-top:10px"><a href="/listen_benchmark_review/p2_vico43_combined8000_20261106/">查看联合8000步全部43条生成结果：speaker／GT／生成视频同步对照 →</a></p>
+<p id="compare-vico-nav"><a href="/listen_benchmark_review/p2_vico43_compare_20261106/">新增：DyStream全部43条视频＋Learning2Listen四套动作曲线 →</a></p>
+</header>
+<main>
+  <ol id="list"></ol>
+  <section>
+    <div class="bar">
+      <button type="button" id="prev">上一条</button>
+      <button type="button" id="play">一起播放</button>
+      <button type="button" id="next">下一条</button>
+      <span id="now"></span>
+    </div>
+    <div class="stage">
+      <figure>
+        <figcaption>听者</figcaption>
+        <video id="listener" controls playsinline></video>
+      </figure>
+      <figure>
+        <figcaption>说话人</figcaption>
+        <video id="speaker" controls muted playsinline></video>
+      </figure>
+    </div>
+    <div class="bar">
+      <span>说话人音频</span>
+      <audio id="audio" controls></audio>
+    </div>
+  </section>
+</main>
+<script>
+const clips = [{"n": 1, "uuid": "ClNUxPsUByg_000210_000221.0", "attitude": "positive", "listener_id": 75, "speaker_id": 76, "video_id": "ClNUxPsUByg", "duration": 11.0, "listener": "original/ClNUxPsUByg_000210_000221.0.mp4", "speaker": "original/ClNUxPsUByg_000210_000221.1.mp4", "audio": "media/ClNUxPsUByg_000210_000221.0.wav", "pixels": "960×1080"}, {"n": 2, "uuid": "Ew2z_sYABE0_000063_000083.0", "attitude": "positive", "listener_id": 0, "speaker_id": 33, "video_id": "Ew2z_sYABE0", "duration": 20.0, "listener": "original/Ew2z_sYABE0_000063_000083.0.mp4", "speaker": "original/Ew2z_sYABE0_000063_000083.1.mp4", "audio": "media/Ew2z_sYABE0_000063_000083.0.wav", "pixels": "960×1080"}, {"n": 3, "uuid": "Ew2z_sYABE0_000143_000162.1", "attitude": "neutral", "listener_id": 33, "speaker_id": 0, "video_id": "Ew2z_sYABE0", "duration": 19.0, "listener": "original/Ew2z_sYABE0_000143_000162.1.mp4", "speaker": "original/Ew2z_sYABE0_000143_000162.0.mp4", "audio": "media/Ew2z_sYABE0_000143_000162.1.wav", "pixels": "960×1080"}, {"n": 4, "uuid": "Rdrevvd0UwQ_001828_001854.1", "attitude": "positive", "listener_id": 86, "speaker_id": 85, "video_id": "Rdrevvd0UwQ", "duration": 26.0, "listener": "original/Rdrevvd0UwQ_001828_001854.1.mp4", "speaker": "original/Rdrevvd0UwQ_001828_001854.0.mp4", "audio": "media/Rdrevvd0UwQ_001828_001854.1.wav", "pixels": "960×1080"}, {"n": 5, "uuid": "Rdrevvd0UwQ_001889_001917.0", "attitude": "positive", "listener_id": 85, "speaker_id": 86, "video_id": "Rdrevvd0UwQ", "duration": 28.0, "listener": "original/Rdrevvd0UwQ_001889_001917.0.mp4", "speaker": "original/Rdrevvd0UwQ_001889_001917.1.mp4", "audio": "media/Rdrevvd0UwQ_001889_001917.0.wav", "pixels": "960×1080"}, {"n": 6, "uuid": "YFhkBtIUgBM_000087_000091.0", "attitude": "neutral", "listener_id": 48, "speaker_id": 15, "video_id": "YFhkBtIUgBM", "duration": 4.0, "listener": "original/YFhkBtIUgBM_000087_000091.0.mp4", "speaker": "original/YFhkBtIUgBM_000087_000091.1.mp4", "audio": "media/YFhkBtIUgBM_000087_000091.0.wav", "pixels": "960×1080"}, {"n": 7, "uuid": "YFhkBtIUgBM_000106_000107.0", "attitude": "positive", "listener_id": 48, "speaker_id": 15, "video_id": "YFhkBtIUgBM", "duration": 1.0, "listener": "original/YFhkBtIUgBM_000106_000107.0.mp4", "speaker": "original/YFhkBtIUgBM_000106_000107.1.mp4", "audio": "media/YFhkBtIUgBM_000106_000107.0.wav", "pixels": "960×1080"}, {"n": 8, "uuid": "bPiofmZGb8o_002969_002986.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "bPiofmZGb8o", "duration": 17.0, "listener": "original/bPiofmZGb8o_002969_002986.1.mp4", "speaker": "original/bPiofmZGb8o_002969_002986.0.mp4", "audio": "media/bPiofmZGb8o_002969_002986.1.wav", "pixels": "960×1080"}, {"n": 9, "uuid": "bPiofmZGb8o_004758_004767.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "bPiofmZGb8o", "duration": 9.0, "listener": "original/bPiofmZGb8o_004758_004767.1.mp4", "speaker": "original/bPiofmZGb8o_004758_004767.0.mp4", "audio": "media/bPiofmZGb8o_004758_004767.1.wav", "pixels": "960×1080"}, {"n": 10, "uuid": "hDMPqh310dQ_000382_000397.0", "attitude": "positive", "listener_id": 78, "speaker_id": 5, "video_id": "hDMPqh310dQ", "duration": 15.0, "listener": "original/hDMPqh310dQ_000382_000397.0.mp4", "speaker": "original/hDMPqh310dQ_000382_000397.1.mp4", "audio": "media/hDMPqh310dQ_000382_000397.0.wav", "pixels": "960×1080"}, {"n": 11, "uuid": "hDMPqh310dQ_000444_000463.0", "attitude": "positive", "listener_id": 78, "speaker_id": 5, "video_id": "hDMPqh310dQ", "duration": 19.0, "listener": "original/hDMPqh310dQ_000444_000463.0.mp4", "speaker": "original/hDMPqh310dQ_000444_000463.1.mp4", "audio": "media/hDMPqh310dQ_000444_000463.0.wav", "pixels": "960×1080"}, {"n": 12, "uuid": "rSM89vRNq4Y_000661_000669.1", "attitude": "neutral", "listener_id": 52, "speaker_id": 54, "video_id": "rSM89vRNq4Y", "duration": 8.0, "listener": "original/rSM89vRNq4Y_000661_000669.1.mp4", "speaker": "original/rSM89vRNq4Y_000661_000669.0.mp4", "audio": "media/rSM89vRNq4Y_000661_000669.1.wav", "pixels": "960×1080"}, {"n": 13, "uuid": "rSM89vRNq4Y_000689_000699.0", "attitude": "positive", "listener_id": 54, "speaker_id": 52, "video_id": "rSM89vRNq4Y", "duration": 10.0, "listener": "original/rSM89vRNq4Y_000689_000699.0.mp4", "speaker": "original/rSM89vRNq4Y_000689_000699.1.mp4", "audio": "media/rSM89vRNq4Y_000689_000699.0.wav", "pixels": "960×1080"}, {"n": 14, "uuid": "rSM89vRNq4Y_001469_001473.1", "attitude": "negative", "listener_id": 52, "speaker_id": 54, "video_id": "rSM89vRNq4Y", "duration": 4.0, "listener": "original/rSM89vRNq4Y_001469_001473.1.mp4", "speaker": "original/rSM89vRNq4Y_001469_001473.0.mp4", "audio": "media/rSM89vRNq4Y_001469_001473.1.wav", "pixels": "960×1080"}, {"n": 15, "uuid": "UCA1A5GqCdQ_000318_000327.0", "attitude": "negative", "listener_id": 71, "speaker_id": 72, "video_id": "UCA1A5GqCdQ", "duration": 9.0, "listener": "original/UCA1A5GqCdQ_000318_000327.0.mp4", "speaker": "original/UCA1A5GqCdQ_000318_000327.1.mp4", "audio": "media/UCA1A5GqCdQ_000318_000327.0.wav", "pixels": "960×1080"}, {"n": 16, "uuid": "UCA1A5GqCdQ_000353_000361.0", "attitude": "negative", "listener_id": 71, "speaker_id": 72, "video_id": "UCA1A5GqCdQ", "duration": 8.0, "listener": "original/UCA1A5GqCdQ_000353_000361.0.mp4", "speaker": "original/UCA1A5GqCdQ_000353_000361.1.mp4", "audio": "media/UCA1A5GqCdQ_000353_000361.0.wav", "pixels": "960×1080"}, {"n": 17, "uuid": "UCA1A5GqCdQ_000610_000619.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 9.0, "listener": "original/UCA1A5GqCdQ_000610_000619.1.mp4", "speaker": "original/UCA1A5GqCdQ_000610_000619.0.mp4", "audio": "media/UCA1A5GqCdQ_000610_000619.1.wav", "pixels": "960×1080"}, {"n": 18, "uuid": "UCA1A5GqCdQ_000690_000696.0", "attitude": "negative", "listener_id": 71, "speaker_id": 72, "video_id": "UCA1A5GqCdQ", "duration": 6.0, "listener": "original/UCA1A5GqCdQ_000690_000696.0.mp4", "speaker": "original/UCA1A5GqCdQ_000690_000696.1.mp4", "audio": "media/UCA1A5GqCdQ_000690_000696.0.wav", "pixels": "960×1080"}, {"n": 19, "uuid": "UCA1A5GqCdQ_000718_000726.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 8.0, "listener": "original/UCA1A5GqCdQ_000718_000726.1.mp4", "speaker": "original/UCA1A5GqCdQ_000718_000726.0.mp4", "audio": "media/UCA1A5GqCdQ_000718_000726.1.wav", "pixels": "960×1080"}, {"n": 20, "uuid": "UCA1A5GqCdQ_000774_000787.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 13.0, "listener": "original/UCA1A5GqCdQ_000774_000787.1.mp4", "speaker": "original/UCA1A5GqCdQ_000774_000787.0.mp4", "audio": "media/UCA1A5GqCdQ_000774_000787.1.wav", "pixels": "960×1080"}, {"n": 21, "uuid": "UCA1A5GqCdQ_001058_001061.0", "attitude": "negative", "listener_id": 71, "speaker_id": 72, "video_id": "UCA1A5GqCdQ", "duration": 3.0, "listener": "original/UCA1A5GqCdQ_001058_001061.0.mp4", "speaker": "original/UCA1A5GqCdQ_001058_001061.1.mp4", "audio": "media/UCA1A5GqCdQ_001058_001061.0.wav", "pixels": "960×1080"}, {"n": 22, "uuid": "UCA1A5GqCdQ_001113_001119.0", "attitude": "negative", "listener_id": 71, "speaker_id": 72, "video_id": "UCA1A5GqCdQ", "duration": 6.0, "listener": "original/UCA1A5GqCdQ_001113_001119.0.mp4", "speaker": "original/UCA1A5GqCdQ_001113_001119.1.mp4", "audio": "media/UCA1A5GqCdQ_001113_001119.0.wav", "pixels": "960×1080"}, {"n": 23, "uuid": "UCA1A5GqCdQ_001154_001162.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 8.0, "listener": "original/UCA1A5GqCdQ_001154_001162.1.mp4", "speaker": "original/UCA1A5GqCdQ_001154_001162.0.mp4", "audio": "media/UCA1A5GqCdQ_001154_001162.1.wav", "pixels": "960×1080"}, {"n": 24, "uuid": "UCA1A5GqCdQ_001213_001223.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 10.0, "listener": "original/UCA1A5GqCdQ_001213_001223.1.mp4", "speaker": "original/UCA1A5GqCdQ_001213_001223.0.mp4", "audio": "media/UCA1A5GqCdQ_001213_001223.1.wav", "pixels": "960×1080"}, {"n": 25, "uuid": "UCA1A5GqCdQ_001301_001308.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 7.0, "listener": "original/UCA1A5GqCdQ_001301_001308.1.mp4", "speaker": "original/UCA1A5GqCdQ_001301_001308.0.mp4", "audio": "media/UCA1A5GqCdQ_001301_001308.1.wav", "pixels": "960×1080"}, {"n": 26, "uuid": "UCA1A5GqCdQ_002627_002636.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 9.0, "listener": "original/UCA1A5GqCdQ_002627_002636.1.mp4", "speaker": "original/UCA1A5GqCdQ_002627_002636.0.mp4", "audio": "media/UCA1A5GqCdQ_002627_002636.1.wav", "pixels": "960×1080"}, {"n": 27, "uuid": "UCA1A5GqCdQ_003373_003382.0", "attitude": "negative", "listener_id": 71, "speaker_id": 72, "video_id": "UCA1A5GqCdQ", "duration": 9.0, "listener": "original/UCA1A5GqCdQ_003373_003382.0.mp4", "speaker": "original/UCA1A5GqCdQ_003373_003382.1.mp4", "audio": "media/UCA1A5GqCdQ_003373_003382.0.wav", "pixels": "960×1080"}, {"n": 28, "uuid": "UCA1A5GqCdQ_003690_003700.0", "attitude": "negative", "listener_id": 71, "speaker_id": 72, "video_id": "UCA1A5GqCdQ", "duration": 10.0, "listener": "original/UCA1A5GqCdQ_003690_003700.0.mp4", "speaker": "original/UCA1A5GqCdQ_003690_003700.1.mp4", "audio": "media/UCA1A5GqCdQ_003690_003700.0.wav", "pixels": "960×1080"}, {"n": 29, "uuid": "UCA1A5GqCdQ_003785_003803.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 18.0, "listener": "original/UCA1A5GqCdQ_003785_003803.1.mp4", "speaker": "original/UCA1A5GqCdQ_003785_003803.0.mp4", "audio": "media/UCA1A5GqCdQ_003785_003803.1.wav", "pixels": "960×1080"}, {"n": 30, "uuid": "UCA1A5GqCdQ_004124_004130.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 6.0, "listener": "original/UCA1A5GqCdQ_004124_004130.1.mp4", "speaker": "original/UCA1A5GqCdQ_004124_004130.0.mp4", "audio": "media/UCA1A5GqCdQ_004124_004130.1.wav", "pixels": "960×1080"}, {"n": 31, "uuid": "UCA1A5GqCdQ_004221_004229.0", "attitude": "negative", "listener_id": 71, "speaker_id": 72, "video_id": "UCA1A5GqCdQ", "duration": 8.0, "listener": "original/UCA1A5GqCdQ_004221_004229.0.mp4", "speaker": "original/UCA1A5GqCdQ_004221_004229.1.mp4", "audio": "media/UCA1A5GqCdQ_004221_004229.0.wav", "pixels": "960×1080"}, {"n": 32, "uuid": "UCA1A5GqCdQ_004879_004893.0", "attitude": "negative", "listener_id": 71, "speaker_id": 72, "video_id": "UCA1A5GqCdQ", "duration": 14.0, "listener": "original/UCA1A5GqCdQ_004879_004893.0.mp4", "speaker": "original/UCA1A5GqCdQ_004879_004893.1.mp4", "audio": "media/UCA1A5GqCdQ_004879_004893.0.wav", "pixels": "960×1080"}, {"n": 33, "uuid": "UCA1A5GqCdQ_004996_005013.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 17.0, "listener": "original/UCA1A5GqCdQ_004996_005013.1.mp4", "speaker": "original/UCA1A5GqCdQ_004996_005013.0.mp4", "audio": "media/UCA1A5GqCdQ_004996_005013.1.wav", "pixels": "960×1080"}, {"n": 34, "uuid": "UCA1A5GqCdQ_005365_005373.1", "attitude": "negative", "listener_id": 72, "speaker_id": 71, "video_id": "UCA1A5GqCdQ", "duration": 8.0, "listener": "original/UCA1A5GqCdQ_005365_005373.1.mp4", "speaker": "original/UCA1A5GqCdQ_005365_005373.0.mp4", "audio": "media/UCA1A5GqCdQ_005365_005373.1.wav", "pixels": "960×1080"}, {"n": 35, "uuid": "yTInFHb_o1Q_000473_000485.2", "attitude": "neutral", "listener_id": 89, "speaker_id": 87, "video_id": "yTInFHb_o1Q", "duration": 12.0, "listener": "original/yTInFHb_o1Q_000473_000485.2.mp4", "speaker": "original/yTInFHb_o1Q_000473_000485.1.mp4", "audio": "media/yTInFHb_o1Q_000473_000485.2.wav", "pixels": "640×1080"}, {"n": 36, "uuid": "yTInFHb_o1Q_000506_000516.0", "attitude": "neutral", "listener_id": 88, "speaker_id": 87, "video_id": "yTInFHb_o1Q", "duration": 10.0, "listener": "original/yTInFHb_o1Q_000506_000516.0.mp4", "speaker": "original/yTInFHb_o1Q_000506_000516.1.mp4", "audio": "media/yTInFHb_o1Q_000506_000516.0.wav", "pixels": "640×1080"}, {"n": 37, "uuid": "yTInFHb_o1Q_000506_000516.2", "attitude": "neutral", "listener_id": 89, "speaker_id": 87, "video_id": "yTInFHb_o1Q", "duration": 10.0, "listener": "original/yTInFHb_o1Q_000506_000516.2.mp4", "speaker": "original/yTInFHb_o1Q_000506_000516.1.mp4", "audio": "media/yTInFHb_o1Q_000506_000516.2.wav", "pixels": "640×1080"}, {"n": 38, "uuid": "yTInFHb_o1Q_000516_000551.1", "attitude": "positive", "listener_id": 87, "speaker_id": 89, "video_id": "yTInFHb_o1Q", "duration": 34.97, "listener": "original/yTInFHb_o1Q_000516_000551.1.mp4", "speaker": "original/yTInFHb_o1Q_000516_000551.2.mp4", "audio": "media/yTInFHb_o1Q_000516_000551.1.wav", "pixels": "640×1080"}, {"n": 39, "uuid": "yTInFHb_o1Q_000516_000551.0", "attitude": "positive", "listener_id": 88, "speaker_id": 89, "video_id": "yTInFHb_o1Q", "duration": 34.97, "listener": "original/yTInFHb_o1Q_000516_000551.0.mp4", "speaker": "original/yTInFHb_o1Q_000516_000551.2.mp4", "audio": "media/yTInFHb_o1Q_000516_000551.0.wav", "pixels": "640×1080"}, {"n": 40, "uuid": "yTInFHb_o1Q_000551_000558.0", "attitude": "positive", "listener_id": 88, "speaker_id": 87, "video_id": "yTInFHb_o1Q", "duration": 7.0, "listener": "original/yTInFHb_o1Q_000551_000558.0.mp4", "speaker": "original/yTInFHb_o1Q_000551_000558.1.mp4", "audio": "media/yTInFHb_o1Q_000551_000558.0.wav", "pixels": "640×1080"}, {"n": 41, "uuid": "yTInFHb_o1Q_000551_000558.2", "attitude": "positive", "listener_id": 89, "speaker_id": 87, "video_id": "yTInFHb_o1Q", "duration": 7.0, "listener": "original/yTInFHb_o1Q_000551_000558.2.mp4", "speaker": "original/yTInFHb_o1Q_000551_000558.1.mp4", "audio": "media/yTInFHb_o1Q_000551_000558.2.wav", "pixels": "640×1080"}, {"n": 42, "uuid": "z5x1Nx2eiuQ_000111_000142.0", "attitude": "neutral", "listener_id": 21, "speaker_id": 91, "video_id": "z5x1Nx2eiuQ", "duration": 31.0, "listener": "original/z5x1Nx2eiuQ_000111_000142.0.mp4", "speaker": "original/z5x1Nx2eiuQ_000111_000142.1.mp4", "audio": "media/z5x1Nx2eiuQ_000111_000142.0.wav", "pixels": "960×1080"}, {"n": 43, "uuid": "z5x1Nx2eiuQ_000177_000196.0", "attitude": "positive", "listener_id": 21, "speaker_id": 68, "video_id": "z5x1Nx2eiuQ", "duration": 19.0, "listener": "original/z5x1Nx2eiuQ_000177_000196.0.mp4", "speaker": "original/z5x1Nx2eiuQ_000177_000196.1.mp4", "audio": "media/z5x1Nx2eiuQ_000177_000196.0.wav", "pixels": "960×1080"}];
+const attitudeText = { positive: "积极 positive", neutral: "中性 neutral", negative: "消极 negative" };
+const summary = document.getElementById("summary");
+const counts = clips.reduce((m, c) => (m[c.attitude] = (m[c.attitude] || 0) + 1, m), {});
+const seconds = clips.reduce((s, c) => s + c.duration, 0);
+summary.textContent = `43 条，合计 ${seconds.toFixed(1)} 秒。积极 ${counts.positive || 0}，中性 ${counts.neutral || 0}，消极 ${counts.negative || 0}。全部是原画幅，36 条 960×1080，7 条 640×1080。画面没有音轨，声音在下面单独的音频里。`;
+const list = document.getElementById("list");
+const listener = document.getElementById("listener");
+const speaker = document.getElementById("speaker");
+const audio = document.getElementById("audio");
+const now = document.getElementById("now");
+let index = 0;
+clips.forEach((c, i) => {
+  const li = document.createElement("li");
+  const b = document.createElement("button");
+  b.className = "row";
+  b.type = "button";
+  b.innerHTML = `<div>${c.n}. ${c.uuid}</div><div class="meta">${attitudeText[c.attitude] || c.attitude} · ${c.duration.toFixed(1)} 秒 · ${c.pixels}</div>`;
+  b.addEventListener("click", () => show(i));
+  li.appendChild(b);
+  list.appendChild(li);
+});
+function show(i) {
+  index = (i + clips.length) % clips.length;
+  const c = clips[index];
+  listener.src = c.listener;
+  speaker.src = c.speaker;
+  audio.src = c.audio;
+  listener.pause(); speaker.pause(); audio.pause();
+  now.textContent = `${c.n} / 43 · 听者 ${c.listener_id} · 说话人 ${c.speaker_id} · ${attitudeText[c.attitude] || c.attitude}`;
+  [...list.querySelectorAll("button")].forEach((b, n) => {
+    if (n === index) b.setAttribute("aria-current", "true");
+    else b.removeAttribute("aria-current");
+  });
+  list.children[index].scrollIntoView({ block: "nearest" });
+}
+document.getElementById("prev").addEventListener("click", () => show(index - 1));
+document.getElementById("next").addEventListener("click", () => show(index + 1));
+document.getElementById("play").addEventListener("click", async () => {
+  listener.currentTime = 0; speaker.currentTime = 0; audio.currentTime = 0;
+  await Promise.all([listener.play(), speaker.play(), audio.play()]);
+});
+show(0);
+</script>
+</body>
+</html>

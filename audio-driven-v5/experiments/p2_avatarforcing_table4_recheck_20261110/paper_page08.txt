@@ -1,0 +1,108 @@
+Table 5. Ablation study on user motion and preference optimiza-
+tion. “w/ mu” indicates whether the user motion latent mu is
+provided as input to the model during both training and inference.
+Method
+Reactiveness
+Motion Richness
+w/ mu
+DPO
+rPCC-Exp ↓
+rPCC-Pose ↓
+SID ↑
+Var ↑
+✗
+✗
+0.052
+0.175
+2.165
+1.586
+✓
+✗
+0.042
+0.146
+2.236
+1.408
+✓
+✓
+0.003
+0.036
+2.442
+1.734
+tance (FD) for the expression and pose, and rPCC, SID, and
+Var metrics used in Tab. 1 but with respect to expression
+and head pose, respectively. Since the baseline models are
+not publicly available, we take the results from DIM [55].
+In Tab. 4, our model outperforms the baselines on almost
+all of the metrics. In particular, Avatar Forcing achieves the
+best user–avatar synchronized motion generation (rPCC).
+5.5. Ablation Study
+In this section, we conduct ablation studies on (i) the neces-
+sity of using user motion in the Dual Motion Encoder and
+(ii) the importance of preference optimization. We provide
+further ablation studies, including the diffusion forcing and
+blockwise look-ahead attention mask in Appendix D.
+User Motion
+To validate the necessity of using user
+motion for interactive avatar generation, we compare our
+model with a variant that does not take user motion as in-
+put. As shown in Tab. 5, removing user motion leads to sig-
+nificantly less reactive behavior (Reactiveness) and reduced
+expressiveness in motion (Motion Richness).
+Furthermore, as visualized in Fig. 7, the model without
+user motion produces static behavior whenever the user’s
+audio is silent. This occurs even in the presence of strong
+non-verbal cues, such as smiling, as the model cannot per-
+ceive visual signals. In contrast, our model, which uses
+user motion, generates a reactive avatar that naturally smiles
+right after the user smiles (Fig. 7 red arrow) and becomes
+more focused when the user speaks (Fig. 7 green box).
+Direct Preference Optimization
+To assess the impact of
+the preference optimization, we compare our model against
+a variant without fine-tuning. As shown in Tab. 5, prefer-
+ence optimization significantly improves the Reactiveness
+metrics (rPCC-Exp and rPCC-Pose), which quantify user-
+avatar motion synchronization. It also substantially boosts
+the Motion Richness metrics (SID and Var), indicating more
+expressive and varied motion. As visualized in Fig. 8, the
+model without preference optimization generates notice-
+ably reduced diversity in facial expressions and head move-
+ment. It also exhibits weaker interaction, failing to respond
+to the user’s smile.
+In contrast, our fine-tuned model generates an expres-
+sive avatar that shows natural head movement (Fig. 8 red
+User (GT)
+w/o 𝐦!
+Ours
+Audio
+(Smiling)
+Ok..
+(Start Speaking…)
+(Focusing...)
+(Silence)
+Figure 7. Ablation study on the user motion. Without mu, the
+avatar remains static even when the user smiles. With mu, our
+model reacts by smiling after the user (red arrow) and shifting to a
+focused expression when the user begins speaking (green box).
+User (GT)
+w/o DPO
+Ours
+Audio
+(Laughing)
+Figure 8. Ablation study on preference optimization. Model
+fine-tuned with DPO produces more expressive motion (red box)
+and reactive (red arrow) compared to model without DPO.
+box) and smiles more broadly along with the user (Fig. 8
+red arrow). We provide further analysis of our DPO method
+in Appendix D.
+6. Conclusion
+We proposed Avatar Forcing, a real-time interactive head
+avatar model based on diffusion forcing, that generates re-
+active and expressive motion using both the verbal and non-
+verbal user signals.Avatar Forcing takes a step toward truly
+interactive virtual avatars and opens new possibilities for
+real-time human-AI communication.
+Discussion We leave further discussion, including ethical
+considerations, limitations, and future work, in the Ap-
+pendix E.
+8

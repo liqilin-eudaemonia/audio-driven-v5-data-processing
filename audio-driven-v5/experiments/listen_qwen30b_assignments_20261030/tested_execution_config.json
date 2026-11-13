@@ -1,0 +1,40 @@
+{
+  "status": "experimental_not_production_promoted",
+  "model": "/private/ckpts/Qwen3-30B-A3B-Instruct-2507",
+  "runner": "scripts/run_listener_semantic_assignments.py",
+  "implementation": "extractive_assignments_v4",
+  "tested_gpu_type": "H200",
+  "dtype": "bfloat16",
+  "tensor_parallel_size": 1,
+  "max_num_seqs": 64,
+  "gpu_memory_utilization": 0.8,
+  "max_num_batched_tokens": 32768,
+  "max_model_len": 32768,
+  "enable_prefix_caching": true,
+  "enable_chunked_prefill": true,
+  "decode_graph": true,
+  "compilation_config": {
+    "mode": 0,
+    "cudagraph_mode": "FULL_DECODE_ONLY",
+    "cudagraph_capture_sizes": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "max_cudagraph_capture_size": 64
+  },
+  "temperature": 0,
+  "seed": 20261027,
+  "attempts": 3,
+  "proposal_token_budget": "max(8192,min(24000,1024+220*number_of_visual_sources))",
+  "review_token_budget": 3072,
+  "OMP_NUM_THREADS": 4,
+  "OPENBLAS_NUM_THREADS": 1,
+  "TOKENIZERS_PARALLELISM": false,
+  "LD_PRELOAD": "/private/software/conda/envs/vllm/lib/libstdc++.so.6",
+  "note": "One model per GPU in pilot arms. No validated full-dataset multi-GPU scheduler in this experiment; no automatic training-label replacement."
+}

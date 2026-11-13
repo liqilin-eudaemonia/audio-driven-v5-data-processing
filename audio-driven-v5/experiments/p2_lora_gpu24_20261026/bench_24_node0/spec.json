@@ -1,0 +1,35 @@
+{
+  "argv": [
+    "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+    "-m",
+    "torch.distributed.run",
+    "--nnodes=3",
+    "--nproc-per-node=8",
+    "--node-rank=0",
+    "--master-addr=172.29.252.11",
+    "--master-port=29626",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_lora_gpu24_20261026/benchmark_scaling.py",
+    "--config",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_lora_gpu24_20261026/benchmark/config.json",
+    "--output",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_lora_gpu24_20261026/bench_24_results",
+    "--batch",
+    "24",
+    "--steps",
+    "6",
+    "--profiles",
+    "baseline,bucket,half"
+  ],
+  "cwd": "/private/liqi_workspace/project_code/audio-driven-v5",
+  "env": {
+    "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7",
+    "OMP_NUM_THREADS": "2",
+    "OPENBLAS_NUM_THREADS": "2",
+    "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+    "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+    "NCCL_SOCKET_IFNAME": "eth0",
+    "NCCL_DEBUG": "INFO",
+    "NCCL_DEBUG_FILE": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_lora_gpu24_20261026/bench_24_node0/nccl.%h.%p.log"
+  },
+  "timeout": 1800
+}

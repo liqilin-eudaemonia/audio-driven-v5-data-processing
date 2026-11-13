@@ -1,0 +1,56 @@
+{
+  "scope": "ResponseNet, 512x512, original FPS and paired time windows",
+  "validated_at_utc": "2026-11-02T06:25:22.801377+00:00",
+  "source_protocol": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_testsets_4ckpt_24gpu_20261102/protocol.json",
+  "configuration": {
+    "metric_batch_size": 64,
+    "metrics_workers_per_gpu": 8,
+    "metrics_inference_workers_per_gpu": 4,
+    "metrics_pixel_workers": 4,
+    "metrics_face_device": "cuda:0",
+    "metrics_emotion_device": "cuda:0",
+    "metrics_gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/gt_cache",
+    "metrics_use_released_inference_nodes": true
+  },
+  "torch_device": "cuda:0",
+  "threads": 4,
+  "environment": {
+    "OMP_NUM_THREADS": "4",
+    "OPENBLAS_NUM_THREADS": "2"
+  },
+  "emotion_batch": 32,
+  "fid_frames": 32,
+  "fvd_frames": 32,
+  "fvd_stride": 1,
+  "face_padding": 64,
+  "onnx_cuda": {
+    "use_tf32": false,
+    "cudnn_conv_algo_search": "HEURISTIC"
+  },
+  "tensorflow_gpu": {
+    "memory_growth": true,
+    "tf32": false
+  },
+  "aggregation": {
+    "host": "172.29.189.119",
+    "OMP_NUM_THREADS": 4,
+    "OPENBLAS_NUM_THREADS": 4,
+    "distribution": "full-shard features, never averaged scalar FID/FVD"
+  },
+  "generation": {
+    "workers": 32,
+    "seed": 137,
+    "planner": "unmodified_Qwen2.5-Omni-3B",
+    "generation": {
+      "steps": 30,
+      "video_cfg": 3,
+      "audio_cfg": 7
+    }
+  },
+  "evidence": {
+    "benchmark": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/BENCHMARK.json",
+    "batch_comparison": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/BATCH64_VS128.json",
+    "worker_expansion": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_metrics_acceleration_20261102/WORKER_EXPANSION.json"
+  },
+  "qualification": "Recommended from this run; worker counts were not exhaustively benchmarked. Batch128 had no stable benefit; defaults of the generic runner remain compatible."
+}

@@ -1,0 +1,298 @@
+           CustomListener: Text-guided Responsive Interaction for
+                   User-friendly Listening Head Generation
+
+                           Supplementary Material
+
+A. Implementation Details
+
+A.1. Network Details
+
+We introduced Audio Encoder, Mapping Net, Motion En-
+coder and Transformer Decoder-based Diffusion Model in
+Section 3 of our main paper. Due to the page limitation,
+we show implementation details of these modules in this
+Appendix.
+
+Audio Encoder  For audio preprocessing, we first extract
+45-dim acoustic features from speaker audio, and then en-
+code these acoustic features into audio features. The struc-
+ture of Audio Encoder is shown in Figure 8, which consists
+of two convolution layers, a GELU activation function, six
+768-dim transformer layers, and a linear layer.
+
+Mapping Net  As discussed in Section 3.2 of the main
+paper, in order to obtain portrait-related tokens, we further
+employ a Mapping Net to convert text embeddings from
+RoBERTa [22] into static portrait tokens, which describes the
+listener’s static portrait (e.g. expressions, head movements)
+in the entire video segment. The structure of Mapping Net is
+shown in Figure 8.
+                                                                       Figure 8. Stucture of Audio Encoder and Mapping Net.
+Motion Encoder  We only use a single linear layer to en-
+code the 70-dim noised listener motions to 768-dim motion     speech content. We then input user-customized listener at-
+tokens (denoted with small blue squares in Figure 2 of our      tributes. Subsequently, by incorporating speech content of
+main paper).                                               each segment as well as pre-customized attribute description,
+                                                                     text priors of each segment will be produced with the help
+Transformer Decoder-based Diffusion Model We em-
+                                                               of GPT. Finally, our proposed CustomListener will generate
+ploy transformer decoder as our basic denoising module for
+                                                           long-term listener motions clip-by-clip.
+two reasons: First, compared to U-Net [33] used in tradi-
+tional diffusion model, transformer [38] can better capture
+temporal information in listener motion sequences. Further-    Text Prior Generation  To generate text prior in spe-
+more, compared to transformer encoder which only contains      cific format like [A person <EMOTION> and listens with
+self-attention, transformer decoder is capable of facilitating   <AU> (and <HEAD MOTION>)]), inspired by [12], we
+information interaction better between noised listener mo-     use chain-of-thought prompting [40] when querying GPT.
+tion features as well as concatenated dynamic portrait token      Specifically, before asking question, we first provide GPT
+and motion prior. Specifically, we use an 8-layer transformer     with a few examples showing the desired answer format as
+decoder, with 8 heads and 2048-dim fully forward layers.     well as reasoning process. This strategy can also enable
+Additionally, we concatenate the input motion tokens with    GPT to provide more accurate text prior about facial expres-
+diffusion time-step token (denoted with small pink squares in      sions and head motions while reducing the misunderstanding
+Figure 2 of our main paper) to inject time-step information.      probability towards the speaker’s content. We present some
+                                                       examples of queries in Figure 9 and Figure 10.
+A.2. Inference Details
+                                                                After getting the text prior, we randomly replace the ad-
+Long-video Inference  During inference, we generate long-      jectives and adverbs to enhance the diversity of description.
+term video in a segment-by-segment way. Specifically, we     For example, for <EMOTION>, if it is 'happy', we replace
+first sequentially clip the original long video to several 60-       it by randomly selecting one from a group <looks happy,
+frame video segments, containing video frames, audios and     seems joyful, ...>. For <AU>, following Facial Action
+
+
+                                                 11       User Customization                    The speaker says to the listener: “there was a lot
+       The listener is an easy-going professor,           of ice on the ground, I just couldn't keep my
+        and thinks it is funny …                        balance and took a tumble...“                               A: The speaker is telling the listener that he
+                                                                                                                           slipped as there was ice on the ground. The
+                                                                                                                                                                               look                                                                                                                                                                                                    surprised                                                                                                                                                                              and listen                                                                                                                                                                                                     with                                                                                                                                          listener                                                                                                            would                                                                                                                                                     likely                                                                                                                                      look                                                                                                                                                       surprised                                                                                                                                        and                                                                                                                                                                                         listen                                                Q:                                              What                                                                                   is                                                                      the                                                                     speaker                                                                     communicating                                                                                                      to the                                                                                                                                                                                             outer                                                                                                                                                            brow                                                                                                                                                                                        extremely                                                                                                                                                                                                                                                     lifted                                                                                                                                                                                         and                                                                                                                   with                                                                                                                                 outer                                                                                                            brow                                                                                                                                 extremely                                                                                                                                                                               lifted                                                                                                                                     and                                                                                                                                                                               slightly                                                                listener?                                                         Given                                                                                 that the                                                                                           listener                                                                                                              is                                                                                an                                                                                         easy-going                                                                                                                                                                                                               slightly                                                                                                                                                                                                           raised                                                                                                                                                                                                                   chin.                                                                                                                                                                      text prior                                                                                                             GPT  there was a lot of ice on the ground, I                                                                                                                                raised                                                                                                                            chin                                                                                                                   and                                                                                                                                   without                                                                                                                              any                                                                                                                                                             special                                                                                                                                          head                                                             professor,                                                          and                                                                         thinks                                                                                                                     it                                                                                                    is                                                                          funny                                     …                                                                                                                                                         , describe                                                                                                       the
+  just couldn't keep my balance and took              listener's facial expressions and head movements               movements.
+  a tumble ....                                             in visual detail.
+
+
+
+
+
+              Speaker
+
+                                            Figure 9. Details of Text Prior Generation.
+
+
+ Example 1:
+ The speaker says to the listener: "At that time, I'm full of disappointment in life...."
+ Q: What is the speaker communicating to the listener? Given that the listener is an emotionally rich person who is very sympathetic to the speaker’s experiences, describe the listener's facial expressions and head
+ movements in visual detail.
+ A: The speaker is telling the listener that she felt deeply disappointed with life. The listener would likely appear sympathetic and listen with quite furrowed brow and without any special head movements.
+
+ Example 2:
+ The speaker says to the listener: "I don't think you did a good job on this matter..."
+ Q: What is the speaker communicating to the listener? Given that the listener is a very impatient person and disagrees with the speaker’s words, describe the listener's facial expressions and head movements in visual
+  detail.
+ A: The speaker is telling the listener that he thinks the listener performed poorly on this matter. The listener would likely look angry and listen with a relatively lowered brow and shaking head.
+
+ Example 3:
+ The speaker says to the listener: "I believe Lily is the best performer among these contestants..."
+ Q: What is the speaker communicating to the listener? Given that the listener is an outgoing person and trusts the speaker’s feelings completely, describe the listener's facial expressions and head movements in visual
+  detail.
+ A: The speaker is telling the listener that he thinks Lily did best among these people. The listener would likely look delighted and listen with relatively parted lip and lip corner raised completely and nodding head.
+
+ The speaker says to the listener: “there was a lot of ice on the ground, I just couldn't keep my balance and took a tumble...
+ Q: What is the speaker communicating to the listener? Given that the listener is an easy-going professor, and thinks it is funny, describe the listener's facial expressions and head movements in visual detail.
+ A: The speaker is telling the listener that he slipped as there was ice on the ground. The listener would likely look surprised and listen with outer brow extremely lifted and slightly raised chin and without any special
+ head movements.
+
+
+    User Customization:            Speaker Content:                   Text Prior:
+
+
+                                      Figure 10. Illustration of Chain-of-thought Prompting.
+
+Coding System, if AU12 (lip corner puller) is activated and      lated to image-level quality on RealTalk. Our model achieves
+level=3, we randomly choose an adj. from <raised, pulled,     optimal results, which indicates CustomListener can gener-
+...>, an adv. from <fully, extremely, ...>, then combine the      ate relatively high-quality listener images without special
+above and get [ A person seems joyful and listens with fully     design in the render module, thus justifies our generated
+raised lip corners.].                                        motions are highly precise.
+
+B. Quantitative Results on RealTalk                                             C. Supplementary Visual Results
+
+We did not present quantitative results on RealTalk in main                                                       C.1. Visual Comparisons with Other Methods
+paper due to page limitation, thus we give these results in
+the Appendix B. For a fair comparison, we retrain PCH      In Figure 11, we compared our results with PCH [15], RLHG
+[15], RLHG [46] and L2L [25] on RealTalk dataset. Due     [46] and ELP [35]. As there is no source code provided by
+to the unavailability of source codes, we cannot compare    ELP [35], for fairly comparison, we first find the speaker
+with MFR-Net [21] and ELP [35] on RealTalk. Notably,     video showed in ELP [35], and then generate listener head
+since PCH [15] and RLHG [46] need listener’s attitude la-     based on the speaker video and corresponding description
+bel as input, we use [6] to obtain emotion labels of each      texts instead of an attitude label. Then, we displayed four
+video clip. Then, we group these emotion labels into three     generated listener frames, which are aligned with the four
+basic attitudes: positive, negative and neutral. As shown in     speaker frames in time. As shown in the visual compar-
+Table 5, we present the FD, RTLCC, RWTLCC, FID△fm,     isons, our method has two advantages. Firstly, without any
+SND and V-D of our model as well as other methods. Our      special design in render model, our generated listener im-
+proposed CustomListener achieves best performance on Re-     ages showed less facial artifacts and more closed to the
+alTalk across all metrics, which demonstrates the superiority     ground truth, which indicates the listener motions produced
+of CustomListener in generating realistic and coherent lis-    by CustomListener are highly aligned with the ground-truth
+tener motions that highly synchronous with the speaker’s     motions. Secondly, without a blink modeling like ELP [35],
+motions. In Table 6, we also present evaluation results re-     our generated listener can perform blinking action, which
+
+
+                                                 12                         FD ↓          RTLCC ↓     RWTLCC↓    FID△fm↓     SND ↓       V-D ↑             Methods
+                          exp     angle    trans    exp     pose    exp     pose    exp    pose   exp    pose   exp    pose
+         RLHG∗[46]   20.11   10.32    7.16    0.162   0.365   0.160   0.363   12.42    0.76    4.75    0.09    0.54    0.14
+
+           PCH∗[15]    23.07   13.46    8.04    0.170   0.368   0.163   0.391   12.38    0.81    5.02    0.11    0.29    0.10
+
+           L2L∗[25]    19.01   10.16    7.03    0.158   0.319   0.156   0.315   10.80    0.71    4.67    0.10    0.56    0.40
+
+              Ours       17.63    9.30    6.49    0.138   0.218   0.134   0.207    7.70    0.14    4.37    0.07    2.90    1.01
+
+Table 5. Comparisons of our model with other methods on Dtest of RealTalk. Bold represents the best. The ∗denotes we retrain the model.
+The ↓indicates lower is better and the ↑indicates higher is better. The values of FD and FID△fm are multiplied by 100.
+
+
+
+
+        Method    SSIM ↑  CPBD ↑  PSNR ↑   FID ↓
+      RLHG∗[46]     0.51       0.29      15.34     30.22
+       PCH∗[15]      0.56       0.32      16.13     24.68
+       L2L∗[25]      0.56       0.31      15.98     25.68
+          Ours         0.58       0.34      16.01     23.86
+
+
+Table 6. Quantitative results with other methods on image quality.
+The ∗denotes we retrain the model. The best results are highlighted
+in bold.
+
+                                                                   Speaker
+
+demonstrates that the listener motions are natural-looking
+and photorealistic. More visual comparisons with PCH [15],
+RLHG [46] and L2L [25] on ViCo and RealTalk are pre-
+sented in Figure 12 and Figure 13, respectively.              GT
+
+C.2. Visual Results of Ablation
+
+In Section 4.5 of our main paper, we presented visual abla-
+tion of PGM module. Due to the page limitation, we show     PCH
+the visual ablation of SDP module in this subsection. As
+shown in Figure 14, with the help of SDP module, our gener-
+ated listener motions can not only realize progressive motion
+changes, but also fluctuate with the speaker’s semantics,     RLHG
+intonation and movement amplitude, and thus achieve the
+speaker-listener coordination.
+
+C.3. Supplementary Video
+                                                      ELP
+We provide a supplementary video to present more visual
+results, which include visual videos on ViCo and RealTalk,
+more visual comparisons with other methods as well as
+ablation study of each component. The video can be found
+                                                                 Ours
+in the “Supplementary Videos.mp4” in the Supplementary
+Materials. These videos are also displayed on the project
+page.
+                                                                 Figure 11. Qualitative comparisons with PCH [15], RLHG [46]
+                                                            and ELP [35].
+
+
+
+
+
+                                                 13Speaker
+                                                                                     Speaker
+
+
+
+
+RLHG
+                                                          RLHG
+
+
+
+
+ PCH
+                                                             PCH
+
+
+
+
+  L2L
+                                                                      L2L
+
+
+
+
+  GT
+                                                            GT
+
+
+
+
+ Ours
+                                                                                  Ours
+
+
+
+
+
+Speaker
+                                                                                     Speaker
+
+
+
+
+RLHG
+                                                          RLHG
+
+
+
+
+ PCH
+                                                             PCH
+
+
+
+
+  L2L
+                                                                      L2L
+
+
+
+
+  GT
+                                                            GT
+
+
+
+
+ Ours
+                                                                                  Ours
+
+
+Figure 12. Qualitative comparisons with other methods on ViCo
+                                                                    Figure 13. Qualitative comparisons with other methods on RealTalkdataset.
+                                                                            dataset.
+
+
+
+
+
+                                                 14Speaker
+
+
+
+
+
+w/o SDP
+
+
+
+
+
+  Ours
+
+
+
+
+                                            Figure 14. Ablation study of SDP module.
+
+
+
+
+
+                                                 15

@@ -1,0 +1,197 @@
+{
+  "paper": {
+    "pairs": 107149,
+    "approx_hours": 147,
+    "reaction_events": 64557,
+    "train_test_ratio": "9:1",
+    "source_pdf": "/private/liqi_workspace/project_code/audio-driven-v5/related/00_GLARE_local.pdf",
+    "pages": [
+      3,
+      4,
+      7,
+      13,
+      14,
+      16
+    ]
+  },
+  "checks": [
+    {
+      "rule": "All distinct released reaction clip IDs",
+      "clips": 240513,
+      "hours": 415.76858888888887,
+      "note": "Each clip counted once across six categories"
+    },
+    {
+      "rule": "FER complete and consecutive",
+      "clips": 201455,
+      "hours": 343.1445444444444,
+      "note": "Every annotation frame has its FER row 0..N-1; MP, source audio and manual checks are additional conditions"
+    },
+    {
+      "rule": "Any positive reaction",
+      "clips": 240399,
+      "hours": 415.66243333333335,
+      "note": "Diagnostic hypothesis; public HDF5 builder does not reject all-zero CSVs"
+    },
+    {
+      "rule": "Any reaction > 0.5",
+      "clips": 240095,
+      "hours": 415.3170777777778,
+      "note": "Diagnostic hypothesis; not final manually verified events"
+    },
+    {
+      "rule": "At least 5 seconds",
+      "clips": 110692,
+      "hours": 287.68233333333336,
+      "note": "Diagnostic simple duration rule"
+    },
+    {
+      "rule": "FER complete and at least 5 seconds",
+      "clips": 90813,
+      "hours": 234.09784444444443,
+      "note": "Combined diagnostic rule"
+    },
+    {
+      "rule": "Direct README 10sec audio training eligibility",
+      "clips": 8544,
+      "hours": 57.561844444444446,
+      "note": "385 total frames = 250 current + 10 previous + 125 reference; 7 complete 60-frame chunks. Assumes one released clip maps to one HDF5 clip without padding or merging."
+    },
+    {
+      "rule": "FER complete and direct README training eligibility",
+      "clips": 6778,
+      "hours": 45.70351111111111,
+      "note": "Same direct-reconstruction assumptions"
+    }
+  ],
+  "fer": {
+    "realtalk": {
+      "counts": {
+        "files": 15361,
+        "rows": 3035177,
+        "without_reaction_id": 7505,
+        "matched_reaction_ids": 7856,
+        "reaction_frames": 1603672,
+        "complete": 7856,
+        "complete_reaction_frames": 1603672
+      },
+      "examples": {
+        "without_reaction_id": [
+          "FLEd4elTmGM/0006",
+          "FLEd4elTmGM/0002",
+          "FLEd4elTmGM/0003",
+          "FLEd4elTmGM/0005",
+          "vMDhbHWUFb8/0014"
+        ]
+      },
+      "seconds": 2.1618740558624268,
+      "complete_hours": 17.81857777777778
+    },
+    "seamless": {
+      "counts": {
+        "files": 234921,
+        "rows": 34823188,
+        "matched_reaction_ids": 232657,
+        "reaction_frames": 35815501,
+        "complete": 193599,
+        "complete_reaction_frames": 29279337,
+        "incomplete": 39058,
+        "incomplete_reaction_frames": 6536164,
+        "without_reaction_id": 2264
+      },
+      "examples": {
+        "incomplete": [
+          {
+            "id": "V00_S0917_I00000770_P1017_65.249_71.369",
+            "fer_rows": 144,
+            "reaction_frames": 153,
+            "consecutive": false
+          },
+          {
+            "id": "V00_S1805_I00001053_P0933A_61.202_63.812",
+            "fer_rows": 62,
+            "reaction_frames": 66,
+            "consecutive": false
+          },
+          {
+            "id": "V00_S1628_I00001172_P0320A_171.726_175.236",
+            "fer_rows": 51,
+            "reaction_frames": 88,
+            "consecutive": false
+          },
+          {
+            "id": "V00_S0452_I00000981_P0107A_91.688_95.858",
+            "fer_rows": 104,
+            "reaction_frames": 105,
+            "consecutive": false
+          },
+          {
+            "id": "V00_S1027_I00001058_P0185A_361.237_365.707",
+            "fer_rows": 0,
+            "reaction_frames": 112,
+            "consecutive": true
+          }
+        ],
+        "without_reaction_id": [
+          "V00_S0610_I00000880_P0658A_422.289_425.409",
+          "V00_S1296_I00000672_P1102A_304.798_311.638",
+          "V00_S1066_I00001052_P0323A_298.771_305.251",
+          "V00_S2088_I00000639_P1343A_40.080_56.730",
+          "V00_S1646_I00001061_P0789A_115.792_123.232"
+        ]
+      },
+      "seconds": 33.55782747268677,
+      "complete_hours": 325.32596666666666
+    }
+  },
+  "source_categories": {
+    "naturalistic": {
+      "clips": 0,
+      "hours": 0.0,
+      "unique_interactions": 0
+    },
+    "improvised": {
+      "clips": 231851,
+      "hours": 395.8162222222222,
+      "unique_interactions": 15063
+    },
+    "missing_local_original_index": {
+      "clips": 806
+    }
+  },
+  "face_validation_sample": {
+    "dataset": "seamless",
+    "members": 500,
+    "compressed_bytes": 381821475,
+    "archive_bytes": 187147291913,
+    "seconds": 6.9282190799713135,
+    "full_parser_checks": 105,
+    "fast_mismatches": 0,
+    "full_parser_used": 6,
+    "joint_valid": 414,
+    "joint_valid_hours": 0.6617222222222222,
+    "matched_reaction_hours": 0.8070777777777778,
+    "scope": "leading 500 PKLs; nonrandom sample",
+    "complete": true
+  },
+  "public_pipeline_remaining_conditions": [
+    "MediaPipe all-frame detections",
+    "intersection with source HDF5 audio/motion clip and chunk keys",
+    "manual face and audio quality checks",
+    "manual verification of reaction events"
+  ],
+  "judgment": "Release is a collection of intermediate automatic annotation outputs with partially filtered clip sets. It cannot currently be identified with the final 107149-pair benchmark. The final subset may be contained in this pool, but that inclusion and its IDs are not established. No tested simple rule reproduces both the pair count and total duration.",
+  "not_established": [
+    "Exact final sample membership",
+    "Whether paper test IDs equal the code val IDs",
+    "Exact manually corrected reaction event annotations"
+  ],
+  "sources": {
+    "hf_readme": "https://huggingface.co/datasets/lzk901372/GLARE_reaction_annotation_results/blob/main/README.md",
+    "usable_filter": "https://github.com/lzk901372/visual_reaction_annotation/blob/main/generate_usable.py",
+    "hdf5_injection": "https://github.com/lzk901372/visual_reaction_annotation/blob/main/build_reaction_pruned_h5.py",
+    "training_window": "https://github.com/lzk901372/glare/blob/main/train_multigpu.py",
+    "chunk_requirement": "https://github.com/lzk901372/glare/blob/main/float/data/base.py",
+    "split": "https://github.com/lzk901372/glare/blob/main/float/data/VideoDataset.py"
+  }
+}

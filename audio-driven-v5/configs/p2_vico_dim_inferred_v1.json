@@ -1,0 +1,33 @@
+{
+  "schema": "vico-dim-inferred-protocol-v1",
+  "source_work": "experiments/p2_vico_literature_protocol_20261108",
+  "source_complete_sha256": "d08d23f3ddf61481581c62aeed319a16388582289dd736bb2c391b1fef8d4de7",
+  "methods": ["joint", "joint_sft2752"],
+  "primary_case": "official43_released_offset",
+  "cases": [
+    {"id": "official43_released_offset", "scope": "official43", "speaker_offset_frames": 1, "label": "正式43条／发布tester一帧偏移", "role": "primary"},
+    {"id": "official43_same_timestamp", "scope": "official43", "speaker_offset_frames": 0, "label": "正式43条／同时间戳speaker", "role": "sensitivity_only"},
+    {"id": "released_loader_projection", "scope": "video_only_loader_projection", "speaker_offset_frames": 1, "label": "公开加载器范围投影／41记录39个listener", "role": "sensitivity_only"}
+  ],
+  "listener_start_frame": 1,
+  "coefficient_order": "pose6_then_exp50",
+  "normalization": "none",
+  "speaker": "actual_motion_for_scoring_only",
+  "face_failures": "shared_valid_mask_across_both_models_no_interpolation",
+  "primary_metrics": "DIM_fixed_released_functions",
+  "primary_sid": "GT_fitted_KMeans_exp40_pose20_global_histogram_log2",
+  "primary_var": "pooled_flatten_population_variance",
+  "variance_sensitivity": ["pooled_flatten", "pooled_per_coefficient_mean", "equal_clip_flatten", "equal_clip_temporal_per_coefficient_mean"],
+  "sid_sensitivity": "same_GT_fitted_clusters_equal_clip_entropy",
+  "sampling": {
+    "measured_outputs_per_pair": 1,
+    "measured_seed": 137,
+    "released_tester_candidates": 10,
+    "released_tester_selection": "per_clip_minimum_GT_Frechet_full56_then_same_candidate_for_all_metrics",
+    "published_table_use_confirmed": false,
+    "extra_candidate_generation_in_this_run": false
+  },
+  "choice_basis": "paper_and_fixed_public_code; alternatives report ambiguity and never select by generated scores",
+  "author_contact_required": false,
+  "strict_published_table_equivalence": false
+}

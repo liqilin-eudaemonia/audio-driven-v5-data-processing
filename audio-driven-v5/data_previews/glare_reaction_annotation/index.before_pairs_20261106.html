@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GLARE 反应标注</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font: 15px/1.45 system-ui, sans-serif; color: #1c1c1c; background: #f6f5f3; }
+  header, main { padding: 16px 20px; }
+  header { padding-bottom: 0; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  h2 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+  p { margin: 0; color: #555; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
+  .stat { background: #fff; border: 1px solid #ddd; padding: 10px 12px; }
+  .stat b { display: block; font-size: 20px; font-weight: 600; color: #1c1c1c; }
+  .stat span { color: #666; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  section { background: #fff; border: 1px solid #ddd; padding: 12px; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: right; padding: 4px 6px; border-bottom: 1px solid #eee; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: #555; font-weight: 600; }
+  .barline { display: grid; grid-template-columns: 4.5em 1fr 4.2em; gap: 8px; align-items: center; margin: 5px 0; font-size: 13px; }
+  .track { height: 10px; background: #eceae6; }
+  .fill { height: 10px; background: #3d6b4f; }
+  .fill.alt { background: #8a5a2a; }
+  .note { background: #fff; border: 1px solid #ddd; padding: 10px 12px; color: #333; }
+  code { font-family: ui-monospace, monospace; font-size: 12px; }
+  figure { margin: 0; }
+  figcaption { font-weight: 600; margin-bottom: 8px; }
+  video { width: auto; max-width: 100%; max-height: 70vh; background: #111; display: block; }
+  .stage { position: relative; display: inline-block; max-width: 100%; }
+  .stage video { max-width: 100%; }
+  .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  figure p { margin-top: 8px; }
+  @media (max-width: 900px) {
+    .stats, .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>GLARE 反应标注</h1>
+  <p>压缩包在 <code>/public/0_DATA/2_Avatar/GLARE_reaction_annotation_results</code>。20 个文件共 191.41 GiB，没有解压。下面的条数和帧数是从反应分数、FER 这两个 CSV 压缩包里逐行读出来的。人脸关键点 pkl 只核对了体积，没有展开。</p>
+</header>
+<main>
+  <section>
+    <h2>标注对应的画面</h2>
+    <div class="grid">
+      <figure>
+        <figcaption>Seamless 标注片段</figcaption>
+        <div class="stage">
+          <video id="sea" controls playsinline preload="auto" src="media/seamless_V00_S0058_I00000536_P0088_202.791_206.631.mp4"></video>
+          <svg viewBox="0 0 1080 1920" preserveAspectRatio="none">
+            <rect id="facebox" fill="none" stroke="#d6ff3f" stroke-width="6"/>
+          </svg>
+        </div>
+        <p id="facebox-readout"></p>
+        <p>源视频 <code>V00_S0058_I00000536_P0088.mp4</code>，取 202.791–206.631 秒。反应分数本身没有框。FER 标注有人脸框，但这条的框落在大约 x 128–244、y 70–319，是检测器用的小图像素，对不上这张 1080×1920。画面上跟着播放移动的框，是源视频关键点里 68 个脸部点的外接矩形。</p>
+      </figure>
+      <figure>
+        <figcaption>RealTalk 源视频</figcaption>
+        <video id="rt" controls playsinline preload="metadata" src="media/realtalk_-1wCGAxqT_4.mp4"></video>
+        <p>这是 <code>-1wCGAxqT_4.avi</code> 的整段，611.64 秒，两个人同框。标注片段 <code>0003</code> 只有 147 帧，发布的 CSV 没有写下它在这整段里的入点，所以这里播的是源对话，不是那 147 帧的裁脸。</p>
+      </figure>
+    </div>
+  </section>
+  <section>
+    <h2>一条 RealTalk：整段视频，标注在切好的片段上</h2>
+    <p>视频是 <code>realtalk/videos/videos_09.tar</code> 里的 <code>-1wCGAxqT_4.avi</code>，284 MB，整段对话 611.64 秒。标注不覆盖整段，只覆盖其中一个片段 <code>0003</code>，147 帧。文件名里的 0003 是片段序号，不是视频里的第 3 秒。同一帧号在 FER 和六个反应文件里是同一帧。</p>
+    <table>
+      <thead><tr><th>帧</th><th>FER 脸框</th><th>FER happy</th><th>微笑</th><th>点头</th></tr></thead>
+      <tbody>
+        <tr><td>114</td><td>134,101,220,289</td><td>0.97</td><td>0.940</td><td>0.471</td></tr>
+        <tr><td>115</td><td>138,98,219,292</td><td>0.96</td><td>0.928</td><td>0.525</td></tr>
+        <tr><td>116</td><td>133,89,224,296</td><td>0.97</td><td>0.916</td><td>0.559</td></tr>
+        <tr><td>117</td><td>137,98,219,293</td><td>0.98</td><td>0.908</td><td>0.546</td></tr>
+        <tr><td>118</td><td>135,99,221,291</td><td>0.97</td><td>0.908</td><td>0.505</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:8px">FER 文件：<code>-1wCGAxqT_4/emo_scores/0003.csv</code>。微笑、点头文件：<code>-1wCGAxqT_4/0003.csv</code>，分开放在各类别的压缩包里。</p>
+  </section>
+  <section>
+    <h2>一条 Seamless：文件名里写着视频和时间段</h2>
+    <p>标注文件 <code>V00_S1127_I00001166_P0825A_291.126_296.766.csv</code> 有 141 行。对应的视频是各分片 tar 里的 <code>V00_S1127_I00001166_P0825A.mp4</code>，取 291.126 秒到 296.766 秒，长度 5.640 秒。141 帧 / 5.640 秒 = 25 帧/秒。第 1 到第 3 帧的点头分数是 0.541、0.591、0.641。</p>
+    <video id="sea2" controls playsinline preload="auto" src="media/seamless_291.126_296.766.mp4" style="margin-top:8px"></video>
+  </section>
+  <div class="stats">
+    <div class="stat"><b>191.41 GiB</b><span>已下载，20 / 20 个文件大小相符</span></div>
+    <div class="stat"><b>7,857</b><span>RealTalk 反应片段，588 个视频</span></div>
+    <div class="stat"><b>232,658</b><span>Seamless 反应片段，一个片段一个文件</span></div>
+    <div class="stat"><b>190.86 GiB</b><span>关键点 pkl，占整包几乎全部体积</span></div>
+  </div>
+
+  <div class="grid">
+    <section>
+      <h2>分数超过 0.5 的帧占比</h2>
+      <p style="margin-bottom:8px">同一数据集里六个类别共用同一批帧。RealTalk 1,603,672 帧，Seamless 35,815,501 帧。</p>
+      <div id="share"></div>
+    </section>
+    <section>
+      <h2>FER 每帧最高分的类别占比</h2>
+      <p style="margin-bottom:8px">列是边框和七类概率。RealTalk 3,035,177 帧，Seamless 34,823,188 帧。片段数和反应分数不是同一份清单。</p>
+      <div id="fer"></div>
+    </section>
+  </div>
+
+  <section>
+    <h2>六个反应类别</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>类别</th>
+          <th>RealTalk 有分的帧</th>
+          <th>RealTalk &gt;0.5</th>
+          <th>RealTalk 连续段</th>
+          <th>Seamless 有分的帧</th>
+          <th>Seamless &gt;0.5</th>
+          <th>Seamless 连续段</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>压缩包</h2>
+    <table>
+      <thead><tr><th>内容</th><th>RealTalk</th><th>Seamless</th><th>里面是什么</th></tr></thead>
+      <tbody>
+        <tr><td>人脸关键点</td><td>16.57 GiB</td><td>174.29 GiB</td><td>每帧一个 pkl：是否检测到脸、关键点、框、blendshape、pitch / roll / yaw</td></tr>
+        <tr><td>FER 表情</td><td>0.03 GiB</td><td>0.34 GiB</td><td>CSV：帧号、脸框、angry / disgust / fear / happy / sad / surprise / neutral</td></tr>
+        <tr><td>六类反应分数</td><td>合计 0.004 GiB</td><td>合计 0.17 GiB</td><td>每个类别单独一份 CSV：帧号和该类强度，范围 0 到 1</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <p class="note">RealTalk 的皱眉几乎是空的：1,603,672 帧里只有 11 帧超过 0.5。Seamless 的点头最多，超过 0.5 的帧占 27.5%，连续段 619,441 个。反应分数和 FER 的片段数不一致，RealTalk 是 7,857 对 15,361，Seamless 是 232,658 对 234,921，不能按文件名直接对齐。</p>
+</main>
+<script>
+const RT = 1603672;
+const SM = 35815501;
+const classes = [
+  ["点头", 212897, 67295, 14107, 14409499, 9850271, 619441],
+  ["摇头", 133337, 68508, 6282, 6725054, 5739707, 212126],
+  ["微笑", 492503, 422789, 7254, 6918460, 5561348, 116540],
+  ["大笑", 272432, 234343, 4110, 3264460, 2675558, 52709],
+  ["皱眉", 944, 11, 25, 6876676, 4387575, 82926],
+  ["惊讶", 5310, 2352, 242, 4124668, 2601367, 84935]
+];
+const fer = [
+  ["中性", 1552194, 3035177, 16484820, 34823188],
+  ["高兴", 914932, 3035177, 6645129, 34823188],
+  ["悲伤", 288962, 3035177, 5175897, 34823188],
+  ["生气", 133137, 3035177, 3614767, 34823188],
+  ["恐惧", 98040, 3035177, 1807730, 34823188],
+  ["惊讶", 46164, 3035177, 906114, 34823188],
+  ["厌恶", 1748, 3035177, 188731, 34823188]
+];
+function pct(n, d) { return (100 * n / d).toFixed(1); }
+function num(n) { return n.toLocaleString("en-US"); }
+function bars(el, rows, aDen, bDen) {
+  const max = Math.max(...rows.map(r => Math.max(100 * r[1] / aDen, 100 * r[2] / bDen)));
+  el.innerHTML = rows.map(r => {
+    const a = 100 * r[1] / aDen;
+    const b = 100 * r[2] / bDen;
+    return `<div class="barline"><span>${r[0]}</span><div class="track"><div class="fill" style="width:${(a / max) * 100}%"></div></div><span>${a.toFixed(1)}%</span></div>`
+      + `<div class="barline"><span></span><div class="track"><div class="fill alt" style="width:${(b / max) * 100}%"></div></div><span>${b.toFixed(1)}%</span></div>`;
+  }).join("") + `<p style="margin-top:8px">上条绿色是 RealTalk，下条棕色是 Seamless。</p>`;
+}
+bars(document.getElementById("share"), classes.map(r => [r[0], r[2], r[5]]), RT, SM);
+bars(document.getElementById("fer"), fer.map(r => [r[0], r[1], r[3]]), fer[0][2], fer[0][4]);
+document.getElementById("rows").innerHTML = classes.map(r =>
+  `<tr><td>${r[0]}</td><td>${num(r[1])}（${pct(r[1], RT)}%）</td><td>${num(r[2])}（${pct(r[2], RT)}%）</td><td>${num(r[3])}</td><td>${num(r[4])}（${pct(r[4], SM)}%）</td><td>${num(r[5])}（${pct(r[5], SM)}%）</td><td>${num(r[6])}</td></tr>`
+).join("");
+</script>
+<script>
+const sea = document.getElementById("sea");
+const face = document.getElementById("facebox");
+const readout = document.getElementById("facebox-readout");
+fetch("media/seamless_V00_S0058_face.json").then(r => r.json()).then(data => {
+  const draw = () => {
+    const i = Math.min(data.boxes.length - 1, Math.max(0, Math.round(sea.currentTime * data.fps)));
+    const [x1, y1, x2, y2] = data.boxes[i];
+    face.setAttribute("x", x1);
+    face.setAttribute("y", y1);
+    face.setAttribute("width", x2 - x1);
+    face.setAttribute("height", y2 - y1);
+    readout.textContent = `当前脸框 ${Math.round(x1)}, ${Math.round(y1)}, ${Math.round(x2)}, ${Math.round(y2)}`;
+  };
+  sea.addEventListener("timeupdate", draw);
+  sea.addEventListener("seeked", draw);
+  sea.addEventListener("loadeddata", draw);
+  draw();
+});
+</script>
+</body>
+</html>

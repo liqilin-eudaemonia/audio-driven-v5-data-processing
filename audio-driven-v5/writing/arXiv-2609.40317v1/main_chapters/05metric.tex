@@ -1,0 +1,71 @@
+\vspace{-0.5em}
+\section{Reaction-Centric Evaluation Metrics} \label{sec:metric}
+\vspace{-0.5em}
+
+Conventional evaluation metrics for talking-head or listening-head generation mainly focus on global visual fidelity, perceptual similarity, motion diversity, or distributional realism, which are insufficient for evaluating listener-specific behaviors. In particular, they fail to capture whether appropriate reactions are generated at the right moments, whether their temporal extents are accurate, and whether the visual quality of these reactions is satisfactory. To address these limitations, we propose a set of \textbf{reaction-centric evaluation metrics} that explicitly measure the reaction type correctness, temporal alignment, and visual quality of generated listener reactions.
+
+For each generated listener video, we apply the reaction detector described in Sec. \ref{sec:reaction_taxonomy} to obtain a set of predicted reaction events $\widehat{\mathcal{A}}=\{(\widehat{y}_i,\widehat{t}_{s,i},\widehat{t}_{e,i})\}_{i=1}^{\widehat{N}}$, where $\widehat{y}_i$ is the predicted reaction type and $\widehat{t}_{s,i},\widehat{t}_{e,i}$ are the predicted start and end timestamps. The ground-truth reaction annotations are denoted as $\mathcal{A}=\{(y_j,t_{s,i},t_{e,i})\}_{j=1}^{N}$. A predicted event $\widehat{a}_i$ matches a ground-truth event $a_j$ only if they have the same reaction type and their temporal Intersection-over-Union (tIoU) exceeds a threshold $\tau$ (i.e., $\widehat{y}_i=y_j$, and $\mathrm{tIoU}(\widehat{a}_i,a_j)\geq\tau$. We set $\tau=0.5$ in all experiments). The tIoU is defined as
+% \vspace{-0.5em}
+{
+\footnotesize
+\begin{equation}
+    \text{tIoU}(\widehat{a}_i,a_j)=
+    \frac{\left[\min(\widehat{t}_{e,i},t_{e,j})-\max(\widehat{t}_{s,i},t_{s,j})\right]_+}
+    {\max(\widehat{t}_{e,i},t_{e,j})-\min(\widehat{t}_{s,i},t_{s,j})}.
+\end{equation}
+}Matching is performed in a one-to-one manner by selecting the prediction with the highest temporal IoU for each ground-truth event, and the resulting matched set is denoted as $\mathcal{M}$.
+
+
+
+
+
+
+
+\textbf{Reaction F1 (R-F1) score}. R-F1 evaluates the occurance and matching quality of generated reactions across six categories. Matched pairs are treated as true positives, unmatched predictions as false positives, and unmatched ground-truth events as false negatives. We compute
+{
+\footnotesize
+\begin{equation}
+    \text{R-F1}=\frac{2\cdot\text{Precision}\cdot\text{Recall}}{\text{Precision}+\text{Recall}},
+\end{equation}
+}where precision and recall are computed from event-level matches. A higher R-F1 indicates better reaction occurrence and type consistency.
+
+\textbf{Reaction temporal IoU (R-tIoU)}. R-tIoU measures the temporal localization accuracy of matched reaction events. It is computed as the average temporal IoU over all matched pairs:
+{
+\footnotesize
+\begin{equation}
+    \text{R-tIoU}=\frac{1}{|\mathcal{M}|}\sum_{(\widehat{a},a)\in\mathcal{M}}\text{tIoU}(\widehat{a},a).
+\end{equation}
+}A higher R-tIoU indicates that the generated reactions better match the ground-truth reaction intervals in both onset and offset.
+
+\textbf{Reaction asymmetric temporal deviation (R-ATD)}. Temporal overlap alone does not distinguish different types of timing errors. In dyadic interaction, prematurely generated listener reactions are often more disruptive than slightly delayed reactions, since early feedback may appear to anticipate the speaker before the relevant cue occurs. 
+% \yumin{this makes sense for $\delta_s$ but I'm not sure this also applies to $\delta_e$ and $\delta_d$ in Eq.(8). For example, I guess shorter duration is still acceptable?} 
+We therefore define Reaction Asymmetric Temporal Deviation, denoted as R-ATD. For a matched pair $(\widehat{a},a)$, we compute normalized deviations in start time, end time, and duration:
+{
+\footnotesize
+\begin{equation}
+    \delta_s=\frac{\widehat{t}_s-t_s}{\Delta t}, \qquad
+    \delta_e=\frac{\widehat{t}_e-t_e}{\Delta t}, \qquad
+    \delta_{\Delta t}=\frac{\widehat{\Delta t}-\Delta t}{\Delta t},
+\end{equation}
+}where $\Delta t=t_e-t_s$ and $\widehat{\Delta t}=\widehat{t}_e-\widehat{t}_s$. We then apply an asymmetric penalty function $\phi$ and calculate R-ATD as follows
+{
+\footnotesize
+\begin{equation}
+    \text{R-ATD}=\frac{1}{|\mathcal{M}|}\sum_{(\widehat{a},a)\in\mathcal{M}}
+    \left[\phi(\delta_s;\alpha,\beta)+\phi(\delta_e;\alpha,\beta)+\phi(\delta_d;\alpha,\beta)\right]
+    \ ,\ \text{where}\ 
+    \phi(\delta;\alpha,\beta)=
+    \begin{cases}
+        \alpha|\delta|, & \delta<0 \\
+        \beta|\delta|, & \delta\geq0
+    \end{cases},
+    % \ \text{and}\ 
+    % \alpha>\beta
+\end{equation}
+}We use asymmetric weights with $\alpha>\beta$
+% empirically $\alpha$=2 and $\beta$=0.5 
+to place stronger penalties on negative deviations, which correspond to premature or truncated reactions, while allowing greater tolerance for slightly delayed or temporally extended reactions. Lower R-ATD indicates better temporal alignment and fewer premature or duration-inaccurate reactions.
+
+\textbf{Reaction Fréchet distance (R-FID)}. R-FID evaluates the visual quality of generated reaction regions. Instead of computing FID over all video frames, which can be dominated by neutral listening frames, we compute the standard Fréchet distance only on frames inside reaction intervals. Generated reaction frames are collected from predicted reaction segments, while real reaction frames are collected from ground-truth reaction annotations. Lower R-FID indicates that the generated reaction frames better match the visual distribution of real listener reactions.
+
+Together, R-F1, R-tIoU, R-ATD, and R-FID provide complementary measurements of reaction correctness, temporal localization, asymmetric timing deviation, and reaction-region realism. Although multiple reactions may be plausible for the same context, our evaluation only compares against the ground truth, serving as a reference rather than an absolute measure of reaction plausibility. Additional implementation details, including one-to-one matching, aggregation, empty-case handling, R-ATD penalization with $\alpha$ and $\beta$, and R-FID computation, are provided in Appendix \ref{app:evaluation_protocol}.

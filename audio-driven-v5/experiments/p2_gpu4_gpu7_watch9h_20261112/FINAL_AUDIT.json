@@ -1,0 +1,139 @@
+{
+  "schema": "nine-hour-monitoring-completion-audit-v1",
+  "at": 1794527636.5082068,
+  "monitoring_complete": true,
+  "evaluations_complete": false,
+  "checks": {
+    "complete_fixed_nine_hour_window": {
+      "passed": true,
+      "start_at": 1794495134,
+      "deadline": 1794527534,
+      "finished_at": 1794527535.9408648,
+      "proof": "CONFIG.json; WINDOW_FINISHED.json"
+    },
+    "hourly_actual_gpu_and_process_checks": {
+      "passed": true,
+      "proof": "hourly/00.json through08.json plus WINDOW_FINISHED.json final",
+      "scheduled_followups": [
+        {
+          "hour": 1,
+          "at": 1794498765.781044,
+          "delay_s": 31.781044006347656
+        },
+        {
+          "hour": 2,
+          "at": 1794502381.809546,
+          "delay_s": 47.80954599380493
+        },
+        {
+          "hour": 3,
+          "at": 1794505973.9628153,
+          "delay_s": 39.962815284729004
+        },
+        {
+          "hour": 4,
+          "at": 1794509582.7661788,
+          "delay_s": 48.76617884635925
+        },
+        {
+          "hour": 5,
+          "at": 1794513195.3815231,
+          "delay_s": 61.38152313232422
+        },
+        {
+          "hour": 6,
+          "at": 1794516746.9305034,
+          "delay_s": 12.930503368377686
+        },
+        {
+          "hour": 7,
+          "at": 1794520370.26069,
+          "delay_s": 36.26068997383118
+        },
+        {
+          "hour": 8,
+          "at": 1794523991.839441,
+          "delay_s": 57.8394410610199
+        }
+      ]
+    },
+    "failures_and_slowdowns_addressed": {
+      "passed": true,
+      "proof": "operator/02_contention.json; operator/02_recovery.json; operator/02_resolved_slowdown_alarm.json; later hourly samples",
+      "issue": "Independent reference-method compute contention caused about5x slowdown; its owner released18 GPU worker groups and adopted idle-only policy; same main renderer preserved",
+      "recovered_same_frame_seconds": [
+        94.48536114022136,
+        94.15874348208308,
+        93.96892290189862
+      ],
+      "unresolved_alerts": []
+    },
+    "conditional_gpu7_handoff": {
+      "passed": true,
+      "triggered": false,
+      "reason": "GPU7 remains actively rendering prioritized ResponseNet6500; both-checkpoint completion and empty-GPU prerequisites did not occur",
+      "proof": "WINDOW_FINISHED.json final children and throughput; operator/09_live.json"
+    },
+    "ongoing_evaluations_preserved": {
+      "passed": true,
+      "proof": "operator/09_live.json actual post-deadline /proc and nvidia-smi",
+      "controllers": {
+        "gpu4": [
+          3355926,
+          "1721494647"
+        ],
+        "gpu7": [
+          4149916,
+          "1716337590"
+        ]
+      },
+      "renderers": {
+        "gpu4": [
+          3355954
+        ],
+        "gpu7": [
+          2449910
+        ]
+      }
+    },
+    "science_protocol_unchanged": {
+      "passed": true,
+      "proof": "Existing MODEL_ACCEPTANCE and protocol files; no native GPU renderer restarted during contention repair; physical GPU UUID verified at each audit"
+    }
+  },
+  "final_deadline_counts": {
+    "seamless6000": {
+      "latents": 343,
+      "videos": 538,
+      "median_seconds_per_frame": 0.33151566524454307
+    },
+    "responsenet6000": {
+      "latents": 586,
+      "videos": 586,
+      "median_seconds_per_frame": 0.38287452396566735
+    },
+    "responsenet6500": {
+      "latents": 256,
+      "videos": 256,
+      "median_seconds_per_frame": 0.31467727800629225
+    }
+  },
+  "final_gpu_util": {
+    "4": 100.0,
+    "7": 100.0
+  },
+  "source_sha256": {
+    "CONFIG.json": "5f426a010e96ad3476be0a707d43ce6bc03c9b23c3e5dcd779815b37ee8d15e3",
+    "WINDOW_FINISHED.json": "2a826113becf7598da4ee6f11f231dd5633524fa7b3dfdcc8a1fe5618eea6e76",
+    "operator/09_live.json": "18ead8784bb9228828ac96d90550521dbc90df62b672c96bfc3779385ec4fcdf",
+    "hourly/00.json": "94f74991d1c42a5f9fc77488d1b4a049dc3bee5b796ec97ce2bcde96615be9e0",
+    "hourly/01.json": "7e20a95e434d3f734993a122c0d7fb3777f42c8272f4c8270a02ba16a7046452",
+    "hourly/02.json": "5fa956bae526fcbdf1bc72c90f82223ef80f9a53b12bb27c28b3de38fd3a43f2",
+    "hourly/03.json": "e88301cc1bf24d828a4937060877ecd09b3c7fd477e3defc1cba945fe4339877",
+    "hourly/04.json": "4e6efaccdabbee50d62fd0910ec44aeaa1c9b95d1f3744c58691f29fff5e3b58",
+    "hourly/05.json": "94dc9762177866f2d7bf3acd748ae2ddc61d75b8b3564417f9586a49d7472562",
+    "hourly/06.json": "38cf23cdebfa30df7b44c5b3eec1a13d670e21ba243be2fce99264938fcb370f",
+    "hourly/07.json": "b63d223a7a72fb72db05ec763debc6cc6891a8eb774f5404ccf2e777294e19a6",
+    "hourly/08.json": "8bbef3c270af8b27478b7e616e3920279752194147902329d5b32ae06ea7ebe1"
+  }
+}

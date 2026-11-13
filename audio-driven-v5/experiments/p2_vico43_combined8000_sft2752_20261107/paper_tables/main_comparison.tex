@@ -1,0 +1,17 @@
+% Requires \usepackage{booktabs}
+\begin{table*}[t]
+\centering\small
+\caption{Local transfer evaluation on all 43 official ViCo test pairs (10 source videos, seed 137, one sample per pair). Both Ours rows use the identical step-8000 generator; only the Qwen planner, its descriptions, hidden conditions and Gemma conditions change. The generator was trained with base-Qwen hidden conditions. DyStream and Avatar Forcing use disclosed source-only listener adaptations, with zero self audio and no future listener frames. Image metrics use official frame weighting (FID is set-level); DECA expression-50 and head-axis-angle-3 distances are clip-averaged. All distances and sharpness must be interpreted alongside motion amplitude and appropriateness.}
+\label{tab:vico43-planner}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Method & PSNR (dB) $\uparrow$ & SSIM $\uparrow$ & FID $\downarrow$ & CSIM $\uparrow$ & CPBD $\uparrow$ & Exp. L1 $\downarrow$ & Head L1 $\downarrow$ & Exp. Fr\'{e}chet $\downarrow$ \\
+\midrule
+DyStream (adapted) & 18.380 & 0.6187 & 35.067 & 0.4672 & 0.2262 & 0.21209 & 0.10664 & 3.92245 \\
+Avatar Forcing (adapted) & 16.183 & 0.5725 & 39.153 & 0.4663 & 0.1902 & 0.22449 & 0.10487 & 4.54813 \\
+Ours, base Qwen & 19.668 & 0.6624 & 30.116 & 0.5968 & 0.1391 & 0.15394 & 0.09666 & 2.16883 \\
+Ours, SFT2752 Qwen & 19.336 & 0.6559 & 29.426 & 0.5803 & 0.1374 & 0.16719 & 0.08715 & 2.09591 \\
+\bottomrule
+\end{tabular}
+\end{table*}

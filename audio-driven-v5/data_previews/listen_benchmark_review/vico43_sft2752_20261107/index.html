@@ -1,0 +1,52 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ViCo43 · 原始Qwen vs SFT2752</title><style>
+body{font:15px/1.65 system-ui,sans-serif;background:#111827;color:#e5e7eb;margin:0;padding:24px}main{max-width:1500px;margin:auto}h1{font-size:24px}a{color:#93c5fd}.note{background:#1f2937;padding:16px;border-radius:8px;margin:16px 0}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}td,th{padding:8px;border-bottom:1px solid #374151;text-align:right}th:first-child,td:first-child{text-align:left}.overflow{overflow:auto}select,button{padding:8px;background:#374151;color:white;border:1px solid #64748b;border-radius:5px;margin:4px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}video{width:100%;background:black;aspect-ratio:1}.card{background:#1f2937;padding:10px;border-radius:8px}.card span{display:block}input[type=range]{width:90%}pre{white-space:pre-wrap;overflow-wrap:anywhere}#status{color:#fde68a}#clip{max-width:100%}</style>
+<main><h1>ViCo43：固定联合8000，原始Qwen vs SFT2752</h1>
+<p>联合8000固定 · 原始Qwen／SFT2752 · DyStream／Avatar Forcing参考</p>
+<div class="note">全部43条、固定seed137、每条一次采样。两个baseline只生成视频；不使用listener真值音轨或后续画面。L2L人物迁移模型见补充表。此处不是DIM原论文表复现，DECA不与EMOCA/BFM混排。</div>
+<h2>画质与身份 · 同一官方评分</h2><div id="image" class="overflow"></div>
+<h2>共同DECA动作 · 视频反提取</h2><p>本地RTLCC/RWTLCC是相关曲线差异，越低越好；不是原始相关系数或DIM的rPCC。</p><div id="deca" class="overflow"></div>
+<h3>动作幅度参考 · 不按高低直接排名</h3><div id="variance" class="overflow"></div><p>参考距离、动作幅度和语境适当性需共同解释；低距离不保证反馈充分。本轮尚未进行人工语境适当性评价。</p>
+<details><summary>BFM70四模型独立补充（FD为原始L1，未乘100）</summary><p>表情64＋角度3＋平移3；与DECA分开。FID_fm和FID_delta_fm为片段内高斯Fréchet。</p><div id="bfm" class="overflow"></div></details>
+<details><summary>L2L四个人物模型迁移动作（额外speaker motion，无写实视频）</summary><div id="l2l" class="overflow"></div></details>
+<h2>全部片段</h2><select id="clip"></select><select id="geometry"><option value="native">原生生成512/25</option><option value="score">实际评分256/30</option></select>
+<select id="audio"><option value="speaker">speaker上下文</option><option value="ours">原始Qwen版listener音轨</option><option value="latest">SFT2752版listener音轨</option><option value="mute">静音</option></select>
+<div><button id="prev">上一条</button><button id="play">同步播放</button><button id="pause">暂停</button><button id="next">下一条</button></div>
+<input id="seek" type="range" min="0" max="1" step=".01" value="0"><span id="time">0.00s</span><p id="status"></p>
+<div class="grid"><div class="card"><span>Speaker</span><video id="speaker" muted playsinline preload="metadata"></video></div>
+<div class="card"><span>Listener GT（浏览器预览）</span><video id="gt" muted playsinline preload="metadata"></video></div>
+<div class="card"><span>联合8000＋原始Qwen</span><video id="joint" muted playsinline preload="metadata"></video></div>
+<div class="card"><span>联合8000＋SFT2752</span><video id="joint_sft2752" muted playsinline preload="metadata"></video></div>
+<div class="card"><span>DyStream · listener适配</span><video id="dystream" muted playsinline preload="metadata"></video></div>
+<div class="card"><span>Avatar Forcing · source-only适配</span><video id="avatarforcing" muted playsinline preload="metadata"></video></div></div>
+<audio id="sound" preload="metadata"></audio><h3>本片段DECA动作</h3><div id="perclip" class="overflow"></div>
+<details><summary>本片段：两版Qwen规划描述</summary><p>这是模型预测的反应计划，不是真值描述。</p><pre id="planning"></pre></details><details><summary>边界、检测及覆盖</summary><pre id="receipt"></pre></details>
+<h2>配对差值及来源聚类95%区间</h2><p>SFT2752版−对照；距离指标为负表示SFT2752版较低。10000次整来源重采样；不包含训练/生成seed变化。集合FID不作逐片段bootstrap。</p><div id="paired" class="overflow"></div>
+<p id="limits"></p><a href="../p2_vico43_compare_20261106/">旧版完整视频与BFM/L2L补充</a></main>
+<script>
+let D,index=0,ready=false,playing=false;const vids=['speaker','gt','joint','joint_sft2752','dystream','avatarforcing'];const $=x=>document.getElementById(x);const fmt=x=>x==null?'N/A':Number(x).toFixed(5);const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function table(head,rows){return '<table><thead><tr>'+head.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('')+'</tbody></table>'}
+const cols=[['L1','exp'],['L1','head_rotation'],['L1','jaw_rotation'],['Frechet','exp'],['Frechet','head_rotation'],['RTLCC','exp'],['RWTLCC','exp']];
+function motionTable(models,per=false){return table(['方法',...cols.map(x=>x.join('/')+' ↓')],Object.entries(models).map(([n,r])=>[D.labels[n]||n,...cols.map(([m,g])=>fmt((per?r:r.metrics)[m][g]))]));}
+function pause(){playing=false;for(const n of vids)$(n).pause();$('sound').pause()}
+function sound(){const c=D.cases[index],mode=$('audio').value;$('sound').pause();if(mode!=='mute'){$('sound').src=mode==='speaker'?c.speaker_audio:mode==='latest'?c.sft_audio:c.our_audio;$('sound').currentTime=$('speaker').currentTime;if(playing)$('sound').play().catch(e=>$('status').textContent=e.message)}}
+async function show(i){pause();ready=false;index=(i+D.cases.length)%D.cases.length;$('clip').value=index;const c=D.cases[index],mode=$('geometry').value;
+for(const n of vids){$(n).src=n==='speaker'?c.speaker:n==='gt'?c.gt:c[mode][n];$(n).load()}
+$('planning').textContent=JSON.stringify(c.planning,null,2);$('seek').max=c.duration;$('seek').value=0;$('perclip').innerHTML=motionTable(Object.fromEntries(Object.entries(c.deca).filter(([n])=>D.labels[n])),true);
+$('receipt').textContent=JSON.stringify({id:c.id,frames:c.frames,duration:c.duration,max_timestamp_error_s:c.max_timestamp_error_s,SFT_missing_face_frames:c.detection.missing_face_frames,SFT_multi_face_frames:c.detection.multi_face_frames,coverage:'RTLCC短于完整lag范围N/A；RWTLCC不足4秒N/A；不填充'},null,2);
+$('status').textContent='加载 '+c.id;sound();
+await Promise.all(vids.map(n=>new Promise((resolve,reject)=>{const v=$(n);if(v.readyState>=1)return resolve();v.addEventListener('loadedmetadata',resolve,{once:true});v.addEventListener('error',()=>reject(Error(n+' media load failed')),{once:true})})));
+ready=true;$('status').textContent=`${index+1}/43 · ${c.id} · ${c.duration.toFixed(3)}s`;}
+$('play').onclick=async()=>{if(!ready)return;playing=true;await Promise.all(vids.map(n=>$(n).play()));if($('audio').value!=='mute')await $('sound').play()};$('pause').onclick=pause;
+$('seek').oninput=()=>{for(const n of vids)$(n).currentTime=Math.min(+$('seek').value,$(n).duration-.001);$('sound').currentTime=+$('seek').value};
+$('clip').onchange=()=>show(+$('clip').value).catch(fail);$('geometry').onchange=()=>show(index).catch(fail);$('audio').onchange=sound;$('prev').onclick=()=>show(index-1).catch(fail);$('next').onclick=()=>show(index+1).catch(fail);
+function fail(e){$('status').textContent=e.stack||e.message;console.error(e)}
+setInterval(()=>{if(!ready)return;const t=$('speaker').currentTime;$('seek').value=t;$('time').textContent=t.toFixed(2)+'s';if(playing){for(const n of vids.slice(1)){const v=$(n);if(Math.abs(v.currentTime-t)>.15&&!v.ended)v.currentTime=Math.min(t,v.duration-.001)}if($('audio').value!=='mute'&&Math.abs($('sound').currentTime-t)>.15)$('sound').currentTime=t;if($('speaker').ended)pause()}},100);
+window.reviewDebug=()=>({ready,index,playing,count:D?.count,times:vids.map(n=>$(n).currentTime),errors:vids.filter(n=>$(n).error).map(n=>$(n).error.message)});
+fetch('data.json').then(r=>r.json()).then(async d=>{D=d;$('clip').innerHTML=d.cases.map((c,i)=>`<option value="${i}">${i+1} · ${esc(c.id)} · ${c.duration.toFixed(2)}s</option>`).join('');
+$('image').innerHTML=table(['方法','PSNR ↑','SSIM ↑','FID ↓','CSIM ↑','CPBD ↑'],Object.entries(d.image).map(([n,r])=>[d.labels[n],...['psnr','ssim','fid','csim','cpbd'].map(k=>fmt(r[k]))]));
+$('deca').innerHTML=motionTable(Object.fromEntries(Object.entries(d.deca).filter(([n])=>d.labels[n])));$('l2l').innerHTML=motionTable(Object.fromEntries(Object.entries(d.deca).filter(([n])=>n.startsWith('learning2listen/'))));
+$('variance').innerHTML=table(['来源','表情方差','头旋转方差','下颌方差'],[['Listener GT',...['exp','head_rotation','jaw_rotation'].map(g=>d.deca.joint.metrics.V_D_GT[g].toFixed(8))],...Object.keys(d.labels).map(n=>[d.labels[n],...['exp','head_rotation','jaw_rotation'].map(g=>d.deca[n].metrics.V_D[g].toFixed(8))])]);
+let br=[];for(const [m,groups] of Object.entries(d.bfm.joint.metrics_raw))for(const g of Object.keys(groups))br.push([(m==='FD'?'FD/L1':m)+'/'+g,...Object.keys(d.labels).map(n=>fmt(d.bfm[n].metrics_raw[m][g])),d.bfm.joint.coverage[m][g]]);$('bfm').innerHTML=table(['指标/组',...Object.values(d.labels),'覆盖pair'],br);
+let rows=[];for(const [n,r] of Object.entries(d.paired))for(const [m,g] of cols){const v=r[m][g];rows.push([d.labels[n],m+'/'+g,fmt(v.mean),'['+v.ci95.map(fmt).join(', ')+']',v.clips+'/'+v.source_groups])}$('paired').innerHTML=table(['baseline','指标','SFT2752版−对照','95%区间','pair/来源'],rows);$('limits').textContent=d.limitations.join(' ');await show(0)}).catch(fail);
+</script></html>

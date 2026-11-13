@@ -1,0 +1,66 @@
+{
+  "schema": "listen-native-caption-pilot-v1",
+  "model": "/private/ckpts/Qwen3-Omni/Instruct",
+  "media": {
+    "fps": 8,
+    "max_frames": 128,
+    "max_edge": 768,
+    "max_audio_seconds": 16
+  },
+  "prompt": "Watch and listen to this listener clip. Write one coherent English paragraph describing directly visible actions and audible listener responses across the whole clip.\nDescribe actions in order, sustained states, simultaneous actions, and genuine repetitions. Include visible facial, eye, head, hand, and body movements. Describe each sustained state or movement once; retain separate occurrences when they actually recur. Use a clear subject and natural temporal connections.\nQuote clearly intelligible spoken responses exactly as heard, and describe audible nonverbal vocalizations. Do not guess unclear words or infer sounds from mouth movements. listener_audio_is_silent is computed from the supplied waveform: true means every sample is zero, so describe visible actions only and do not claim speech, audible laughter, or other vocalizations. false does not by itself establish that any vocal response occurs.\nBefore writing, check every supplementary nodding interval against its place in the clip. Integrate supported nodding into the action sequence, including what happens at the same time. Do not invent an action if the video clearly contradicts it. An empty list does not prove nodding is absent.\nInterval keys: \"id\" identifies a candidate interval, not an individual nod; \"start\" and \"end\" are seconds relative to the current pair's start (0 = pair start); \"observation\" names the movement. An interval can contain multiple nods. Do not infer nod counts from interval counts, or describe a head dip and the same nod as two separate actions.\nDescribe physical movements and expressions, not thoughts, intentions, feelings, agreement, or communicative meanings. Avoid interpretations such as indicating, suggesting, thoughtful, contemplative, or acknowledgment. Do not add unrelated appearance details.\nOutput only the paragraph describing the person. Do not explain the input, detector, supplementary data, silence flag, interval IDs, or numeric timestamps. Do not output JSON, a list, or your checking process.",
+  "input_manifest_sha256": "753798404ad53bb7bcc12628c5801aef9e42b7556fcc70d01db1d95488842bdb",
+  "prepared_manifest_sha256": "7d540a1a1333132ef619cdbea19c92ef551db9679f1215eea30e2696c283ed39",
+  "temperature": 0,
+  "max_tokens": 4096,
+  "max_model_len": 49152,
+  "batch_size": 1,
+  "native_alignment": "explicit_vllm_grid_time_v1",
+  "human_ground_truth": false,
+  "training_admitted": false,
+  "original_results_changed": false,
+  "new_wav_files": false,
+  "scope": "fresh independent annotation for every one of the 50 clips; no old paragraph input or output reuse",
+  "gpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "single_paragraph_regex": "[A-Za-z][^\\n\\r]*",
+  "repetition_penalty": 1.05,
+  "decode_graph": true,
+  "task": "nod_guided_direct_annotation",
+  "nod_instruction": "Watch and listen to this listener clip. Write one coherent English paragraph describing directly visible actions and audible listener responses across the whole clip.\nDescribe actions in order, sustained states, simultaneous actions, and genuine repetitions. Include visible facial, eye, head, hand, and body movements. Describe each sustained state or movement once; retain separate occurrences when they actually recur. Use a clear subject and natural temporal connections.\nQuote clearly intelligible spoken responses exactly as heard, and describe audible nonverbal vocalizations. Do not guess unclear words or infer sounds from mouth movements. listener_audio_is_silent is computed from the supplied waveform: true means every sample is zero, so describe visible actions only and do not claim speech, audible laughter, or other vocalizations. false does not by itself establish that any vocal response occurs.\nBefore writing, check every supplementary nodding interval against its place in the clip. Integrate supported nodding into the action sequence, including what happens at the same time. Do not invent an action if the video clearly contradicts it. An empty list does not prove nodding is absent.\nInterval keys: \"id\" identifies a candidate interval, not an individual nod; \"start\" and \"end\" are seconds relative to the current pair's start (0 = pair start); \"observation\" names the movement. An interval can contain multiple nods. Do not infer nod counts from interval counts, or describe a head dip and the same nod as two separate actions.\nDescribe physical movements and expressions, not thoughts, intentions, feelings, agreement, or communicative meanings. Avoid interpretations such as indicating, suggesting, thoughtful, contemplative, or acknowledgment. Do not add unrelated appearance details.\nOutput only the paragraph describing the person. Do not explain the input, detector, supplementary data, silence flag, interval IDs, or numeric timestamps. Do not output JSON, a list, or your checking process.",
+  "prompt_version": "native-av-natural-nod-v1",
+  "decoding_attempts": [
+    {
+      "temperature": 0,
+      "max_tokens": 4096,
+      "repetition_penalty": 1.05
+    },
+    {
+      "temperature": 0,
+      "max_tokens": 4096,
+      "repetition_penalty": 1.12
+    }
+  ],
+  "retry_policy": "At most one retry for empty, unfinished or verbatim-loop output; retain every raw attempt; never truncate or rewrite captions",
+  "source_manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_native_caption_clean50_20261030/text8/manifest.json",
+  "old_caption_input": false,
+  "reuse_previous_outputs": false,
+  "nod_protocol_sha256": "dabd29fd2d01d4658c6743e8e423b320ce1e432e1143d316bc61eda3141398bc",
+  "gpu_memory_by_gpu": {
+    "0": 0.55,
+    "1": 0.55,
+    "2": 0.55,
+    "3": 0.55,
+    "4": 0.85,
+    "5": 0.85,
+    "6": 0.85,
+    "7": 0.85
+  }
+}

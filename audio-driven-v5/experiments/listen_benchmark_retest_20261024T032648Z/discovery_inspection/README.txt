@@ -1,0 +1,1 @@
+Qualitative visual inspection of original-frame-rate cropped previews, sampled to contact sheets. Times are printed on frames. Three diagnostic examples only; no exhaustive event ground truth and no audio listening verification.

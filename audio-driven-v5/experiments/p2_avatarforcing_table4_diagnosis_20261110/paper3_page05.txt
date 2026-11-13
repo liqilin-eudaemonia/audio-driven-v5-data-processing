@@ -1,0 +1,150 @@
+Algorithm 1 Motion inference with KV caching
+Require: ODE timesteps {tn}T
+n=0, motion generator vθ, video
+length N, block size B, max cache size M, user inputs
+(au, mu), avatar audio ai, latent-to-frame decoder Dec, and
+id latent zS.
+1: Divide the frames into L = ⌈N/B⌉blocks
+2: Initialize KV, cKV ←[ ], [ ] ▷Frame & condition caches
+3: for i = 1 to L do
+4:
+Sample Noise block mi
+t0 ∼N(0, I),
+▷mi
+t0 ∈RB×d
+5:
+Acquire User inputs (ai
+u, mi
+u) and avatar audio ai .
+6:
+Set ci ←(ai
+u, mi
+u, ai)
+▷Condition triplet
+7:
+for j = 0 to T do
+8:
+Solve ODE: mi
+tj+1 ←vθ(mi
+tj, tj; ci, KV, cKV)
+9:
+end for
+10:
+Decode & Return
+xi
+1 ←Dec(zS, mi
+1) ∈RB×3×H×W
+11:
+Update caches kvi, ckvi ←vθ(zi
+1, 1; ci, KV, cKV)
+12:
+if |KV| = |cKV| = M then
+13:
+KV.pop(0) and cKV.pop(0)
+14:
+end if
+15:
+KV.append(kvi) and cKV.append(ckvi)
+16: end for
+  \ los s _{DF}(\
+theta ) 
+= \ mat hbb {E}
+_ {n,
+ t_n, \mathbf {m}^n_{t_n}}\! \| v_{\theta }(\mathbf {m}^n_{t_n}, t_n, \mathbf {c}^n) \!-\! (\mathbf {m}_1^n \!-\! \mathbf {m}_0^n)\|, \label {eq:train_ours} (6)
+where n ∈[1, N] denotes the frame index, tn ∈[0, 1] is the
+per-frame noise timestep, cn = (ai
+u, mi
+u, ai) is the user-
+avatar condition triplet, mn
+tn ∈Rd is the noisy motion la-
+tent. For simplicity, we omit the reference motion condition
+mS in Eq. (6).
+With the trained model, we can generate the interactive
+avatar motion given user inputs and avatar audio in an au-
+toregressive rollout. We provide the pseudo code for motion
+sampling in Algorithm 1, which adopts rolling KV cache in
+a blockwise manner [21, 59]. Further details on inference
+are provided in Appendix D.
+4.2. Enhancing Motion Expressiveness
+While our model enables real-time motion generation, we
+observe that it struggles to produce expressive motions cru-
+cial for natural human conversation. In contrast to achieving
+an accurate lip-sync that has an almost one-to-one match
+with the avatar audio, appropriate reaction to the user’s mo-
+tion and audio is highly ambiguous, as there is no single
+correct response [33, 35, 54].
+Moreover, as shown in Fig. 5, existing listening datasets
+generally exhibit lower motion expressiveness compared to
+speaking datasets, which leads models to learn passive and
+non-expressive listening behaviors. While prior work at-
+tempted to address it with personalized motion [35] or ex-
+ternal text instructions [33], these methods do not address
+the core challenge of learning the true interactive behavior
+for natural interaction.
+To generate vibrant and expressive reactions, we for-
+mulate this as an alignment problem and apply the Rein-
+0.0
+0.5
+1.0
+1.5
+2.0
+2.5
+3.0
+Variance (over time of L2 per frame)
+0.0
+0.5
+1.0
+1.5
+2.0
+2.5
+3.0
+Density
+Stiff, Static
+Listener
+Speaker
+Figure 5. Variance visualization of the L2-norm of 3DMM ex-
+pressions [13] for the speaker and listener on ViCo [62] dataset.
+Higher variance indicates higher expressiveness.
+forcement Learning from Human Feedback (RLHF) [36]
+approach. The main challenge lies in defining an explicit
+reward for the avatar’s interactive behavior, which must ac-
+count for the interplay between avatar audio, user audio,
+user motion, and the generated video, which are difficult to
+evaluate even for humans.
+We adapted a reward-free method, Direct Preference Op-
+timization (DPO) [41, 52], for fine-tuning our motion gener-
+ation based on diffusion forcing. Specifically, we construct
+preference pairs of motion latents (mw, ml) as follows:
+• Preferred sample mw: the motion latent from the
+ground-truth video, exhibiting expressive and contextu-
+ally appropriate responses.
+• Less preferred sample ml: the motion latent generated
+by a separately trained talking avatar model [24], con-
+ditioned solely on the avatar audio.
+This paired design yields a clear signal for enhancing ex-
+pressiveness, emphasizing active listening and reactive mo-
+tion while leaving other aspects, such as lip sync or speech-
+driven motion, unchanged.
+Building on the original DPO objective LDPO (Eq. (2))
+with our constructed pairs (mw, ml), we fine-tune our dif-
+fusion forcing model vθ with the following objective:
+  \los s _{ ft} ( \the ta ) = \loss _{DF}(\theta ) + \lambda \loss _{DPO}(\theta ), \label {eq:total_objective} 
+(7)
+where λ is a balancing coefficient. As a result, our model
+achieves efficient preference alignment without requiring a
+dedicated reward model, which we validate in Sec. 5.5. We
+provide the detailed formulation of LDPO in Appendix C.
+5. Experiments
+5.1. Dataset and Preprocessing
+We use dyadic conversation video datasets: RealTalk [14]
+and ViCo [62].
+We first detect scene changes using
+PySceneDetect [40] to split the videos into individual
+clips.
+We then detect and track each face using Face-
+Alignment [4], crop and resize it to 512×512.
+Next,
+we separate and assign the speaker and listener audio us-
+ing a visual-grounded speech separation model [27]. All
+videos are converted to 25 fps, and audio is resampled to
+18078

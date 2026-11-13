@@ -1,0 +1,67 @@
+Dyadic Interaction Modeling
+11
+Table 2: Quantitative Comparison of Listener Generation on LM_Listener [48]
+Dataset. † denotes the corresponding method has been pre-trained on the CAN-
+DOR [54] dataset. ∗denotes the method didn’t release any code, and we re-implement
+it from scratch on our own.
+Method
+FD↓
+P-FD↓
+MSE↓
+SID
+Var
+rPCC↓
+Exp Pose Exp Pose Exp Pose Exp Pose Exp Pose Exp Pose
+Random
+63.37 0.10 67.14 0.10 2.14 0.03 4.06 3.49 1.57 0.01 0.08 0.06
+Mirror
+69.25 0.16 87.11 0.19 1.95 0.03 4.06 3.54 1.51 0.01 0.74 0.86
+Nearest Motion
+56.00 0.07 58.94 0.08 2.04 0.02 3.94 3.46 1.62 0.01 0.13 0.13
+ELP∗[62]
+22.06 0.01 22.09 0.01 0.45 0.01 5.07 3.64 0.49 0.01 0.09 0.04
+RLHG [80]
+30.50 0.02 31.74 0.02 0.69 0.01 3.84 3.65 0.94 0.01 0.09 0.03
+L2L [47]
+23.56 0.02 23.94 0.02 0.75 0.01 3.50 3.00 0.58 0.01 0.12 0.04
+L2L† [47]
+21.63 0.02 22.03 0.02 0.73 0.01 3.50 3.00 0.67 0.01 0.14 0.03
+GT
+-
+-
+-
+-
+-
+-
+4.97 3.69 0.78 0.01
+-
+-
+DIM-Listener † 12.49 0.01 12.95 0.02 0.29 0.01 4.53 2.93 0.94 0.01 0.04 0.02
+4.2
+Benchmark Performances
+Quantitative Results. We retrain RLHG [80], L2L [47] and ELP [62] on the
+ViCo dataset [80]. Since the Dyadic Interaction Modeling of our pipeline is con-
+ducted on CANDOR [54], we also pre-train L2L [47], a recent state-of-the-art
+method, which adopts a similar approach using VQ-VAE [50] in the model, on
+CANDOR [54], for fair comparison. Table 1 shows the quantitative comparison
+of Listener Generation on ViCo [80]. Based on the metrics presented in Table 1,
+it is clear that our proposed DIM-Listener outperforms existing methods by a
+significant margin. Our method is about 1.5 times better than the current state-
+of-the-art method L2L [47] in terms of the most important metrics FD and P-FD
+of expressions in the Listener Generation task. The performance gain of L2L af-
+ter being trained on CANDOR [54] remains limited compared to the gain of our
+method, which shows that the effectiveness of Dyadic Interaction Modeling is as
+a result of our novel framework rather than additional data. In measuring mo-
+tion diversity (Var, SID), DIM-Listener generates diverse listener reactions to
+the speaker. We expect that listeners’ movements will showcase a greater range
+of diversity when the FD and MSE are kept to a minimum. As demonstrated in
+Table 1, it is evident that even when FD and MSE are performing well (close to
+ground truth), DIM-Listener remains highly effective in both the Var and SID,
+which benefits from our proposed Dyadic Interaction Modeling between speak-
+ers and listeners. The RPCC measures the motion synchronization between the
+speaker and the listener, and it can be found that our method achieves compet-
+itive performance.
+We also retrain RLHG [80], L2L [47] and our model on LM_Listener [48]
+dataset. Table. 2 demonstrates the quantitative comparison. We can observe that
+FD and P-FD of expressions of DIM-Listener is about two times better than
+L2L [47] and three times better than RLHG [80]. We also achieve state-of-the-art

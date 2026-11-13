@@ -1,0 +1,108 @@
+# Route-A Qwen3-Omni + LTX-2.3 AV integration smoke test.
+# Uses eight short, paired Seamless samples and performs two real optimizer steps.
+
+model:
+  model_path: "/public/2_CKPT/2_AVATAR/LTX23/LTX_23/ltx-2.3-22b-dev.safetensors"
+  text_encoder_path: "/public/2_CKPT/0_WM/LTX2.0_TEXT_ENCODER"
+  training_mode: "lora"
+  load_checkpoint: null
+
+lora:
+  rank: 8
+  alpha: 8
+  dropout: 0.0
+  target_modules: ["to_k", "to_q", "to_v", "to_out.0"]
+  exclude_modules: '(?:^|.*\.)(?:omni_attn2|audio_omni_attn2|audio_ff_attn2)(?:\..*)?'
+  modules_to_save:
+    - "omni_attn2"
+    - "audio_omni_attn2"
+    - "video_omni_layer_adapter"
+    - "audio_omni_layer_adapter"
+    - "omni_field_resampler"
+    - "audio_ff_attn2"
+
+training_strategy:
+  name: "text_to_video"
+  i2av_only: true
+  first_frame_conditioning_p: 1.0
+  with_audio: true
+  audio_latents_dir: "audio_latents"
+
+  # Omni packages provide separate video/audio prompts. Gemma's modality
+  # connectors therefore stay online, while Qwen3-VL is not used.
+  online_conditioning: false
+  online_text_conditioning: true
+  online_qwen_conditioning: false
+  use_qwen_cond: false
+  qwen_image_width: 512
+  qwen_image_height: 512
+
+  use_omni_cond: true
+  omni_conditions_dir: "/public/1_FEATURE/0_GM/3_CAPTION/1_omni_no_context_raw_v2"
+  omni_cond_for_audio: true
+  omni_cross_attention_dim: 1024
+  audio_omni_cross_attention_dim: 1024
+  use_omni_layer_adapters: true
+  omni_layer_adapter_num_layers: 4
+  omni_layer_adapter_input_dim: 1024
+  use_omni_field_resampler: true
+  omni_field_resampler_input_dim: 2048
+  omni_field_resampler_num_heads: 8
+  omni_dropout: 0.0
+
+  use_listener_timbre_cond: false
+  use_first_frame_audio_cond: true
+  first_frame_dropout: 0.0
+
+optimization:
+  learning_rate: 1.0e-4
+  steps: 2
+  batch_size: 1
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0
+  optimizer_type: "adamw8bit"
+  scheduler_type: "constant"
+  scheduler_params: {}
+  enable_gradient_checkpointing: true
+
+acceleration:
+  mixed_precision_mode: "bf16"
+  quantization: null
+  load_text_encoder_in_8bit: true
+  offload_optimizer_during_validation: false
+
+data:
+  preprocessed_data_root: "/private/liqi_workspace/project_code/Omni-LTX/experiments/seamless_omni_ltx23/smoke_data"
+  metadata_jsonls:
+    - "/private/liqi_workspace/project_code/Omni-LTX/experiments/seamless_omni_ltx23/smoke_data/metadata.jsonl"
+  num_dataloader_workers: 0
+  caption_field: "sd_text"
+  video_field: "video"
+  path_remap: {}
+  length_bucket:
+    enabled: false
+    sync_bucket_across_ranks: false
+    max_batches_per_epoch: null
+    allowed_frames: null
+
+validation:
+  interval: null
+  skip_initial_validation: true
+  metrics: []
+
+checkpoints:
+  interval: 1
+  keep_last_n: 2
+  precision: "bfloat16"
+  no_resume: true
+  save_training_state: "minimal"
+
+flow_matching:
+  timestep_sampling_mode: "shifted_logit_normal"
+  timestep_sampling_params: {}
+
+hub: {push_to_hub: false, hub_model_id: null}
+wandb: {enabled: false}
+
+seed: 43
+output_dir: "outputs/smoke_seamless_omni_route_a_ltx23_optimized_1g"

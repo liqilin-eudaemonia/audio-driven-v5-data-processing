@@ -1,0 +1,47 @@
+% Included by 07_experiments.tex as Section 5.2; do not also load from main.tex.
+\subsection{Evaluation Protocol}
+\label{sec:evaluation}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{F4_evaluation.pdf}
+\caption{\figdraft{F4: Evaluation design} Clip-level category agreement removes the requirement to reproduce reference event times. Separate judgments address appropriateness under the current utterance and coordination within generated audio and video. Matching categories alone cannot establish either property. Event intervals are schematic; detectors and human-rating details remain to be specified.}
+\label{fig:evaluation}
+\end{figure*}
+% Paragraph role P01: 总体评价设计
+We extend an evaluation framework based on OmniResponse~\cite{omniresponse} with measures for listening feedback. The design considers media quality, visual behavior, and vocal activity, alongside three interaction dimensions: clip-level event-category agreement, contextual appropriateness and engagement, and audiovisual event coordination.
+\cnnote{实现范围}{这是本地扩展的评测框架，不表示完全复现OmniResponse作者原表。三组评价方向已确认；整段语义事件与人工评价的完整执行细则仍待落实。}
+
+\paragraph{Clip-level event-category agreement.}
+% Paragraph role P02: 一对多时序动机
+An utterance often constrains the affective or attitudinal direction of a response. Smiling or shared laughter may be natural after happy news, while a head shake can express disagreement. Even when responses have similar intent, listeners can nod, smile, or vocalize at different pauses, with different durations and repetition counts. Requiring overlap with a single reference's event intervals may therefore penalize an appropriate category expressed at a different time.
+
+% Paragraph role P03: 类别一致性及局限
+We collapse repeated instances of a category within a clip into a presence label and compute precision, recall, and macro-F1 separately for visual and audio categories. The comparison does not require temporal overlap between generated and reference events. It measures category agreement with the observed response, rather than event-localization accuracy. Affect does not uniquely determine behavior: happy news need not always elicit laughter. Category agreement therefore cannot recognize every reasonable response by itself. Allowing variation relative to reference timing also does not make premature, prolonged, or internally uncoordinated feedback acceptable. \Cref{fig:evaluation} illustrates these distinct questions.
+\cnnote{待定技术关系}{最终类别表、外部检测器、阈值、未知标签处理与核验方式未定。P/R的汇总口径尚未写明，不自行假定为micro或macro；Macro-F1沿用已确认表述。训练Event头的类别也不直接作为最终评测类别表。}
+
+\paragraph{Video quality and visual behavior.}
+% Paragraph role P04: 视频指标定义
+Paired video evaluation includes PSNR, SSIM, LPIPS, FID, FVD, Emo-Acc, Emo-Div, and $\Delta$Resp. PSNR and SSIM measure pixel and structural similarity; LPIPS measures perceptual distance; FID and FVD compare image and video feature distributions. Following the definitions used by AnyTalker~\cite{anytalker}, Emo-Acc measures agreement between predicted seven-class expression labels on jointly valid face frames. Emo-Div counts distinct predicted expression classes per video; generated and reference values are reported separately, without assuming that larger values are better. $\Delta$Resp measures the difference in average eye-and-brow movement magnitude during listening, weighted by phase duration.
+
+% Paragraph role P05: 视频指标解读边界
+These measures provide complementary observations, not complete judgments of interaction. Emo-Acc is frame-level reference agreement, not contextual emotional correctness. $\Delta$Resp does not directly measure nod counts, eye contact, or semantic appropriateness. Framewise similarity describes differences from one reference and does not exclude other valid responses.
+\cnnote{指标引用待补}{LPIPS、FID、FVD、表情工具及其他实际使用指标的原始论文引用需按实现核对后补齐。本版不编造书目信息，也不依据相同指标名混用不同实现。}
+
+% Paragraph role P06: GLARE补充协议
+The framework also integrates GLARE's R-F1, R-tIoU, R-ATD, and R-FID~\cite{glare} for supplementary visual-reaction and temporal-alignment diagnostics. GLARE's R-F1 requires category and interval matching, so it is distinct from our clip-level category F1.
+
+\paragraph{Vocal activity, audio quality, and synchronization.}
+% Paragraph role P07: 声音活动定义及局限
+For brief, intermittent listener sounds, the implementation distinguishes energy-based acoustic activity from speech detected by a voice-activity detector. It supports activity-duration error, the fraction of reference-vocal clips with an entirely missed response, extra vocal time during reference silence, and false vocalization on entirely silent clips. Acoustic activity may include laughter or humming, but can also include noise; it is not itself a semantic backchannel event. Strict and tolerant interval-matching precision, recall, F1, and boundary errors provide additional timing diagnostics, separate from clip-level semantic category agreement.
+
+% Paragraph role P08: 适用音质与同步
+For continuous speech windows that satisfy their input requirements, UTMOSv2 assesses audio quality and SyncNet's LSE-D and LSE-C assess synchronization between mouth motion and generated sound. Very short acknowledgments, non-speech vocalizations, and silent clips may not support these measures.
+\cnnote{评测执行要求}{对不可测项报告N/A和有效覆盖率，不通过重复或拼接短回应获得分数。这类样本仍保留声音活动与行为评价。UTMOSv2和SyncNet的正式引用、适用窗口及最终报告项按实际实现补齐。}
+
+\paragraph{Contextual appropriateness and audiovisual coordination.}
+% Paragraph role P09: 语境与声画协调
+The design considers whether feedback fits the current speaker audio, is natural without being excessive, and conveys listening engagement. It also considers whether generated sounds and movements form a coordinated response, such as laughter accompanying a smiling face. Different reasonable responses and natural quiet listening are allowed. The human-assessment design is described in \cref{sec:qualitative}.
+\cnnote{人工评价待完成}{这两组初步采用人工评价，具体评分形式未定。后续分别设置语境适当性、参与感／自然度及视听协调维度，不能将问卷工具就绪写成已收集人工结果。}
+\cnnote{保留的中文执行要求}{评价针对最终生成的音视频进行，不以训练辅助头的分类结果替代生成效果。各项分数同时报告有效样本或窗口覆盖率；未知标签、检测失败与真正无事件分开处理，不将不可测项填为零或满分。}
+\cnnote{已有执行与待补}{视频八项及声音活动已有双200结果；最新6000步结果中UTMOSv2因参考语音过短而无有效窗口。SyncNet与GLARE指标已接入工具，但该轮未运行。整段语义事件指标与人工评价待实施。}

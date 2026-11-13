@@ -1,0 +1,67 @@
+{
+  "schema": "listen-native-caption-pilot-v1",
+  "model": "/private/ckpts/Qwen3-Omni/Instruct",
+  "media": {
+    "fps": 8,
+    "max_frames": 128,
+    "max_edge": 768,
+    "max_audio_seconds": 16
+  },
+  "prompt": "Watch and listen to this {duration:.3f}-second clip of a listener. Write one coherent English paragraph describing the listener's observable visual behavior and audible vocal responses across the whole clip.\nDescribe how actions unfold in order, which expressions or postures persist, which actions happen together, and which actions genuinely repeat. Use natural temporal language such as initially, then, while, and toward the end when useful. Describe a sustained state once rather than turning it into repeated actions. Give a repetition count only when clearly supported.\nDescribe directly visible movements of the face, eyes, head, hands, and body, including brief movements when visible. Use action names such as nodding only when the motion supports them. Describe audible laughter or other nonverbal vocalizations, and quote clearly intelligible spoken responses exactly as heard. Do not guess unclear words. Distinguish visible mouth movement from an audible vocal response, and mention periods without vocalization when relevant.\nUse the supplied video and synchronized listener audio, with the supplementary evidence below. Do not infer thoughts, intentions, feelings, agreement, communicative meaning, or causes; avoid interpretive claims such as indicating, suggesting, or as if. Do not invent actions or sounds to fill a quiet interval. Keep a clear subject and write concrete, connected sentences without redundant descriptions or unrelated appearance details.\nOutput only the natural-language paragraph. Do not output JSON, a list, individual event intervals, or numeric timestamps.\n\nSupplementary nod intervals: id is an identifier; start/end are pair-relative seconds; observation names the movement. Naturally include supported nodding, without treating intervals as counts or an empty list as proof of absence. Do not describe this metadata.\nlistener_audio_is_silent=true means the supplied waveform is entirely zero: do not claim audible speech or vocalizations. Otherwise describe only what you hear.",
+  "input_manifest_sha256": "753798404ad53bb7bcc12628c5801aef9e42b7556fcc70d01db1d95488842bdb",
+  "prepared_manifest_sha256": "7d540a1a1333132ef619cdbea19c92ef551db9679f1215eea30e2696c283ed39",
+  "temperature": 0,
+  "max_tokens": 4096,
+  "max_model_len": 49152,
+  "batch_size": 1,
+  "native_alignment": "explicit_vllm_grid_time_v1",
+  "human_ground_truth": false,
+  "training_admitted": false,
+  "original_results_changed": false,
+  "new_wav_files": false,
+  "scope": "fresh independent annotation for every one of the 50 clips; no old paragraph input or output reuse",
+  "gpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "single_paragraph_regex": "[A-Za-z][^\\n\\r]*",
+  "repetition_penalty": 1.05,
+  "decode_graph": true,
+  "task": "nod_guided_direct_annotation",
+  "nod_instruction": "Watch and listen to this {duration:.3f}-second clip of a listener. Write one coherent English paragraph describing the listener's observable visual behavior and audible vocal responses across the whole clip.\nDescribe how actions unfold in order, which expressions or postures persist, which actions happen together, and which actions genuinely repeat. Use natural temporal language such as initially, then, while, and toward the end when useful. Describe a sustained state once rather than turning it into repeated actions. Give a repetition count only when clearly supported.\nDescribe directly visible movements of the face, eyes, head, hands, and body, including brief movements when visible. Use action names such as nodding only when the motion supports them. Describe audible laughter or other nonverbal vocalizations, and quote clearly intelligible spoken responses exactly as heard. Do not guess unclear words. Distinguish visible mouth movement from an audible vocal response, and mention periods without vocalization when relevant.\nUse the supplied video and synchronized listener audio, with the supplementary evidence below. Do not infer thoughts, intentions, feelings, agreement, communicative meaning, or causes; avoid interpretive claims such as indicating, suggesting, or as if. Do not invent actions or sounds to fill a quiet interval. Keep a clear subject and write concrete, connected sentences without redundant descriptions or unrelated appearance details.\nOutput only the natural-language paragraph. Do not output JSON, a list, individual event intervals, or numeric timestamps.\n\nSupplementary nod intervals: id is an identifier; start/end are pair-relative seconds; observation names the movement. Naturally include supported nodding, without treating intervals as counts or an empty list as proof of absence. Do not describe this metadata.\nlistener_audio_is_silent=true means the supplied waveform is entirely zero: do not claim audible speech or vocalizations. Otherwise describe only what you hear.",
+  "prompt_version": "native-av-first-plus-evidence-pilot-v1",
+  "prompt_style": "first_plus_evidence",
+  "decoding_attempts": [
+    {
+      "temperature": 0,
+      "max_tokens": 4096,
+      "repetition_penalty": 1.05
+    },
+    {
+      "temperature": 0,
+      "max_tokens": 4096,
+      "repetition_penalty": 1.12
+    }
+  ],
+  "retry_policy": "At most one retry for empty, unfinished or verbatim-loop output; retain every raw attempt; never truncate or rewrite captions",
+  "source_manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_native_caption_clean50_20261030/text8/manifest.json",
+  "old_caption_input": false,
+  "reuse_previous_outputs": false,
+  "nod_protocol_sha256": "dabd29fd2d01d4658c6743e8e423b320ce1e432e1143d316bc61eda3141398bc",
+  "gpu_memory_by_gpu": {
+    "0": 0.55,
+    "1": 0.55,
+    "2": 0.55,
+    "3": 0.55,
+    "4": 0.85,
+    "5": 0.85,
+    "6": 0.85,
+    "7": 0.85
+  }
+}

@@ -1,0 +1,788 @@
+
+=== PDF PAGE 1 ===
+1                                                                                                                                                                                                     59      ListenFormer: Responsive Listening Head Generation with
+2                                                                                                                                                                                                     60
+
+3                                                                                                                                                                                                     61                 Non-autoregressive Transformers
+4                                                                                                                                                                                                     62
+5                                 Anonymous Author(s)                                                                              63
+6                                                                                                                                                                                                     64
+7   ABSTRACT                                                                                                                             Generated Listening Heads                                Generated Listening Heads       65
+8     As one of the crucial elements in human-robot interaction, respon-                                                                                                      66
+9      sive listening head generation has attracted considerable atten-            Speaker Video & Audio                                  Speaker Video & Audio                               67
+10     tion from researchers. It aims to generate a listening head video                                                                                                      68
+11     based on speaker’s audio and video as well as a reference listener                                         Generative Model                                   Generative Model         69
+12     image. However, existing methods exhibit two limitations: 1) the                                                                                                      70
+13     generation capability of their models is limited, resulting in gen-                                                                                                      71
+14     erated videos that are far from real ones, and 2) they mostly em-                                                                                                      72
+15     ploy autoregressive generative models, unable to mitigate the risk                                       Reference Image                                                 Reference Image          73
+16      of error accumulation. To tackle these issues, we propose Listen-                 (a) Autoregressive model             (b) Non-autoregressive model           74
+17     former that leverages the powerful temporal modeling capability                                                                                                      75
+18      of transformers for generation. It can perform non-autoregressive      Figure 1: Concept diagrams of the responsive listening head       76
+19     prediction with the proposed two-stage training method, simulta-     generation model. Given the speaker inputs and a refer-       77
+20     neously achieving temporal continuity and overall consistency in     ence listener image, the autoregressive model relies on past       78
+21     the outputs. To fully utilize the information from the speaker in-     outputs to predict future listener heads, whereas our pro-       79
+22      puts, we designed an audio-motion attention fusion module, which     posed non-autoregressive model does not depend on previ-       80
+23     improves the correlation of audio and motion features for accu-     ous outputs, deliberately computing results in parallel at       81
+24      rate response. Additionally, a novel decoding method called sliding     each timestep.                                                                         82
+25    window with a large shift is proposed for Listenformer, demon-                                                                                                      83
+26      strating both excellent computational efficiency and effectiveness.                                                                                                      84
+27     Extensive experiments show that Listenformer outperforms the                                                                                                      85
+28                                                                          primarily through non-verbal behaviors such as nodding, smiling,       86       existing state-of-the-art methods on ViCo and L2L datasets. And
+29                                                                       headshaking, etc.                                                                       87      a perceptual user study demonstrates the comprehensive perfor-
+30                                                              The speaker-centric synthesis, specifically talking head genera-       88     mance of our method in generating diversity, identity preserving,
+31                                                                               tion (THG), has received widespread attention. It plays a significant       89       speaker-listener synchronization, and attitude matching.
+32                                                                                role in many human-robot interaction (HRI) applications, such as       90
+33   CCS CONCEPTS                                                  film production, games, and education. Researchers use still im-       91
+34                                                                       ages and audio clips to generate vivid speaking videos, advancing       92
+35      • Information systems →Multimedia content creation.          towards improving lip-synchronization quality [8, 9, 17], adding       93
+36                                                                  emotions [15, 23, 49], and achieving free pose control [28, 31, 56].       94
+37   KEYWORDS                                              However, as another crucial component of HRI, research on re-       95
+38      listening head generation, video synthesis, transformer                sponsive listening head generation (LHG), is still in its early stages.       96
+39                                                           The synthesis of smooth listening head videos is also crucial for       97
+40    1  INTRODUCTION                                             successful communication [34, 40]. Through real-time feedback, the       98
+41                                                                                     listener demonstrates their level of engagement in communication,       99
+42     Communication is indispensable in the process of social interaction,     making the conversation easier to understand for both parties. In       100
+43     whether in a school setting or in a professional workplace [2, 37, 45].      addition to modeling everyday scenarios, it holds great potential for       101
+44      In face-to-face communication [24], participants take turns playing      enriching virtual character modeling, synthesizing fake audiences,       102
+45     the roles of speaker and listener to exchange information. The     and various other applications involving responsive listeners.             103
+46     speaker directly transmits information to the listener through verbal         Similar to THG, LHG also involves the synthesis of human heads       104
+47     expression, while the listener actively considers the information     and faces. Therefore, there are many aspects that can be borrowed       105
+48     provided by the speaker, decoding it, and offering real-time feedback     and applied. For instance, 3D Morphable Models (3DMM) [3, 12, 27]       106
+49                                                                          are often used in facial parameters modeling in the THG tasks.       107
+                     to                 make                                digital                                  or hard                                          copies                                                   of all                                                     or                                                          part of                                                                        this                                                       work                                                                               for                                                                           personal                                                                                    or50      Permission                                                                                  Similarly, this approach can be applied to LHG [35, 57] in order       108        classroom use                              is                        granted                               without                                           fee                                          provided                                                        that                                                          copies                                                                 are                                                                not                                                        made                                                                            or                                                                                     distributed
+51        for profit or commercial advantage and that copies bear this notice and the full citation      to maintain the stability of reconstructed faces. Meanwhile, there       109
+52      on the first page. Copyrights for components of this work owned by others than the      are differences between the two. Firstly, THG focuses solely on the       110
+         author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or
+53         republish, to post on servers or to redistribute to lists, requires prior specific permission       speaker, while LHG spans both the speaker and the listener, requir-       111
+54      and/or a fee. Request permissions from permissions@acm.org.                      ing more consideration of how listening behaviors are influenced by       112
+55    ACM MM, 2024, Melbourne, Australia                                         the speaker signals. Additionally, LHG receives signals from both       113
+     © 2024 Copyright held by the owner/author(s). Publication rights licensed to ACM.
+56     ACM ISBN 978-x-xxxx-xxxx-x/YY/MM                                       the speaker’s audio and video modalities, requiring consideration       114
+57       https://doi.org/10.1145/nnnnnnn.nnnnnnn                                       of the audio-visual fusion issue.                                                    115
+58                                                                                    1                                                                                                 116
+
+=== PDF PAGE 2 ===
+     ACM MM, 2024, Melbourne, Australia                                                                                                               Anon.
+
+
+117      At the earliest, static images, repeated frames, or pre-scripted          • Experimental results show a significant improvement achieved    175
+118    animations were commonly used to synthesize listeners. However,           by our proposed method compared to other state-of-the-       176
+119    they often appeared too rigid and were unable to respond realisti-               art methods on the ViCo and L2L dataset in terms of vi-       177
+120     cally to the speaker [57]. Recently, the LHG task was redefined and              sual naturalness, generation diversity, identity-preserving,       178
+121    introduced by Zhou et al. [57], who also curated the audio-visual              speaker-listener synchronization, and attitude matching.         179
+122    ViCo dataset comprising video pairs of speakers and listeners. Al-                                                                                                      180
+123    most simultaneously, Ng et al. [35] released a novel in-the-wild    2  RELATED WORK                                                        181
+124     dataset of dyadic conversations and proposed L2L for understand-                                                                                                      182
+                                                               2.1  Responsive Listening Head Generation
+125     ing human interactional communication. Subsequently, substantial                                                                                                      183
+126     efforts [7, 21, 41, 54] have been devoted to investigating listening      In early works, several rule-based methods [5, 6] were employed       184
+127    head generation techniques. However, these methods still encounter      to produce listener heads. However, those videos fall far short in       185
+128     three primary limitations. Firstly, the quality and naturalness of      terms of naturalness and realism. Subsequently, some data-driven       186
+129     the generated listener videos are currently not good enough. There      approaches [14, 36] based on facial keypoints were used to generate       187
+130      is still a significant gap compared to real videos, largely due to     2D listener motions, but they lost many details of facial expressions.       188
+131     limitations in model performance. Therefore, it is crucial to have a         In recent years, many 3D-based methods have been developed       189
+132     suitable and effective generative model for this task. Secondly, au-     due to their excellent facial reconstruction capabilities. Zhou et       190
+133     toregressive models have inherent limitations. As seen in Fig. 1(a),        al. [57] established a high-quality speaker-listener dataset, named       191
+134    most existing methods [7, 21, 35, 41, 54, 57] employ autoregressive      ViCo. The proposed baseline utilizes long-short term memory (LSTM)     192
+135    models, making it difficult to avoid issues such as slow synthesis      as the sequential model to handle the input of speaker audio and       193
+136    speed and error accumulation. Moreover, there is insufficient atten-      visual signals, generating facial 3DMM coefficients for the listener.       194
+137     tion to the fusion of audio and video signals for speakers. In LHG,     At almost the same time, Ng et al. [35] proposed a novel motion-       195
+138     the input speaker signals consist of two modalities: audio and visual      encoding VQ-VAE [47] to learn a discrete latent representation       196
+139    motion. Most existing methods [7, 21, 54, 57] simply concatenate      of realistic listener motion. Later, Huang et al. [21] adopted an       197
+140     the signals from these two modalities, overlooking the importance     enhanced renderer and video restoration module, improving the       198
+141     of cross-modal fusion. A robust fusion method is necessary to better      quality of the generated listening videos. Recently, some methods       199
+142     extract representative features from the speaker inputs.                    [7, 55] have attempted to incorporate semantic information into       200
+143      To address the aforementioned problems and meet the multifac-      the inputs of the task with the pre-trained language model [26].       201
+144     eted requirements, we propose a non-autoregressive transformer-     However, the methods mentioned above mostly employ autoregres-       202
+145    based model ListenFormer, which captures the speaker’s audio and       sive models, which cannot avoid the issue of error accumulation       203
+146    video signals as well as a reference image to generate highly realis-      during the generation process. In contrast, the non-autoregressive       204
+147      tic listener videos. It is important to note that, a two-stage training      prediction approach of Listenformer can largely overcome this       205
+148    method is applied to ListenFormer. During the pre-training stage,       limitation.                                                                                206
+149   we employ the teacher-forcing method. This means that real and                                                                                                      207
+150    continuous listener head coefficients were input into the decoder.     2.2  Transformers in Audio-Visual Learning              208
+151     In the fine-tuning stage, we modify the decoder input to consist of      Transformer [48] was initially proposed for sequence-to-sequence       209
+152     repeated reference image coefficients. As shown in Fig. 1(b), in this      (seq2seq) translation in the field of natural language processing       210
+153    way, we achieve the non-autoregressive prediction of ListenFormer.      (NLP). Unlike recurrent neural networks (RNNs) that recursively       211
+154    To capture the representative features, we propose a novel audio-      process sequence tags, transformers can parallelly attend to all       212
+155    motion attention fusion module (AMAF) to embed speaker’s audio      tokens in the input sequence, effectively modeling contextual infor-       213
+156    and motion features. The proposed module utilizes cross-modal      mation. The transformers have proven to be a powerful alternative       214
+157     attention to discover key information aligned along the tempo-      to RNNs in various sequential tasks and have achieved marvelous       215
+158     ral sequence. In addition, we experiment with several decoding      success in audio-visual learning tasks such as speech recognition       216
+159    methods to address the issue of temporal infinite extrapolation for       [32, 42], emotion recognition [16, 20, 46, 58] and event detection       217
+160     ListenFormer. We conduct extensive experiments on ViCo and L2L       [18, 29, 33]. Some of the most recent works on speech-driven THG       218
+161     datasets and achieve state-of-the-art performance on both datasets.       [13, 22, 53] have explored the power of transformers in modeling       219
+162    Our code and benchmark will be released.                                  facial features and produced impressive results.                               220
+163        Overall, our contributions are summarized as follows:                 Despite its many advantages, the transformer as a generative       221
+164        • We propose a transformer-based model ListenFormer that     model also has notable issues. For instance, the traditional Trans-       222
+165           can predict diverse and high-quality listening head videos in      former, being an autoregressive model, suffers from the problem of       223
+166           a non-autoregressive manner conditioned on the listener’s      error accumulation during inference. Additionally, the challenge       224
+167            reference image and speaker’s audio and motion features.       of temporal infinite extrapolation has been a persistent concern       225
+168        • The audio-motion attention fusion module (AMAF) is de-      for many researchers working with transformers [1, 43, 44, 52].       226
+169            signed to integrate cross-modal features in order to provide      After comprehensive consideration, our work relies on a novel       227
+170            representative speaker-related information to the decoder.      non-autoregressive transformer for the 3D reconstruction of the       228
+171        • We present an efficient sliding-window decoding method,       listener’s face due to its excellent temporal modeling capability.       229
+172          which addresses the transformer’s inability to extrapolate      Moreover, we explore various decoding approaches to address the       230
+173               infinitely.                                                    challenge of infinite extrapolation.                                                231
+174                                                                                   2                                                                                                 232
+
+=== PDF PAGE 3 ===
+        ListenFormer: Responsive Listening Head Generation with Non-autoregressive Transformers                          ACM MM, 2024, Melbourne, Australia
+
+
+233                  Speaker Encoder              Renderer                                                                    l                                                                          291
+234                                     Speaker Video                                                                                                                                          292
+235                                                                                                                                                                                                   293
+236                                      m2ˆl   m3ˆl   m4ˆl  mˆ tl1     G r                                                                          294
+237                                                                                                                                                                                                   295
+238                 m1s   m2s   m3s   mts                                                                                                                                 296239                                                     Listener Decoder                 Listener Decoder                                                297
+                                                                      (Stage 1: Pre-training)                      (Stage 2: Fine-tuning)
+240                                                                                                                                                                                                   298
+                               Audio-Motion Attention Fusion
+241                                       m2ˆl   m3ˆl   m4ˆl   mˆ tl1       m2ˆl   m3ˆl   m4ˆl   mˆ tl1                                   299
+242                                                                                                                                                                                                   300
+243                               1a       1a       1a       1a                                                                                                                                 301                                                                            Feed Forward                           Feed Forward
+244                                                                                                                                                                t                                                                                               t                                                                      302
+245                                   Feed Forward                              Cross-Attention       Nd               Cross-Attention       Nd                             303
+246               Ne                                                                                                                                                                    304
+                                             Self-Attention                      Masked Self-Attention                          Self-Attention
+247                                                                                                                                                                                                   305
+
+248                                                                                                                                                                                                   306
+
+249                                        Positional Encoding                           Positional Encoding                          Positional Encoding                                         307
+250                                                                                                                                                                                                   308
+
+251                                                                                                                                Repeat                                        309
+252                                  1h       2h       3h        th                          l  m1l   m2l   m 3l   m tl                                                      l  m1l                                                  310
+
+253                                                                                                                                                                                                   311
+
+254                                                                                                                                                                                                   312
+
+255                                                                                                                                                                                                   313
+256                                     Speaker Audio                      Ground Truth Frames                     Reference Listener Image                                      314
+
+257                                                                                                                                                                                                   315
+258    Figure 2: Overview of our proposed ListenFormer. An encoder-decoder model G𝑚with Transformer architecture takes the       316
+259                                                                                             as inputs and generates a sequence       317      speaker’s audio H𝑡and motion features M𝑠𝑡as well as the reference listener coefficient 𝑚𝑙1                                                                                                                                                                                                      318260
+      of listener coefficient M𝑙ˆ   which are fed into a renderer G𝑟along with the reference listener image 𝑣𝑙 and identity-dependent261                                  𝑡+1,                                                                                       1                                          319
+                                                  The audio-motion attention fusion module (blue block) is designed       320262     coefficients I𝑙to produce responsive listening videos V𝑙𝑡+1.
+263    for cross-modal robust representation extraction. In addition, the two-stage training method implements non-autoregressive       321
+264    prediction for ListenFormer. 𝑁𝑒and 𝑁𝑑respectively represent the number of layers in the transformer encoder and decoder.        322
+
+265                                                                                                                                                                                                   323
+266   3 METHOD                                                     identity-independent coefficients extracted from speaker videos can       324
+267                                                     M𝑠𝑡= {𝑚𝑠1, · · · ,𝑚𝑠𝑡}. Then, the audio-motion fusion       325268    3.1  Problem Formulation                               be denoted as                                                                module fuses M𝑠𝑡and A𝑡to get the fusion representation F𝑡. The       326
+269   We formulate the LHG task as a seq2seq learning problem. Given                                                                                                      327                                                                         transformer decoder receives F𝑡and the identity-independent co-
+                                                                                                                                                                                                      328270    an input video V𝑠𝑡= {𝑣𝑠1, · · · , 𝑣𝑠𝑡} of a speaker head in timestamps       efficient 𝑚𝑙1 of the reference listener image to non-autoregressively271    ranging from {1, ...,𝑡}, containing a corresponding audio signal S𝑡.                                                                                                      329
+                                                                                 predict the listener coefficients M𝑙ˆ 𝑡+1                                                                                = {ˆ𝑚𝑙2, · · · , ˆ𝑚𝑙𝑡+1}. We formu-       330272    The goal here is to produce a model G (Fig. 2) that can synthesize
+                                                                                       late the procedure as:
+                                                                                                                                                                                                      331273    the whole listener’s head video sequence V𝑙ˆ𝑡+1                                       =  {ˆ𝑣𝑙2, · · · , ˆ𝑣𝑙𝑡+1}.
+                                                                                                                                                                                                      332274     Formally,                                                  M𝑙ˆ                                                                                                        𝑡+1 = G𝑚(M𝑠𝑡, H𝑡,𝑚𝑙1)                    (2)
+275                     V𝑙ˆ                                𝑡+1 = G(V𝑠𝑡, S𝑡, 𝑣𝑙1)                       (1)       Finally, we use the pre-trained rendering model [39] to generate       333334276
+
+                                                                                                                                                                                                      335277    where 𝑣𝑙1 denotes the reference head image of the listener.              the realistic listening video. Formally,
+                                                                                                                                                                                                      336278       Following [57], we apply the 3D-based method and divide the G                   V𝑙ˆ                                                                    M𝑙ˆ 𝑡+1, I𝑙, 𝑣𝑙1)                     (3)                                                                                                       𝑡+1 = G𝑟(
+279     into G𝑚and G𝑟. As shown in Fig. 2, G𝑚consists of a speaker en-                                                                                                      337
+280    coder and a listener decoder, which is used to predict the 3D recon-     where I𝑙is the identity-dependent coefficient of the given listener.       338
+281     struction coefficients of listeners. And G𝑟is used for 3D face render-        For the remainder of this section, we describe each component       339
+282     ing, as depicted in the ’Renderer’ part in Fig 2. In the proposed G𝑚,      of the ListenFormer architecture in detail.                                       340
+283     the transformer encoder transforms audio feature H𝑡= {ℎ1, . . . ,ℎ𝑡}                                                                                                      341
+284     into deep representation A𝑡= {𝑎1, . . . ,𝑎𝑡}. Meanwhile, we extract     3.2  Transformer Encoder                                              342
+285    the 3D reconstruction coefficients {𝛼, 𝛽,𝛿, 𝑝,𝛾} which denote the    We adopt the vanilla Transformer encoder [48]. It is composed of a       343
+286     identity, expression, texture, pose, and lighting, respectively. They       sinusoidal positional encoding and a stack of sub-layers, converting       344
+287     are split into two components: I = (𝛼,𝛿,𝛾) to represent relatively      the audio feature vectors H𝑡into contextualized representations A𝑡.       345
+288     fixed, identity-dependent coefficients, and 𝑚=  (𝛽, 𝑝) to repre-     Each encoder layer consists of multi-head self-attention and fully       346
+289     sent relatively dynamic, identity-independent coefficients. These      connected feed-forward networks. Note that layer normalization       347
+290                                                                                   3                                                                                                 348
+
+=== PDF PAGE 4 ===
+     ACM MM, 2024, Melbourne, Australia                                                                                                               Anon.
+
+
+349    and residual connection are omitted for simplicity in Fig. 2. The                                                  Fusion Representation     t                   407
+350    audio representations outputted by the encoder are sent to the                                                                                                      408
+351    audio-motion fusion module.                                                                           Add & Norm                         409
+352                                                                                                                                                                                                   410
+
+353                                                                                                                                                                                                   411
+                                                                                                                               Feed Forward
+354                                                                                                                                                                                                   412
+355                                                                                                                                                                                                                                                                                                                                         t                                                     413
+356                                                                                Add & Norm                Add & Norm                         414
+357    3.3  Transformer Decoder and Two-stage                                                                                                                   415
+358                                                                                                                 Self-Attention                    Cross-Attention                        416
+359        Training                                                                                                                                                                    417
+                                                               Q    K    V         V    K    Q360    The decoder is also composed of a sinusoidal positional encoding                                                                                                      418
+361    and a stack of sub-layers. Different from the encoder, each decoder                                                                                                                                                                     s               419
+                                                                                          Audio Representation      t                  Motion Feature        t362     layer consists of self-attention, cross-attention, and feed-forward                                                                                                      420
+363    networks. The output identity-independent 3D facial coefficients                                                                                                      421
+364     of listeners are sent to the renderer for video reconstruction.                   Figure 3: Structure of the AMAF module.                     422
+365       In the pre-training stage, we apply the teacher-forcing scheme,                                                                                                      423
+366    which is shown in the middle of Fig. 2 (light blue background).                                                                                                      424
+                                                                      decoder outputs and ground truths, which is calculated as:367    At each time step, the decoder receives the real target coefficients                                                                                                      425
+
+                                                                               𝑇                                                                             426368   M𝑙𝑡= {𝑚𝑙1, · · · ,𝑚𝑙𝑡} (ground truth) along with the fusion repre-
+                                                                                                                                                                                                      427369     sentation, instead of using predictions generated by the model       𝐿= ∑︁ ||𝛽𝑙𝑡−ˆ𝛽𝑙𝑡||2 + ||𝑝𝑙𝑡−ˆ𝑝𝑙𝑡||2
+370      itself. This speeds up the training process and minimizes cumula-                 𝑡=2                                                                            428
+                                                                                                                                                                    (4)
+371     tive errors during the training phase. We also apply masks in the               𝑇                      𝑇                                            429
+372     self-attention in the first training stage to prevent current output          + ∑︁ 𝑤1||𝜇(𝛽𝑙𝑡) −𝜇( ˆ𝛽𝑙𝑡)||2 + ∑︁ 𝑤2||𝜇(𝑝𝑙𝑡) −𝜇( ˆ𝑝𝑙𝑡)||2               430
+373    from being affected by subsequent positions according to [48].                   𝑡=2                       𝑡=2                                           431
+374      Although the teacher-forcing scheme helps the model learn tem-                                                                                                      432
+                                                                                                                                              ˆ𝛽𝑙𝑡and ˆ𝑝𝑙𝑡represent the generated expression and pose co-       433375     poral continuity of the output, the model must rely on its own     where
+376    generated previous coefficients and generate predictions autore-       efficients of listeners, respectively. The last two terms of Eq. 4       434
+377     gressively during the inference phase, leading to inconsistency      are applied to guarantee the inter-frame continuity, where 𝜇(·)       435
+378    between training and inference. Therefore, we modify the input of     measures the inter-frame changes. 𝑤1 and 𝑤2 are the adjustable       436
+379    the decoder in the fine-tuning stage. Specifically, as shown in the      parameters for different losses.                                                     437
+
+                                                                                                                                                                                                      438380     right of Fig. 2 (light green background), the 3D coefficient 𝑚𝑙1 of
+381    the reference listener image is replicated along the time axis and     3.4  Audio-Motion Attention Fusion                            439
+382    inputted into each time step to replace the ground truth M𝑙𝑡. As    When we listen to others, the speaker’s audio, facial expressions,       440
+383    shown in Fig. 1(b), the model can perform non-autoregressive infer-     and head motions can convey messages to us. Often, there is a strong       441
+384    ence consistent with the training phase, thereby avoiding the issue      correlation between them. Therefore, it is crucial to effectively       442
+385     of cumulative errors. Additionally, such approach does not require       utilize multi-modal features (audio and motion) in the LHG task.       443
+386    masks in self-attention and tends to provide a globally consistent     The previous works [7, 21, 54, 57] only concatenated audio and       444
+387    motion.                                                      motion features, which is a coarse fusion fashion. Here, we design       445
+388     On the one hand, the first teacher-forcing pre-training stage      a novel AMAF module for finer interaction, as shown in Fig. 3.           446
+389     forces the model to optimize in the right direction in the early         In our view, audio conveys richer information in communication       447
+390     stages of training. During the experimental phase, we find that     compared to motion, for example, semantic information is lacking       448
+391     skipping the pre-training stage and directly proceeding to the non-      in motion. In cross-modal fusion, we prioritize audio as the pri-       449
+392     autoregressive training in the second stage does not yield more     mary information stream, with motion serving as supplementary       450
+393     satisfactory results. For more details, refer to Section 4.5.2. This      modality. Experimental results in Section 4.5.1 demonstrate that this       451
+394     indicates the importance of the pre-training stage for the final      approach performs better than regarding motion as the primary       452
+395    performance of ListenFormer. On the other hand, the prediction      modality. Before the cross-modal fusion, to model the temporal       453
+396    approach in the second fine-tuning stage is the non-autoregressive       relations of audio representation A𝑡, we feed it into a multi-head       454
+                                                                                                                                                                                                      455397    method we ultimately aim for in inference. Since people usually       self-attention module. Then, enhanced representation A′𝑡interacts
+                                                                                                                                                                                                      456398    do not make large head movements during the listening process,     with motion representation M𝑠𝑡in a cross-attention way, where the
+                                                                                                                                                                                                      457399    using repeated reference frames as the input for the decoder helps      queries are from M𝑠𝑡, keys and values are from A′𝑡, respectively:
+400    maintain the stability of the predictions. As a result, the combination                                                                                                      458
+401     of the two training stages allow ListenFormer to simultaneously                      M𝑠𝑡𝑊𝑄· (A′𝑡𝑊𝐾)T                         459                                                                            Interact(A′𝑡, M𝑠𝑡) = Softmax(     √                                                                                                   )A′𝑡𝑊𝑉   (5)       460402     learn temporal continuity and overall consistency, achieving a good                                                                                                      𝑑
+403    balance between facial motion diversity and stability.                                                                                                                       461
+404      Once the complete 3D facial coefficient sequence is produced,     where 𝑊𝑄, 𝑊𝐾, 𝑊𝑉are learnable parameters and 𝑑is a scaling       462
+405     the model is trained by minimizing the regression loss between the       factor.                                                                                     463
+406                                                                                   4                                                                                                 464
+
+=== PDF PAGE 5 ===
+         ListenFormer: Responsive Listening Head Generation with Non-autoregressive Transformers                          ACM MM, 2024, Melbourne, Australia
+
+
+465     We expect that the motion feature plays a role as queries in the                                                                                                      523
+                                                                                             L
+466     cross-attention mechanism, strengthening the audio representa-                                                                                                      524
+467     tion closely associated with head motion and facial expressions to                                                                                                      525
+                                                                                                                      S
+468    obtain a more comprehensive fused representation F𝑡. At last, a                T                                                                             526
+469    feed-forward layer is applied to output the fusion representation.                                                                                                      527
+470    Residual connection and layer normalization are employed after                                                                                                      528
+471     attention and feed-forward layers to ensure the training stability                    ListenFormer                 ListenFormer                 ListenFormer                 529
+472     of the fusion process.                                                                                                                                                                 530
+
+473                                                                                                                                                                                                   531
+
+474                                                                                                                                                           2                                   2             T   2                           532                                                             O (T  )          O (TL )        O (  L )  O (TL )
+475                                                                                                                            S                              533
+476                                                                                                                       (a) All-in              (b) Step-by-step         (c) Sliding Window            534
+
+477                                                                                                                                                                                                   535
+478    3.5  Decoding                                             Figure 4: Illustration of three decoding methods. The non-       536
+479    Because there is a significant disparity in the lengths of videos in the      autoregressive ListenFormer, trained on inputs of length 𝐿,       537
+480     training datasets (ranging from 1 to 71 seconds), the video clips are      predicts the outputs of length 𝑇(𝑇 ≫𝐿). And the shift       538
+481     divided into fixed-length segments for training. This results in lim-     length in (c) is 𝑆(𝑆≈𝐿).                                                           539
+482     ited generalization ability of the transformer during the decoding                                                                                                      540
+483    phase for longer sequences. Methods to enhance the length extrap-                                                                                                      541
+484     olation ability of transformers have garnered widespread attention.                                                                                                      542
+485     Existing approaches mainly fall into relative position encoding    4  EXPERIMENT                                                              543
+486     [38, 43, 44], context window extension [1, 10, 50], and so on. There     4.1  Experimental Settings                                             544
+487       is, however, a scarcity of methods specifically addressing seq2seq                                                                                                      545
+                                                                                          4.1.1  Dataset. We train and validate our model on two conver-
+488     tasks. To address this issue for non-autoregressive ListenFormer,                                                                                                      546
+                                                                             sation portrait datasets, the ViCo [57] and L2L [35] datasets. The
+489   we explore three different decoding methods, corresponding to the                                                                                                      547
+                                                                ViCo dataset contains 483 video clips ranging from 1 to 71 seconds.
+490     three subfigures in Fig. 4.                                                                                                                                                           548
+                                                                                      Specifically, it includes the identities of 76 listeners and 67 speak-
+491         Fig. 4(a) represents the all-in decoding method, where the entire                                                                                                      549
+                                                                                         ers, and each clip contains face-to-face interaction between two
+492     clip with length 𝑇is inputted at once, and all predictions are gener-                                                                                                      550
+                                                                                            realistic subjects. It is divided into training D𝑡𝑟𝑎𝑖𝑛, test D𝑡𝑒𝑠𝑡, and
+493     ated in a single decoding step. This method not only results in high                                                                                                      551
+                                                                         out-of-domain D𝑜𝑜𝑑subsets. All identities present in D𝑡𝑒𝑠𝑡are also
+494    computational complexity 𝑂(𝑇2) but also yields poor performance                                                                                                      552
+                                                                     found in D𝑡𝑟𝑎𝑖𝑛, while identities in D𝑜𝑜𝑑do not overlap with those
+495    due to limitations in extrapolation ability. Fig. 4(b) represents the                                                                                                      553
+                                                                              in D𝑡𝑟𝑎𝑖𝑛. The L2L dataset is a 72-hour versus 95-minute dataset
+496    step-by-step decoding method. The input segment has a fixed win-                                                                                                      554
+                                                                                  collected in the wild, which comes from YouTube with six identities.
+497   dow length 𝐿and only one frame is slid in at each step. Meanwhile,                                                                                                      555
+                                                                Each video features a plethora of interviewees and hosts from a
+498     the output of the last frame of each segment is concatenated to the                                                                                                      556
+                                                                                variety of backgrounds. Note that the L2L dataset only provides 3D
+499      final predictions. Although its computational complexity is reduced                                                                                                      557
+                                                                            expression and pose coefficients along with corresponding speaker-
+500    compared to the all-in approach, its 𝑂(𝑇𝐿2) complexity can con-                                                                                                      558
+                                                                       only audio features, and does not include the original videos.
+501     siderably slow down the decoding process when dealing with long                                                                                                      559
+502     videos. Furthermore, while this stepping approach performs well       4.1.2  Evaluation Metrics. On the ViCo dataset, both the feature-       560
+503     in autoregressive large language models (LLMs) [52], it is not suit-       level and video-level metrics are applied for comprehensive compar-       561
+504     able for ListenFormer which computes all inputs’ results in parallel.       ison. For the former one, the L1 distance is employed to represent       562
+505    While each input is step-by-step, for non-autoregressive inference,      the disparity between the predicted angles, expressions, translation       563
+506    even small changes in input can result in non-coherent outputs       coefficients, and the ground truth. Angle and translation coefficients       564
+507    between each step. Therefore, the step-by-step method may lead to      are two components that constitute the pose coefficient 𝑝. For the       565
+508     significant temporal jitter in the final output.                              latter one, we adopt Fréchet Inception Distance (FID) [19], Struc-       566
+509        Fig. 4(c) represents the proposed sliding window with a large       tural Similarity (SSIM) [51], Peak Signal-to-Noise Ratio (PSNR), and       567
+510     shift decoding method. Similar to the step-by-step method, the      Cumulative Probability of Blur Detection (CPBD) [4]. Additionally,       568
+                                                                                                                                                                                                      569511    input window length 𝐿remains fixed, but the sliding shift 𝑆is       to evaluate identity preservation, we utilize cosine similarity (CSIM)
+                                                                                                                                                                                                      570512    expanded to approach the size of the window length 𝐿. A slight      between identity features extracted from ArcFace [11] on generated
+513    overlap helps to smooth the output at the junctions of segments.     and source videos.                                                                     571
+514    The outputs of non-overlapping frames are concatenated to the final      On the L2L dataset, due to the unavailability of the original       572
+515     prediction at each step. This method not only further reduces the       videos, only feature-level metrics (L1 distance and Fréchet distance       573
+                                                                                                                                                                                                      574516    complexity to 𝑂(𝑇𝐿), but also alleviates the jitter issue associated      (FD)) for the expression and angle coefficients are applied.
+517    with the stepping method. To further maintain the predictions                                                                                                      575
+518     coherence, in the (b) and (c) methods, the reference image is replaced       4.1.3  Comparison Methods. Five state-of-the-art responsive lis-       576
+519    by the output of the beginning frame taken from the previous      tener head generation methods are selected as comparing methods.       577
+520    segment after the first step. More performance comparisons can be     ViCo [57] utilizes an LSTM-based sequential decoder to predict the       578
+521    found in Section 4.5.3.                                           pose and expression features of the listener subject. PCHG [21]       579
+522                                                                                   5                                                                                                 580
+
+=== PDF PAGE 6 ===
+     ACM MM, 2024, Melbourne, Australia                                                                                                               Anon.
+
+581    Table 1: The L1 Distance (×100) of different listening head generation methods on ViCo dataset. Each cell in the table repre-       639
+582    sents the feature distance of angle/expression/translation coefficients respectively. Lower is better. The bold and underlined       640
+583    notations represent the Top-2 results. The ∗indicates that we directly follow the official report results of MFR-Net, while the       641
+584     results of other comparison methods are reproduced on our own system.                                                                                   642
+
+585                                                                                                                                                                                                   643
+
+586                                              Positive                Neutral                Negative               Average                        644
+587           Method      Testset                                                                                                                                                     645                                 Angle   Exp   Trans  Angle   Exp   Trans  Angle   Exp   Trans  Angle   Exp   Trans
+588                           D𝑡𝑒𝑠𝑡     7.22    14.66    6.16     5.33    12.87    6.80    13.86   17.73    6.96     9.53    15.57    6.59                646
+589          ViCo [57]                                                                                                                                                                     647                        D𝑜𝑜𝑑     8.45    16.68    7.05     7.05    15.17    6.38     6.85    17.66    6.96     7.54    16.41    6.79
+590                           D𝑡𝑒𝑠𝑡     7.24    14.71    6.06     5.32    12.90    7.37    13.84   17.94    6.89     9.53    15.68    6.60                648
+591        PCHG [21]                                                                                                                                                                    649                        D𝑜𝑜𝑑     8.42    16.73    7.05     7.01    15.32    6.79     6.86    17.70    6.81     7.51    16.50    6.90
+592                           D𝑡𝑒𝑠𝑡     4.82     5.80    12.89    5.32    11.84    5.71    14.39   17.83    7.74     8.71    14.67    6.55                650
+593        DSPN [54]                                                                                                                                                                     651                        D𝑜𝑜𝑑     7.69    15.77    7.08     6.30    13.11    6.20     7.76    14.58    6.37     7.23    14.53    6.58
+594                           D𝑡𝑒𝑠𝑡     5.36    13.73    5.94     5.35    12.32   4.58   11.78   13.46   5.48    6.82    13.37    6.02                652595        MFR-Net∗[30]                                                                                                                                                                  653
+                        D𝑜𝑜𝑑     9.03    13.72    6.29     6.27    12.96   4.77    7.77    15.51   5.78    8.12    14.70    6.37
+596                           D𝑡𝑒𝑠𝑡    4.24   11.61   5.62    3.30    9.25    4.89    12.47   17.04    6.49     7.35   13.36   5.84               654
+597             Ours                                                                                                                                                                        655
+                        D𝑜𝑜𝑑    4.89   13.63   5.94    3.72   12.09    5.62    6.23   12.92    6.51    4.95   12.90   5.98
+598                                                                                                                                                                                                   656
+
+599                                                                                                                                                                                                   657
+600    Table 2: Quantitative results on video-level metrics with dif-     Table 3: Quantitative results on feature-level metrics with       658
+601    ferent methods on ViCo dataset. The upward arrow indi-      different methods on L2L dataset.                                             659
+602    cates that higher values correspond to better results, while                                                                                                      660
+603    the downward arrow indicates the opposite.                                                                                                                             661
+                                                                                                 Expression      Angle
+604                                                                      Method                                                                 662
+                                                                                       L1 ↓   FD ↓  L1 ↓  FD ↓
+605        Method     SSIM ↑  CPBD ↑  PSNR ↑  FID ↓  CSIM ↑                ViCo [21]   30.28   15.08   7.15   6.77                        663
+606                                                            DSPN [54]   23.65    3.16    5.82   1.54                        664
+607       ViCo [57]       0.57      0.16      17.34    27.03     0.49                                                                                                          665
+                                                                           L2L [35]    37.22    17.6    9.90   8.13
+608     PCHG [21]      0.56      0.16      16.79    26.57     0.49                                                                                                          666
+                                                                             Ours     10.45   2.66   2.71   1.33
+609      DSPN [54]      0.59      0.15      17.64    26.33     0.58                                                                                                          667
+610     MFR-Net∗[30]    0.59     0.18     17.82   20.08       -                                                                                                            668
+611         Ours        0.62      0.17     18.89    24.52    0.63                                                                                                         669                                                               4.2  Quantitative Evaluation
+612                                                                                                                                                                                                   670
+                                                                                           4.2.1  ViCo dataset. Tab. 1 shows the feature-level metrics on the
+613    modifies the post-processing approach during the rendering pro-     D𝑡𝑒𝑠𝑡and D𝑜𝑜𝑑subsets of the ViCo dataset, through evaluations       671
+614     cess based on ViCo. DSPN [54] is a dual-stream prediction network,      conducted on generated angle, expression, and translation features.       672
+615    which consists of LSTMs and temporal convolutional networks      Following [57] and [30], results are presented for three different       673
+616    (TCN) [25]. MFR-Net [30] employs the probabilistic denoising dif-      attitudes, along with their average values. Listenformer outper-       674
+617     fusion model to predict multi-faceted response. L2L [35] learns      forms other existing methods on most metrics across three attitudes,       675
+618    a realistic manifold of listener motion through a novel sequence-     with particularly outstanding performance on the D𝑜𝑜𝑑set. Specif-       676
+619    encoding.                                                                          ically, it shows improvements of 3.75, 2.20, and 0.39 on average       677
+620                                                                                                                                                                                                   678
+                                                                                  results of angle, expression, and translation coefficients, respec-
+621      4.1.4  Implementation Details. On the ViCo dataset, the input video                                                                                                      679
+                                                                                           tively. This could be attributed to the enhanced robustness of our
+622    frames are cropped to 256 × 256 size at 30 FPS and the audio signals                                                                                                      680
+                                                                            non-autoregressive training and inference method, as well as the ef-
+623     are extracted into 45-dimensional acoustic features, including mel-                                                                                                      681
+                                                                                 fectiveness of the proposed cross-modal fusion method in capturing
+624    frequency cepstral coefficients (MFCC), energy, zero-crossing rate                                                                                                      682
+                                                                              representative information within audio and motion features.
+625    (ZCR), and loudness. The window length of the speaker clip is set to                                                                                                      683
+                                                                      Meanwhile, various video-level metrics are displayed in Tab. 2.
+626    be 90 frames with a shift of 80 frames. The 3DMM coefficients are                                                                                                      684
+                                                                        Listenformer achieves the best performance in SSIM, PSNR, and
+627     extracted with the guides of PIRender [39]. The identity-dependent                                                                                                      685
+                                                                  CSIM, with improvements of 0.03, 1.07, and 0.05, respectively. How-
+628     features are in R187, and the identity-independent features are in                                                                                                      686
+                                                                                     ever, it slightly lags behind the state-of-the-art model MFR-Net in
+629     R70.                                                                                                                                                                                       687
+                                                    CPBD and FID. It could be due to the fact that MFR-Net has made
+630     On the L2L dataset, the audio signals are extracted into 128-dim                                                                                                      688
+                                                                 improvements to the rendering model, giving it a certain advan-
+631    mel features. Following [35], the parameters representing identity-                                                                                                      689
+                                                                          tage in facial reconstruction. Improving the rendering model of
+632    independent features include 50 expression coefficients along with                                                                                                      690
+                                                                         Listenformer is also one of our future research directions.
+633    a 3D jaw rotation, as well as 3D head rotation in Euler angles.                                                                                                           691
+634      As for model details, we utilize 3 transformer encoder layers and       4.2.2  L2L dataset. Tab. 3 presents the feature-level results of our       692
+635    3 transformer decoder layers along with 4 attention heads. Due to      proposed method and other existing methods on the L2L dataset.       693
+636     the lack of original videos, the rendering part is not required when     One can see that the proposed method outperforms all state-of-the-       694
+637    conducting experiments on the L2L dataset.                               art approaches, which supports that the proposed non-autoregressive      695
+638                                                                                   6                                                                                                 696
+
+=== PDF PAGE 7 ===
+         ListenFormer: Responsive Listening Head Generation with Non-autoregressive Transformers                          ACM MM, 2024, Melbourne, Australia
+
+
+
+697                                                                                                                                                                                                   755
+698                    Speaker                                                                                                                                                             756
+                      Video
+699                                                                                                                                                                                                   757
+
+700                                                                                                                                                                                                   758
+701                  Ground                                                                                                                                                              759
+702                      Truth                                                                                                                                                               760
+
+703                                                                                                                                                                                                   761
+
+704                                                                                                                                                                                                   762
+705                  ViCo                                                                                                                                                               763
+
+706                                                                                                                                                                                                   764
+
+707                                                                                                                                                                                                   765
+708              PCHG                                                                                                                                                              766
+
+709                                                                                                                                                                                                   767
+
+710                                                                                                                                                                                                   768
+711               DSPN                                                                                                                                                              769
+712                                                                                                                                                                                                   770
+
+713                                                                                                                                                                                                   771
+714                    Ours                                                                                                                                                               772
+715                                                                                                                                                                                                   773
+
+716                                                                                                                                                                                                   774
+717              Figure 5: Snapshots of the generated listener head videos (left: positive listener, right: neutral listener).                       775
+
+718                                                                                                                                                                                                   776
+719           Table 4: User study results on ViCo dataset.             Table 5: Ablation study for fusion methods in ListenFormer       777
+720                                                                      tested on ViCo and L2L datasets.                                              778
+721         Method   ON ↑  MD ↑    IP ↑   Sync ↑  AT ↑                                                                                                              779
+722         ViCo [57]   12.2%   20.2%   14.7%   15.6%   40.7%                                    ViCo              L2L               780
+723                                                                        Fusion Method                                                                      781
+        PCHG [21]   13.3%   16.9%   12.9%   14.2%   38.9%                         PSNR ↑  FID ↓  CSIM ↑   L1 ↓   FD ↓
+724       DSPN [54]   13.1%   15.8%   17.1%   12.9%   38.7%                Concat          18.82    25.24     0.62    10.06   12.90         782
+725           Ours     58.1%  46.4%  55.3%   58.0%   43.2%           Motion-dominated    18.52    25.25     0.62    10.22   12.94         783
+726                                                                    Audio-dominated    18.89   24.52    0.63    9.27   12.90        784
+727                                                                                                                                                                                                   785
+
+728                                                                                                                                                                                                   786
+       ListenFormer also exhibits significant advantages in modeling head      are involved in this user study with human measures in overall       787729
+      motions and facial expressions on large datasets.                      naturalness (ON), motion diversity (MD), identity preserving (IP),       788730
+731                                                                              speaker-listener synchronization (Sync), and attitude matching (AT).       789
+      4.3  Qualitative Evaluation                               Except for attitude matching, which offers a choice between posi-       790732
+733    To qualitatively evaluate different methods, we provide the respon-       tive, negative, and neutral, the remaining four options are selected       791
+734     sive listening head frames generated by the proposed method and      as the best among the four methods. The results from all partic-       792
+735    other methods in Fig. 5. We can see that Listenformer provides a      ipants are averaged and listed in Tab. 4. ListenFormer achieves       793
+736    reasonable response, which may not align entirely with ground      the best performance among all subjective measures, especially       794
+737     truth but remains generally consistent. Both ViCo and PCHG strug-      in terms of motion diversity, identity preservation, and synchro-       795
+738     gle to maintain accurate identity information, specifically in (a),      nization. This verifies the capability of our method in generating       796
+739    where ViCo and PCHG model eye movements unnaturally, and in      diverse and natural listening head videos.                                       797
+740      (b), where generated listeners consistently maintain a weird smile.                                                                                                      798
+741    Although DSPN doesn’t exhibit the aforementioned glaring short-     4.5  Ablation Study                                                          799
+742    comings, it lacks sensitivity in capturing the positive attitude in        4.5.1   Effect of the audio-motion fusion module. In this section, we       800
+743     (a) and neutral attitude in (b). Conversely, our approach ensures      conduct experiments to compare three different fusion methods.       801
+744    the preservation of accurate identity information without visible      "Concat" refers to directly concatenating audio and motion features.       802
+745      artifacts. Furthermore, the generated videos present more natural      "Audio-dominated" denotes the proposed AMAF method in Section       803
+746     facial expressions and more precise attitude conveyance. Please        3.4, while "motion-dominated" involves swapping the positions of       804
+747    watch the supplementary video for the dynamic comparison.          audio and motion features in the AMAF module. Tab. 5 presents the       805
+748                                                                   performance of three methods on two datasets. It can be observed       806
+749    4.4  User Study                                                  that the "audio-dominated" method outperforms the other two       807
+750   We invite 15 people to evaluate the generated listening head videos     methods in all metrics. This not only indicates the effectiveness       808
+751     of our method with the other three methods. Each generated video      of the proposed audio-motion attention fusion method but also       809
+752    along with its corresponding speaker’s video is concatenated into      suggests that the speaker’s audio may be more crucial than motion       810
+753    the same video for presentation. 30 videos from the ViCo dataset       for LHG, as it can convey more information, such as semantics.          811
+754                                                                                   7                                                                                                 812
+
+=== PDF PAGE 8 ===
+     ACM MM, 2024, Melbourne, Australia                                                                                                               Anon.
+
+
+813               Speaker                                                                                                                                                                         871
+                                                                                        Speaker Video                                                                            872814               Video
+815                                                                                                                                                                                                   873
+816              Ground                                                                                                                                                                         874
+817                 Truth                                                                               All-in                                                                                 875
+
+818                                                                                                                                                                                                   876
+819                                                                                                                                                                   Listener        877
+             AR                                                                        Step-by-step                                                           Identity
+820                                                                                                                                                                                                   878
+
+821                                                                                                                                                                                                   879
+                                                                                                Sliding Window                                                                           880822          NAR
+                                                                                         with Large Shift
+823                                                                                                                                                                                                   881
+
+824                                                                                                                                                                                                   882
+
+825    Figure 6: Qualitative results of ListenFormer with different      Figure 8: Qualitative results of ListenFormer with different       883
+826    training methods.                                          decoding methods.                                                                  884
+827                                                                                                                                                                                                   885
+
+828                                                                                                                                                                                                   886
+
+                                                                                                                                                                                                      887829         15.60                                          NAR    19.5                                          NAR       to static facial expressions and induces slight but rapid back-and-
+                                                           AR     19.0                                                                                                                AR        forth head movements. This is due to that the sinusoidal positional       888830         15.55                                                                                 13.0 12.96              13.40 13.39
+831                                                                            12.5                               encoding fails to capture the modeling of position information       889
+              13.35                                                                           12.07
+                                                                                 12.0                                     for extended lengths. For the step-by-step method, although the       890832
+              13.30                                                    L111.5
+                                                                                                        11.31                     generated facial expressions are no longer static, there are more pro-       891833     L1                                                                                 11.0              13.25
+                                                                                 10.5                              nounced back-and-forth head movements. As mentioned in Section       892834         13.20              13.19                     13.22
+                                                                                                                      9.93                                                                                 10.0                                                                       13.16                                                                                             3.5,                                                                                        this                                                            may                                                                              be                                                                                               attributed                                                                                                        to the                                                                                                                        fact                                                                                                                    that                                                                                                                            for                                                                                                                    non-autoregressive                                                                                                                                                                                                      893835              13.15                                                                                                                                            9.49                                                                                      9.5                                                                                                                                 9.27                                              13.11                                                                            ListenFormer,                                                                                             step-by-step                                                                                                       inputs                                                                                             do                                                                                                          not                                                                                                                         necessarily                                                                                                                                        yield                                                                                                                               coherent                                                                                                                                                                                                      894836              13.10                                                                                      9.0
+                                                                 200                                                                                                        300                                                                                                                 400                                                                                                                          500                    0          50  Epochs for                                          100Pretraining 150                                                                             0       100    Epochs200 for Pretraining                                                                                          results.                                                                    The                                                                                          step-by-step                                                                                           approach                                                                                                             introduces                                                                                                                                     significant                                                                                                                          temporal                                                                                                                                                                                                      895837
+                            (a) ViCo                                   (b) L2L                        jitters in the predictions, resulting in a visibly less smooth appear-       896838
+839                                                                          ance. In comparison, our proposed method offers several advan-       897
+840    Figure 7: L1 distance of ListenFormer trained under differ-      tages. On the one hand, the utilization of a sliding window helps       898
+841    ent pre-training epochs on ViCo and L2L datasets.                 to overcome the limitations associated with sinusoidal positional       899
+842                                                                    encoding for length extrapolation in decoding phase. On the other       900
+        4.5.2   Effect of the training method. Fig. 6 respectively illustrates843                                                                    hand, the utilization of a large shift ensures that the generated       901
+       the generation results of ListenFormer trained using autoregressive844                                                                   frames do not exhibit jitters within the window. As a result, our       902
+      (AR) and non-autoregressive (NAR) methods (two-stage training).845                                                           method achieves superior visual quality compared to the other       903
+         It is evident that the generated video of the autoregressive model846                                                           two methods. Additionally, it also leads to significant savings in       904
+       exhibits an abnormal slant in the head, which is difficult to correct847                                                                     computational resources according to Section 3.5.                            905
+       in subsequent inference steps. The non-autoregressive model con-
+848                                                                                                                                                                                                   906
+       sistently maintains stable head movement throughout the whole    5  CONCLUSION                                                              907849
+      generated video. This demonstrates that non-autoregressive meth-
+850                                                We introduce a novel transformer-based model for the responsive       908
+      ods can significantly alleviate the inherent issue of error accumu-
+851                                                                                 listening head generation task. Our proposed Listenformer achieves       909
+       lation in autoregressive methods. Moreover, blinking and other
+852                                                                         non-autoregressive inference through teacher-forcing pre-training       910
+      motions also appear in generated videos of the NAR model, indi-
+853                                                                and input-changed fine-tuning stage, ensuring consistency between       911
+       cating that the NAR model retains excellent motion diversity due
+854                                                                            training and inference prediction modes. Additionally, to provide       912
+       to the two-stage training method.
+855                                                           more accurate responses to the speaker inputs, an audio-motion       913
+           Fig. 7 specifically demonstrates the L1 results of models trained
+856                                                                           attention fusion method is proposed, which better captures the       914
+      with different pre-training epochs for the expression and pose co-
+857                                                                    audio-motion correlation information in the speaker’s signals. To       915
+        efficients. On the ViCo dataset, the model achieves optimal per-
+858                                                                              further enhance performance, we propose a sliding window with a       916
+      formance with 100 pre-training epochs, while on the L2L dataset,
+859                                                                             large shift approach to address infinite-length inference scenarios,       917
+       the model performs best with 400 pre-training epochs. This may
+860                                                             which performs well in terms of both effectiveness and compu-       918
+      be attributed to the larger volume of data in the L2L compared to
+861                                                                                tational efficiency. Qualitative and quantitative experiments have       919
+       the ViCo dataset. Overall, the non-autoregressive method signifi-
+862                                                                            validated the superiority of our method over other state-of-the-art       920
+       cantly outperforms the autoregressive method, even without the
+863                                                               methods in generating high-quality listening head responses.             921
+       pre-training stage.
+864                                                                    Limitations: The renderer and transformer are treated as indepen-       922
+865      4.5.3   Effect of the decoding method. We conduct experimental com-      dent components in our proposed method. In the future, we plan to       923
+866     parisons of three different decoding methods mentioned in Section      explore joint optimization of these two components. Furthermore,       924
+867      3.5. Fig. 8 displays frames selected from a 26-second video clip    we consider abandoning the rendering model and applying our       925
+868    spanning 5 to 15 seconds. It is evident that the all-in method, when     method to 2D-based generation approaches.                                    926
+869     inferred beyond the length of the training clips (3 seconds), leads                                                                                                      927
+870                                                                                   8                                                                                                 928
+
+=== PDF PAGE 9 ===
+        ListenFormer: Responsive Listening Head Generation with Non-autoregressive Transformers                          ACM MM, 2024, Melbourne, Australia
+
+929   REFERENCES                                                                    [24] Adam Kendon, Richard M Harris, and Mary R Key. 2011. Organization of behavior       987
+930        [1]  Iz Beltagy, Matthew E Peters, and Arman Cohan. 2020. Longformer: The long-              in face-to-face interaction. Walter de Gruyter.                                          988
+                                                                                                     [25]  Colin                                                                                                              Lea, Michael                                                                         D Flynn, Rene                                                                                                                                                 Vidal,                                                                                                                                    Austin                                                                                                                                                                         Reiter,                                                                                                                                   and Gregory                                                                                                     D Hager.            document                         transformer.                                                                           (2020).                                    arXiv preprint                                                    arXiv:2004.05150                                                                                                                                                                                                      989931                                                                                                          2017. Temporal                                                                                                                     convolutional                                                                                                                      networks                                                                                                                                                         for                                                                                                                                                    action                                                                                                                                             segmentation                                                                                                                                            and detection.              Charles R Berger.                                2005. Interpersonal                                              communication:                                                                    Theoretical                                                                                  perspectives,           [2]
+932            future prospects. Journal of communication 55, 3 (2005), 415–447.                            In proceedings of the IEEE Conference on Computer Vision and Pattern Recognition.       990
+933        [3]  Volker Blanz and Thomas Vetter. 2023. A morphable model for the synthesis of             156–165.                                                                               991
+           3D faces. In Seminal Graphics Papers: Pushing the Boundaries, Volume 2. 157–164.         [26] JDMCK Lee and K Toutanova. 2018. Pre-training of deep bidirectional trans-
+934           [4] P Bohr, Rupali Gargote, Rupali Vhorkate, RU Yawle, and VK Bairagi. 2013. A no            formers for language understanding. arXiv preprint arXiv:1810.04805 3 (2018),       992
+935            reference image blur detection using cumulative probability blur detection (cpbd)                 8.                                                                                      993
+936            metric. International Journal of Science and Modern Engineering 1, 5 (2013).             [27] Tianye Li, Timo Bolkart, Michael J Black, Hao Li, and Javier Romero. 2017.       994
+           [5] Dan Bohus and Eric Horvitz. 2010.  Facilitating multiparty dialog with gaze,            Learning a model of facial shape and expression from 4D scans. ACM Trans.
+937            gesture, and speech. In International Conference on Multimodal Interfaces and the             Graph. 36, 6 (2017), 194–1.                                                             995
+938          Workshop on Machine Learning for Multimodal Interaction. 1–8.                        [28] Borong Liang, Yan Pan, Zhizhi Guo, Hang Zhou, Zhibin Hong, Xiaoguang Han,       996
+                                                                                        Junyu                                                                                              Han,                                                                                                                 Jingtuo                                                                                                                                     Liu,                                                                                                                               Errui                                                                                                                             Ding,                                                                                                                     and Jingdong                                                                                                                           Wang.                                                                                                                                                                  2022.                                                                                                                                                                 Expressive               Justine Cassell,                            Catherine                                      Pelachaud,                                      Norman                                                               Badler,                                                    Mark                                                                  Steedman,                                                                                       Brett939        [6]                                                                                                              talking                                                                                                  head                                                                                                                  generation                                                                                                                     with                                                                                                                                  granular                                                                                                                                                 audio-visual                                                                                                                                                                        control.                                                                                                                                                                     In                                                                                                                                                                        Proceedings                                                                                                                                                                                                      of the       997             Achorn,                     Tripp Becket,                                     Brett                                           Douville, Scott                                                          Prevost,                                                      and                                                       Matthew                                                                               Stone.                                                                                      1994.
+940         Animated conversation: rule-based generation of facial expression, gesture &            IEEE/CVF Conference on Computer Vision and Pattern Recognition. 3387–3396.         998
+941          spoken intonation for multiple conversational agents. In Proceedings of the 21st        [29] Yan-Bo Lin and Yu-Chiang Frank Wang. 2020. Audiovisual transformer with       999
+             annual conference on Computer graphics and interactive techniques. 413–420.                 instance attention for audio-visual event localization. In Proceedings of the Asian
+942           [7] Zhigang Chang, Weitai Hu, Qing Yang, and Shibao Zheng. 2023. Hierarchical             Conference on Computer Vision.                                                        1000
+943          Semantic Perceptual Listener Head Video Generation: A High-performance        [30]  Jin Liu, Xi Wang, Xiaomeng Fu, Yesheng Chai, Cai Yu, Jiao Dai, and Jizhong       1001
+944             Pipeline. In Proceedings of the 31st ACM International Conference on Multimedia.           Han. 2023.  MFR-Net: Multi-faceted Responsive Listening Head Generation       1002
+              9581–9585.                                                                                via Denoising Diffusion Model. In Proceedings of the 31st ACM International
+945        [8] Zhipeng Chen, Xinheng Wang, Lun Xie, Haijie Yuan, and Hang Pan. 2024.             Conference on Multimedia. 6734–6743.                                                 1003
+946          LPIPS-AttnWav2Lip: Generic audio-driven lip synchronization for talking head        [31]  Jin Liu, Xi Wang, Xiaomeng Fu, Yesheng Chai, Cai Yu, Jiao Dai, and Jizhong Han.       1004
+                                                                                        OPT:                                                                                                      One-shot                                                                                                                         Pose-Controllable                                                                                                                                       Talking                                                                                                                      Head                                                                                                                                                      Generation.                                                                                                                                                                        In                                                                                                                                                 ICASSP              generation in the wild.  Speech Communication 157 (2024), 103028.   https:             2023.                                                                                                                                                                                                      1005947                                                                                                        2023-2023                                                                                                         IEEE                                                                                                                                International                                                                                                                                  Conference on                                                                                                                                                               Acoustics,                                                                                                                                                     Speech                                                                                                                                           and Signal                                                                                                                                                                                     Processing              //doi.org/10.1016/j.specom.2023.103028
+948        [9] Kun Cheng, Xiaodong Cun, Yong Zhang, Menghan Xia, Fei Yin, Mingrui Zhu,             (ICASSP). IEEE, 1–5.                                                                   1006
+949         Xuan Wang, Jue Wang, and Nannan Wang. 2022. Videoretalking: Audio-based        [32]  Pingchuan Ma, Stavros Petridis, and Maja Pantic. 2021. End-to-end audio-visual       1007
+                  lip synchronization for talking head video editing in the wild. In SIGGRAPH Asia            speech recognition with conformers. In ICASSP 2021-2021 IEEE International
+950              2022 Conference Papers. 1–9.                                                              Conference on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 7613–7617.        1008
+951      [10]  Tri Dao, Dan Fu, Stefano Ermon, Atri Rudra, and Christopher Ré. 2022. Flashat-        [33]  Tanvir Mahmud and Diana Marculescu. 2023. Ave-clip: Audioclip-based multi-       1009
+952            tention: Fast and memory-efficient exact attention with io-awareness. Advances           window temporal transformer for audio visual event localization. In Proceedings       1010
+               in Neural Information Processing Systems 35 (2022), 16344–16359.                               of the IEEE/CVF Winter Conference on Applications of Computer Vision. 5158–5167.
+953      [11]  Jiankang Deng, Jia Guo, Niannan Xue, and Stefanos Zafeiriou. 2019. ArcFace:        [34] David McNaughton, Dawn Hamlin, John McCarthy, Darlene Head-Reeves, and       1011
+954           Additive Angular Margin Loss for Deep Face Recognition. In Proceedings of the           Mary Schreiner. 2008. Learning to listen: Teaching an active listening strategy to       1012
+                                                                                                         preservice                                                                                                             education                                                                                                                                    professionals. Topics in Early Childhood Special Education             IEEE/CVF                       Conference                               on Computer                                                 Vision                                              and                                                            Pattern                                                                  Recognition                                                                          (CVPR).                                                                                                                                                                                                      1013955                                                                                                                   27, 4 (2008),                                                                                                              223–231.            Yu Deng, Jiaolong                               Yang,                                   Sicheng Xu,                                      Dong                                                  Chen,                                                    Yunde                                                                                             Jia, and Xin                                                                           Tong. 2019.         [12]
+956           Accurate 3d face reconstruction with weakly-supervised learning: From single        [35] Evonne Ng, Hanbyul Joo, Liwen Hu, Hao Li, Trevor Darrell, Angjoo Kanazawa,       1014
+957          image to image set. In Proceedings of the IEEE/CVF conference on computer vision            and Shiry Ginosar. 2022. Learning to listen: Modeling non-deterministic dyadic       1015
+            and pattern recognition workshops. 0–0.                                                             facial motion. In Proceedings of the IEEE/CVF Conference on Computer Vision and
+958         [13]  Yingruo Fan, Zhaojiang Lin, Jun Saito, Wenping Wang, and Taku Komura. 2022.              Pattern Recognition. 20395–20405.                                                     1016
+959           Faceformer: Speech-driven 3d facial animation with transformers. In Proceedings        [36] Behnaz Nojavanasghari, Yuchi Huang, and Saad Khan. 2018. Interactive genera-       1017
+960             of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. 18770–               tive adversarial networks for facial expression generation in dyadic interactions.       1018
+              18780.                                                                                arXiv preprint arXiv:1801.09092 (2018).
+961      [14]  Will Feng, Anitha Kannan, Georgia Gkioxari, and C Lawrence Zitnick. 2017.        [37]  Julie Parker and Enrico Coiera. 2000. Improving clinical communication: a view       1019
+962           Learn2smile: Learning non-verbal interaction through observation. In 2017            from psychology. Journal of the American Medical Informatics Association 7, 5       1020
+                                                                                                                   (2000),                                                                                                         453–461.              IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE,963                                                                                                     [38]                                                                                                         Ofir Press,                                                                                       Noah A Smith, and Mike Lewis. 2021. Train short, test long: At-       1021             4131–4138.
+964      [15] Yuan Gan, Zongxin Yang, Xihang Yue, Lingyun Sun, and Yi Yang. 2023. Efficient              tention with linear biases enables input length extrapolation. arXiv preprint       1022
+965           emotional adaptation for audio-driven talking-head generation. In Proceedings              arXiv:2108.12409 (2021).                                                               1023
+                of the IEEE/CVF International Conference on Computer Vision. 22634–22645.             [39]  Yurui Ren, Ge Li, Yuanqi Chen, Thomas H Li, and Shan Liu. 2021. Pirenderer: Con-
+966         [16]  Lucas Goncalves and Carlos Busso. 2022. AuxFormer: Robust approach to audio-               trollable portrait image generation via semantic neural rendering. In Proceedings       1024
+967            visual emotion recognition. In ICASSP 2022-2022 IEEE International Conference               of the IEEE/CVF International Conference on Computer Vision. 13759–13768.            1025
+968          on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 7357–7361.                  [40]  Michael Rost and JJ Wilson. 2013. Active listening. Routledge.                         1026
+         [17]  Anchit Gupta, Rudrabha Mukhopadhyay, Sindhu Balachandra, Faizan Farooq        [41] Luchuan Song, Guojun Yin, Zhenchao Jin, Xiaoyi Dong, and Chenliang Xu. 2023.
+969          Khan, Vinay P Namboodiri, and CV Jawahar. 2023. Towards generating ultra-            Emotional Listener Portrait: Realistic Listener Motion Simulation in Conversa-       1027
+970          high resolution talking-face videos with lip synchronization. In Proceedings of                tion. In 2023 IEEE/CVF International Conference on Computer Vision (ICCV). IEEE,       1028
+                                                                                                 20782–20792.                                                                           5209–5218.               the                IEEE/CVF                         Winter                                  Conference                                        on Applications                                                                    of                                                      Computer                                                                                Vision.971                                                                                            Qiya Song, Bin Sun, and Shutao Li. 2022. Multimodal sparse transformer network       1029                                                                                                     [42]         [18]            Yixuan                    He, Xing                            Xu,                              Xin Liu, Weihua                                             Ou, and                                                Huimin                                                                   Lu.                                                                        2021. Multimodal
+972           transformer networks with latent interaction for audio-visual event localization.              for audio-visual speech recognition. IEEE Transactions on Neural Networks and       1030
+973            In 2021 IEEE International Conference on Multimedia and Expo (ICME). IEEE, 1–6.              Learning Systems (2022).                                                               1031
+         [19]  Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and        [43]  Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng
+974             Sepp Hochreiter. 2017. Gans trained by a two time-scale update rule converge to               Liu. 2024. Roformer: Enhanced transformer with rotary position embedding.       1032
+975           a local nash equilibrium. Advances in neural information processing systems 30            Neurocomputing 568 (2024), 127063.                                                   1033
+976             (2017).                                                                                [44]  Yutao Sun, Li Dong, Barun Patra, Shuming Ma, Shaohan Huang, Alon Benhaim,       1034
+         [20]  Jia-Hao Hsu and Chung-Hsien Wu. 2023. Applying segment-level attention            Vishrav Chaudhary, Xia Song, and Furu Wei. 2022. A length-extrapolatable
+977         on bi-modal transformer encoder for audio-visual emotion recognition. IEEE              transformer. arXiv preprint arXiv:2212.10554 (2022).                                   1035
+978            Transactions on Affective Computing (2023).                                            [45]  Michael Tomasello. 2010. Origins of human communication. MIT press.               1036
+                                                                                                     [46] Minh                                                                                               Tran                                                                                                 and Mohammad                                                                                                                           Soleymani.                                                                                                                                                2022.                                                                                          A pre-trained                                                                                                                                                                   audio-visual                                                                                                                                                                                       trans-                 Huang,                       Zhewei                              Huang,                                    and                                        Shuchang                                                   Zhou.                                                                 2022.                                                                     Perceptual                                                                             conver-                                                                                                                                                                                                      1037979      [21]  Ailin                                                                                              former                                                                                                                       for emotion                                                                                                                               recognition.                                                                                                                                         In ICASSP                                                                                                                                               2022-2022                                                                                                                                             IEEE International                                                                                                                                                                            Confer-               sational                   head                           generation                                   with                                             regularized                                                          driver                                                     and                                                          enhanced                                                                                renderer.                                                                                       In
+980            Proceedings of the 30th ACM international conference on multimedia. 7050–7054.              ence on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 4698–4702.            1038
+981      [22]  Ricong Huang, Weizhi Zhong, and Guanbin Li. 2022. Audio-driven talking head        [47] Aaron Van Den Oord, Oriol Vinyals, et al. 2017. Neural discrete representation       1039
+              generation with transformer and 3d morphable model. In Proceedings of the 30th              learning. Advances in neural information processing systems 30 (2017).
+982         ACM International Conference on Multimedia. 7035–7039.                              [48] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,       1040
+983      [23] Xinya Ji, Hang Zhou, Kaisiyuan Wang, Wayne Wu, Chen Change Loy, Xun Cao,           Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. 2017.  Attention is all       1041
+984          and Feng Xu. 2021. Audio-driven emotional video portraits. In Proceedings of the           you need. Advances in neural information processing systems 30 (2017).                1042
+             IEEE/CVF conference on computer vision and pattern recognition. 14080–14089.
+985                                                                                                                                                                                                   1043
+
+986                                                                                   9                                                                                                 1044
+
+=== PDF PAGE 10 ===
+     ACM MM, 2024, Melbourne, Australia                                                                                                               Anon.
+
+
+
+1045     [49]  Kaisiyuan Wang, Qianyi Wu, Linsen Song, Zhuoqian Yang, Wayne Wu, Chen             Dual-Stream Prediction Network. In Proceedings of the 1st International Workshop       1103
+1046          Qian, Ran He, Yu Qiao, and Chen Change Loy. 2020. Mead: A large-scale audio-           on Multimedia Content Generation and Evaluation: New Methods and Practice.       1104
+               visual dataset for emotional talking-face generation. In European Conference on             137–143.
+1047         Computer Vision. Springer, 700–717.                                                   [55] Wei Zhao, Peng Xiao, Rongju Zhang, Yijun Wang, and Jianxin Lin. 2022. Semantic-       1105
+1048     [50]  Sinong Wang, Belinda Z Li, Madian Khabsa, Han Fang, and Hao Ma. 2020. Lin-           aware Responsive Listener Head Synthesis. In Proceedings of the 30th ACM       1106
+              former: Self-attention with linear complexity. arXiv preprint arXiv:2006.04768               International Conference on Multimedia. 7065–7069.
+1049                                                                                                                                                                                                  1107
+                (2020).                                                                                [56] Hang Zhou, Yasheng Sun, Wayne Wu, Chen Change Loy, Xiaogang Wang, and
+1050     [51] Zhou Wang, Alan C Bovik, Hamid R Sheikh, and Eero P Simoncelli. 2004. Image             Ziwei Liu. 2021. Pose-controllable talking face generation by implicitly modular-       1108
+1051           quality assessment: from error visibility to structural similarity. IEEE transactions              ized audio-visual representation. In Proceedings of the IEEE/CVF conference on       1109
+             on image processing 13, 4 (2004), 600–612.                                              computer vision and pattern recognition. 4176–4186.
+1052     [52] Guangxuan Xiao, Yuandong Tian, Beidi Chen, Song Han, and Mike Lewis.        [57] Mohan Zhou, Yalong Bai, Wei Zhang, Ting Yao, Tiejun Zhao, and Tao Mei. 2022.       1110
+1053           2023. Efficient streaming language models with attention sinks. arXiv preprint            Responsive listening head generation: a benchmark dataset and baseline. In       1111
+1054           arXiv:2309.17453 (2023).                                                            European Conference on Computer Vision. Springer, 124–142.                          1112
+         [53]  Jinbo Xing, Menghan Xia, Yuechen Zhang, Xiaodong Cun, Jue Wang, and Tien-        [58] Weiwei Zhou, Jiada Lu, Zhaolong Xiong, and Weifeng Wang. 2023. Leveraging
+1055          Tsin Wong. 2023. Codetalker: Speech-driven 3d facial animation with discrete         TCN and Transformer for effective visual-audio fusion in continuous emotion       1113
+1056         motion prior. In Proceedings of the IEEE/CVF Conference on Computer Vision and              recognition. In Proceedings of the IEEE/CVF Conference on Computer Vision and       1114
+               Pattern Recognition. 12780–12790.                                                           Pattern Recognition. 5755–5762.
+1057                                                                                                                                                                                                  1115
+         [54]  Jun Yu, Shenshen Du, Haoxiang Shi, Yiwei Zhang, Renbin Su, Zhongpeng Cai,
+1058         and Lei Wang. 2023. Responsive Listening Head Synthesis with 3DMM and                                                                                                      1116
+
+1059                                                                                                                                                                                                  1117
+
+1060                                                                                                                                                                                                  1118
+
+1061                                                                                                                                                                                                  1119
+
+1062                                                                                                                                                                                                  1120
+
+1063                                                                                                                                                                                                  1121
+
+1064                                                                                                                                                                                                  1122
+
+1065                                                                                                                                                                                                  1123
+
+1066                                                                                                                                                                                                  1124
+
+1067                                                                                                                                                                                                  1125
+
+1068                                                                                                                                                                                                  1126
+
+1069                                                                                                                                                                                                  1127
+
+1070                                                                                                                                                                                                  1128
+
+1071                                                                                                                                                                                                  1129
+
+1072                                                                                                                                                                                                  1130
+
+1073                                                                                                                                                                                                  1131
+
+1074                                                                                                                                                                                                  1132
+
+1075                                                                                                                                                                                                  1133
+
+1076                                                                                                                                                                                                  1134
+
+1077                                                                                                                                                                                                  1135
+
+1078                                                                                                                                                                                                  1136
+
+1079                                                                                                                                                                                                  1137
+
+1080                                                                                                                                                                                                  1138
+
+1081                                                                                                                                                                                                  1139
+
+1082                                                                                                                                                                                                  1140
+
+1083                                                                                                                                                                                                  1141
+
+1084                                                                                                                                                                                                  1142
+
+1085                                                                                                                                                                                                  1143
+
+1086                                                                                                                                                                                                  1144
+
+1087                                                                                                                                                                                                  1145
+
+1088                                                                                                                                                                                                  1146
+
+1089                                                                                                                                                                                                  1147
+
+1090                                                                                                                                                                                                  1148
+
+1091                                                                                                                                                                                                  1149
+
+1092                                                                                                                                                                                                  1150
+
+1093                                                                                                                                                                                                  1151
+
+1094                                                                                                                                                                                                  1152
+
+1095                                                                                                                                                                                                  1153
+
+1096                                                                                                                                                                                                  1154
+
+1097                                                                                                                                                                                                  1155
+
+1098                                                                                                                                                                                                  1156
+
+1099                                                                                                                                                                                                  1157
+
+1100                                                                                                                                                                                                  1158
+
+1101                                                                                                                                                                                                  1159
+
+1102                                                                                 10                                                                                                 1160

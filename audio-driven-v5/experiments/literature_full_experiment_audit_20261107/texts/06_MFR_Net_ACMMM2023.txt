@@ -1,0 +1,540 @@
+     MFR-Net: Multi-faceted Responsive Listening Head Generation
+                      via Denoising Diffusion Model
+
+                         Jin Liu                      Xi Wang∗                 Xiaomeng Fu
+               Institute of Information Engineering,    Institute of Information Engineering,    Institute of Information Engineering,
+              Chinese Academy of Sciences &        Chinese Academy of Sciences        Chinese Academy of Sciences &
+             School of Cyber Security, University                Beijing, China              School of Cyber Security, University
+                of Chinese Academy of Sciences             wangxi1@iie.ac.cn               of Chinese Academy of Sciences
+                          Beijing, China                                                                      Beijing, China
+                         liujin@iie.ac.cn                                                        fuxiaomeng@iie.ac.cn
+
+                 Yesheng Chai                     Cai Yu                            Jiao Dai2023        Institute of Information Engineering,    Institute of Information Engineering,    Institute of Information Engineering,
+              Chinese Academy of Sciences &       Chinese Academy of Sciences &        Chinese Academy of Sciences
+             School of Cyber Security, University    School of Cyber Security, University                Beijing, ChinaAug          of Chinese Academy of Sciences        of Chinese Academy of Sciences                daijiao@iie.ac.cn
+                          Beijing, China                           Beijing, China
+                   chaiyesheng@iie.ac.cn                    caiyu@iie.ac.cn31
+
+                                                  Jizhong Han
+                                                          Institute of Information Engineering,
+                                                  Chinese Academy of Sciences
+                                                                     Beijing, China
+                                                          hanjizhong@iie.ac.cn[cs.CV]
+      ABSTRACT                                                    responses in diversity and speaker identity information but also in
+            Face-to-face communication is a common scenario including roles       attitude and viewpoint expression.
+            of speakers and listeners. Most existing research methods focus on
+          producing speaker videos, while the generation of listener heads   CCS CONCEPTS
+          remains largely overlooked. Responsive listening head generation        • Computing methodologies →Animation; Computer vision.
+               is an important task that aims to model face-to-face communication
+            scenarios by generating a listener head video given a speaker video   KEYWORDS
+          and a listener head image. An ideal generated responsive listening       listening head generation, image synthesis, denoising diffusion
+          video should respond to the speaker with attitude or viewpoint     model
+           expressing while maintaining diversity in interaction patterns and
+                                                  ACM Reference Format:
+           accuracy in listener identity information. To achieve this goal, we
+                                                                                                        Jin Liu, Xi Wang, Xiaomeng Fu, Yesheng Chai, Cai Yu, Jiao Dai, and Jizhong
+          propose the Multi-Faceted Responsive Listening Head Generation                                                                                Han. 2023. MFR-Net: Multi-faceted Responsive Listening Head Generation
+         Network (MFR-Net). Specifically, MFR-Net employs the probabilis-       via Denoising Diffusion Model. In Proceedings of the 31st ACM International
+              tic denoising diffusion model to predict diverse head pose and       Conference on Multimedia (MM ’23), October 29-November 3, 2023, Ottawa,
+           expression features. In order to perform multi-faceted response      ON, Canada. ACM, New York, NY, USA, 10 pages. https://doi.org/10.1145/arXiv:2308.16635v1
+            to the speaker video, while maintaining accurate listener identity       3581783.3612123
+            preservation, we design the Feature Aggregation Module to boost
+             listener identity features and fuse them with other speaker-related    1  INTRODUCTION
+            features. Finally, a renderer finetuned with identity consistency      Face-to-face communication [11, 30] is a common human activity,
+             loss produces the final listening head videos. Our extensive experi-      regularly occurring in various contexts such as between teachers
+          ments demonstrate that MFR-Net not only achieves multi-faceted     and students, doctors and patients, and employers and employees.
+             ∗Corresponding author.                                              During such communication, participants take turns to act as speak-
+                                                                                       ers and listeners, engaging in an exchange of information. Typically,
+                                     This work is licensed under a Creative Commons Attribution      speakers articulate their thoughts verbally, while listeners convey
+                                        International 4.0 License.                                   their opinions non-verbally through head movements.
+                                                                          There exists extensive research works on speaker modeling, i.e.
+        MM ’23, October 29-November 3, 2023, Ottawa, ON, Canada                          talking head generation [6, 25], including improving the lip-syn
+         © 2023 Copyright held by the owner/author(s).
+         ACM ISBN 979-8-4007-0108-5/23/10.                                           quality [9, 28, 31], achieving free pose control [21, 23, 43, 51] or
+               https://doi.org/10.1145/3581783.3612123                                   enhancing the naturalness by adding emotions [17, 18, 41, 44]. InMM ’23, October 29-November 3, 2023, Ottawa, ON, Canada                                                                                                                  Jin Liu et al.
+
+
+                                                                                     Speaker
+                                                                                       Video
+        Listener
+
+       Generated                                                             + Positive
+        Results #1                                                                               Attitude
+
+       Generated                                                             + Positive
+        Results #2                                                                               Attitude
+
+
+       Generated                                                             + Neutral
+        Results #3                                                                               Attitude
+
+       Generated                                                             + Negative
+        Results #4                                                                               Attitude
+
+
+Figure 1: Example results generated by MFR-Net. Given speaker video, audio, listener identity image and specific attitude
+label, our method generates natural multi-faceted responsive listening head videos. Results #1 and #2 display diverse results
+indicating positive attitude (smiling and nodding) while Results #3 and #4 show neutral (calm) and negative (serious) results.
+
+face-to-face communication scenarios, the listener’s role is also       actions in the listener, such as nodding, shaking, frowning, or other
+significant as that of the speaker. However, research on listener     movements. 3) Responsive Diversity: For a given speaker video,
+modeling remains less explored. Actually, the modeling of a listener       listener identity, and attitude, there exist various natural response
+is distinct from that of a speaker, as the former focuses on response       listener head videos. The expressive method and range of head
+to others while the latter primarily emphasizes lip synchroniza-     movement may differ in every response scenario. In a virtual online
+tion. The responsive listening head generation task aims to produce      meeting, it can be jarring if the avatars of each participant exhibit
+new listener head videos given the speaker talking head video and      the same response head reactions, as this could detract from the
+listener identity head image. Apart from modeling the daily sce-      sense of authenticity and spontaneity. 4) Generation Naturalness:
+nario, the technique can also be used in digital avatar generation in     The generated responsive listener heads should be of high image
+Metaverse, customer representatives, robot communication, virtual      quality and free of any visual artifacts. Additionally, the identity
+audience modeling, wherever involves responsive listeners.            information of the generated videos should match the given listener
+   Listening is a conditioned action to reflect human behavior ac-     head image in order to ensure consistency and accuracy.
+cording to the principle proposed in social psychology and anthro-         Recently, Zhou et al. [52] explore this task and collect the audio-
+pology [3]. The listener head videos should also contain the listener       visual ViCo dataset containing pairs of speaker and listener videos.
+identity and opinion information at the same time. In light of the     To guide the generation of listening heads, they utilize an LSTM-
+aforementioned background, there are multi-faceted requirements      based model to process the input signal and output listener head
+for the generation of responsive listener heads. 1) Viewpoint Ex-     pose features. Later, PCHG [16] post-process the generated frames
+pression: The generated responsive listener heads should convey      with face segmentation model [32] to improve the stability of the
+certain viewpoints as a corresponding response to the speaker’s      background. However, the deterministic nature of their models fails
+head videos.Non-verbal behaviors such as nodding, smiling, frown-      to model the generation diversity, and the direct concatenation fu-
+ing, head shaking, or neutral heads are generally used to convey      sion between identity and speaker-related feature causes inaccurate
+those viewpoints. 2) Speaker Interaction: To achieve dynamic       identity preserving, leading to facial contour artifacts.
+interaction between a speaker and listener in virtual communica-       To tackle the aforementioned problems and meet the above multi-
+tion, it is important that the pattern of listener motions exhibit      faceted requirements, we design the Multi-Faceted Responsive lis-
+a high correlation with the speaker’s head video signal, as well      tening head generation network (MFR-Net). Based on the denoising
+as the speaker’s attitude. The rhythm of the speaker’s audio and       diffusion model [15], MFR-Net is designed to predict the speaker’s
+the flow movement of their head can influence the action of the     head pose and expression features. By leveraging the probabilistic
+listener. Moreover, the attitude of the speaker, whether expressing      nature of the denoising diffusion model, we manage to generate di-
+agreement or disagreement, can prompt corresponding response      verse listening head results. Except for the generation diversity, theMFR-Net: Multi-faceted Responsive Listening Head Generation via Denoising Diffusion Model          MM ’23, October 29-November 3, 2023, Ottawa, ON, Canada
+
+
+generated listening head videos should also interact with speakers      audio signals into displacements in the space and generate final talk-
+with viewpoint or attitude expression and keep accurate listener      ing images. Though the above methods have no identity mismatch
+identity information. To achieve the multi-faceted response, we     problem since they merely edit the mouth areas, they generate
+propose the Feature Aggregation Module to embed the constraint      unnatural talking heads given the still facial parts.
+conditions including speaker-related features, listener’s attitude          Later, to improve the diversity and naturalness of talking heads,
+and listener identity information. The proposed module is applied      current methods [21, 23, 45, 48, 49, 51] explore to generate videos
+to each denoising and diffusion process to predict the noise term.     with head pose changes. Some methods [21, 23, 51] rely on auxiliary
+In this way, multi-faceted constraints can be integrated into the      pose video to provide explicit guidance of pose sequences, while
+diverse generated results. Finally, the renderer trained with identity      others [45, 48, 49] explore to infer pose sequence from the audio
+consistency loss is adopted to generate photo-realistic listener head       signal. Among them, OPT [23] try to solve the identity mismatch
+images. As shown in Fig. 1, MFR-Net manages to achieve natural     problem by disentangling identity and content feature from the
+and diverse multi-faceted listening head generation with different      audio signal to eliminate the effect of audio identity. To improve
+listener attitudes and accurate listener identity preservation.           the diversity of generated results, some works [22, 48] utilize the
+  Our contributions are summarized as follows: 1) We propose    VAE structure to map the audio signal into diverse pose sequences.
+MFR-Net, the first diffusion-based model for solving the task of      However, MFR-Net shows diversity not only in head poses, but also
+generating responsive listener heads, and produces diverse and       in facial expression parts as well.
+high-quality listener head videos. 2) The Feature Aggregation Mod-
+ule is designed to integrate speaker-related features, listener atti-
+tude and head image, leading to natural interaction with viewpoint     2.3  Diffusion Generative Models
+expression and accurate listener identity information. 3) The state-     Denoising diffusion probabilistic model [15] is first proposed for
+of-the-art performance is achieved on the ViCo dataset in terms of      unconditional image generation. Due to the stochastic property of
+visual quality, identity-preserving and generation diversity.            the initialized noise in the reversion process, it manages to generate
+                                                               images of great diversity and soon becomes popular in a variety of
+2  RELATED WORK                                            creativity-oriented generation tasks. To name a few, GLIDE [26]
+                                                                      introduces text conditions and proves the effectiveness of classifier-
+2.1  Responsive Listening Head Generation
+                                                                            free guidance. DALLE-2 [35] further generate semantics-consistent
+Responsive Listening Head Generation aims to produce a head      images conditioned on CLIP [34] guidance. Later, Latent Diffusion
+video of the listener, given a corresponding talking-head video of     Models [37] perform the diffusion process in latent space rather
+the speaker and face image of the listener. Zhou et al. [52] first      than pixel space to improve the efficiency. The above works could
+propose this task and construct the ViCo dataset for evaluation.      generate diverse and natural images. However, creative as they are,
+The proposed baseline utilizes LSTM to process the streaming in-      diffusion models adopted in such creativity-oriented tasks are not
+put of visual and audio information of the speaker and produces       stable enough for responsible listening head generation, which aims
+facial 3DMM coefficients of the listener. Later, Huang et al. [16]       to generate a natural video of a fixed listener while keeping identity
+utilizes pre-trained foreground-background segmentation model      information unchanged. Our proposed MFR-Net turns to generate
+U2Net [33] to fuse and improve the background of generated re-       facial coefficient features and impose explicit identity restrictions
+sults. However, the above method could merely generate solitary      over the generation process to solve the above problems.
+listening head videos given certain speaker talking videos, while
+MFR-Net manages to produce diverse listening head videos.
+                                               3 METHOD
+2.2  Audio-Driven Head Synthesis                      Given speaker video clip𝑉𝑠containing visual and audio information,
+Audio-driven head synthesis produces lip-sync talking head videos       listener head image 𝐼𝑙and attitude label, MFR-Net aims to produce
+given source faces and driving speech signals. Some previous meth-      multi-faceted responsive listening head videos. An overview of
+ods [12, 13, 19, 47] generated talking head videos of specific identity     MFR-Net is shown in Fig. 2, which contains four major components.
+used in the training process. Guo et al. [13] utilize NeRF-based [24]     The diffusion process and denoising process act as training and
+network to model the head and torso separately and combine two      inference modules, respectively. The Feature Aggregation Module
+generated parts. Zhang et al. [47] perform 3D face reconstruction       receives the inputs containing speaker video𝑉𝑠, listener head image
+over each frame in the video and generate new expression coeffi-         𝐼𝑙, listener attitude and last intermediate state in the denoising or
+cients to control mouth shape. Though the aforementioned tech-      diffusion process, then adopts attention-based blocks to predict
+niques preserve accurate source identity, they necessitate requiring      noise of current step 𝑡. The output of the denoising process is
+high-quality videos of each subject for minutes to hours and only       listener head pose and expression features, which will be fed into
+produce a limited range of identities, resulting in significant limita-      the generator to generate new listener head videos.
+tions on their applicability and generalization.
+   Therefore, some recent methods [1, 7, 8, 31, 50] try to relieve the
+                                                         3.1  Denoising Diffusion Model for Featureidentity restriction and explore to generate any source subject. Pra-
+jwal et al. [31] adopt a pre-trained lip-sync discriminator to improve         Generation
+the lip-sync quality of generated talking head videos. Alghamdi et      Previous responsive listener head generation methods adopt de-
+al. [1] model each frame into the latent space of StyleGAN, map       terministic LSTM-based modules to predict listener head features.MM ’23, October 29-November 3, 2023, Ottawa, ON, Canada                                                                                                                  Jin Liu et al.
+
+     Denoising Process
+      Listener
+
+                                      Feature Aggregation Module                                    𝑰𝑰𝒍𝒍        Identity𝑭𝑭𝒍𝒍
+                      Feature
+                                                                                                      Generated Listener
+                             SPADE                                                                            Feature                                                                                                                                                                                                                                                                 {෩𝑭𝑭𝒍𝒍𝒑𝒑, ෩𝑭𝑭𝒍𝒍𝒆𝒆}     𝑥𝑥𝑇𝑇~ 𝒩𝒩(0, 𝐼𝐼) …                                       Feature  +     Feature                                          +    ForwardFeed   +            …                                   Enhancing                                                       Fusion                                                                                                                                            𝑝𝑝𝜃𝜃(𝑥𝑥𝑡𝑡−1|𝑥𝑥𝑡𝑡)
+                                                                                                        Output            𝑥𝑥𝑇𝑇                      𝑥𝑥𝑡𝑡                                                                                     𝑥𝑥𝑡𝑡−1             𝑥𝑥0                                                            𝒑𝒑                          Pose𝑭𝑭𝒔𝒔     Expression𝑭𝑭𝒔𝒔𝒆𝒆       Audio𝑭𝑭𝒔𝒔𝒂𝒂              Listener𝒂𝒂𝒂𝒂𝒂𝒂                                 C    Concatenate       F  Feature                         Feature    Feature    Feature           Attitude𝑭𝑭𝒍𝒍
+       Speaker Clip                                             +    Element-wise Addition      Loss function                              C
+                                                                                                                                            Generator                                      +                   SPADE SpatialNormalizationAdaptive    G𝓛𝓛                      𝑽𝑽𝒔𝒔
+     Diffusion Process                                               Renderer
+                                    Noise     Listener Feature             𝜖𝜖~ 𝒩𝒩(0, 𝐼𝐼) Timestep                                           Listener                                                                                                            {𝑭𝑭𝒍𝒍, 𝑭𝑭𝒍𝒍𝒂𝒂𝒂𝒂𝒂𝒂, 𝑭𝑭𝒔𝒔𝒑𝒑, 𝑭𝑭𝒔𝒔𝒆𝒆, 𝑭𝑭𝒔𝒔𝒂𝒂}                                                                                                                      𝒕𝒕           Feature                                           G                {𝑭𝑭𝒍𝒍𝒑𝒑, 𝑭𝑭𝒍𝒍𝒔𝒔}                         …          Aggregation                                                        Module                ℒ𝑛𝑛𝑛𝑛𝑛𝑛𝑛𝑛𝑛𝑛                        𝑰𝑰𝒍𝒍                                                                                                                                               𝝐𝝐𝜽𝜽(𝒙𝒙𝒕𝒕, 𝒕𝒕, 𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊)             𝑥𝑥0           𝑞𝑞(𝑥𝑥𝑡𝑡|𝑥𝑥0)              𝑥𝑥𝑡𝑡                                                                                                                                                                                                           {෩𝑭𝑭𝒍𝒍𝒑𝒑, ෩𝑭𝑭𝒍𝒍𝒆𝒆}          ℒ𝑖𝑖𝑖𝑖                                                                                                                                                                                                                                                                                                                                                                                                                ෨𝑰𝑰𝒍𝒍
+Figure 2: Overview of MFR-Net. MFR-Net adopts the denoising diffusion model to predict new listener features, which are fed
+into the generator along with listener image 𝐼𝑙to produce responsive listening heads. The Feature Aggregation Module is
+designed to predict the noise used in the denoising diffusion model, given speaker clip 𝑉𝑠, listener image 𝐼𝑙, listener attitude 𝐹𝑎𝑡𝑡𝑙    ,
+intermediate feature 𝑥𝑡and time step 𝑡. The brown and black arrows indicate the training and inference process, respectively.
+
+They lack response diversity, which is the key factor in natural face-       As shown in the diffusion part in Fig. 2, during training, noise 𝜖
+to-face interaction. To tackle the problem, we build our generation     and uniformly sampled time step 𝑡are utilized to generate latent
+pipeline based on probabilistic denoising diffusion models.               features. Given that the diffusion process admits sampling 𝑥𝑡at an
+  The denoising diffusion model [15] is adopted to denoise a      arbitrary time step 𝑡, instead of repeatedly adding noises to each
+Gaussian noise step-by-step and finally generate the listener head      intermediate state, the diffusion process can be further denoted as
+pose and expression features. The form is as follows: 𝑝𝜃(x0) :=     𝑞(x𝑡| x0) = N  x𝑡; √¯𝛼𝑡x0, (1 −¯𝛼𝑡) I  , where 𝛼𝑡:= 1−𝛽𝑡and ¯𝛼𝑡:=
+∫ 𝑝𝜃(x0:𝑇) 𝑑x1:𝑇, where 𝑥0 is the real data of listener head pose and    Î𝑡𝑠=1 𝛼𝑠. To improve the performance, following iDDPM [27], we
+expression features and 𝑥1, ...,𝑥𝑇are the latent data of the interme-     choose to predict noise term𝜖instead of predicting latent feature. To
+diate state. Specifically, the joint distribution 𝑝𝜃(x0:𝑇) is called the       integrate each input feature and achieve multi-faceted generation,
+denoising process, which is defined as a Markov chain with learned    we design the Feature Aggregation Module (Sec. 3.2) instead of
+Gaussian transitions starting at 𝑝(x𝑇) = N (x𝑇; 0, I):                 using traditional U-Net to predict the noise term. Hence, the loss
+                                                             term used to optimize the model parameters is as follows:
+                         𝑇
+        𝑝𝜃(x0:𝑇) := 𝑝(x𝑇) Ö 𝑝𝜃(x𝑡−1  | x𝑡) ,                                                                         (1)                  Lnoise = 𝐸𝑡,𝑥0,𝜖  ∥𝜖−𝜖𝜃(𝑥𝑡,𝑡,𝑖𝑛𝑝𝑢𝑡)∥2   .           (3)                            𝑡=1
+       𝑝𝜃(x𝑡−1  | x𝑡) := N (x𝑡−1; 𝜇𝜃(x𝑡,𝑡) , Σ𝜃(x𝑡,𝑡)) .                                                                    Furthermore, as shown in Equation 1, to generate new samples
+   Correspondingly, the diffusion process is the approximate poste-     through the denoising process, 𝜇𝜃and Σ𝜃are demanded. Following
+rior 𝑞(𝑥1:𝑇|𝑥0), which is also designed to fix a Markov chain that    Ho et al. [15], Σ𝜃is set to a constant number and 𝜇𝜃is:
+gradually adds Gaussian noise to the data according to a variance
+schedule 𝛽1, ..., 𝛽𝑇:                                                                     1        −𝛼𝑡                                                                        𝜇𝜃(x𝑡,𝑡,𝑖𝑛𝑝𝑢𝑡) =    x𝑡−1      𝜖𝜃(x𝑡,𝑡,𝑖𝑛𝑝𝑢𝑡)   .   (4)                         𝑇                                                      √𝛼𝑡     √1 −¯𝛼𝑡
+          𝑞(x1:𝑇| x0) := Ö 𝑞(x𝑡| x𝑡−1) ,                                                                        In this way, we manage to denoise the sampled noise step-by-                            𝑡=1                                     (2)
+                                                                      step and finally generate new features, which are conditioned on
+          𝑞(x𝑡| x𝑡−1) := N  x𝑡; √︁1 −𝛽𝑡x𝑡−1, 𝛽𝑡I   .                  the given input, as shown in the pink part in Fig. 2.MFR-Net: Multi-faceted Responsive Listening Head Generation via Denoising Diffusion Model          MM ’23, October 29-November 3, 2023, Ottawa, ON, Canada
+
+3.2  Feature Aggregation Module                     model PIRenderer [36] to produce new listener heads. To further
+In Sec. 3.1, we show the denoising diffusion model as the listener       alleviate the identity mismatch problem, we re-train the model
+feature generator, then we will illustrate the neural network for     and add another identity restriction loss apart from the original
+predicting the noise term 𝜖𝜃(𝑥𝑡,𝑡,𝑖𝑛𝑝𝑢𝑡). Specifically, the input in-      perceptual loss, style loss and GAN loss.
+cludes identity features extracted from the face recognition model,
+pose and expression features reconstructed from 3DMM, audio fea-                     L𝑖𝑑𝑒𝑛𝑡𝑖𝑡𝑦= 𝑉( ˜𝐼𝑡) −𝑉(𝐼𝑡)     ,                  (6)                                                                                                                                1
+tures, listener attitudes and latent state features. Unlike traditional
+denoising diffusion models [15, 35, 37, 40] using the U-Net [38] as     where𝑉denotes the VGGFace [5] model to extract identity features.
+basic module, to deal with input audio and pose features of vari-      In this way, given generated listener pose and expression feature
+                                                                                           ˜𝐹𝑝able length, we design our Feature Aggregation Module based on       {                                                                         𝑙, ˜𝐹𝑒𝑙} and listener head image 𝐼𝑙, new responsive listener head
+Transformer [42] technique.                                    image ˜𝐼𝑙is generated.
+   Furthermore, previous responsive listener head generation meth-
+ods directly concatenate listener head features and other driving    4  EXPERIMENT
+features, giving the same focus on features of different importance.
+                                                         4.1  Experimental SettingsIn this way, responsive listener heads with inaccurate facial contour
+and the identity mismatch problem are generated. To alleviate the       4.1.1  Dataset. Our method is evaluated both quantitatively and
+problem, we hope to enhance the speaker information into driving       qualitatively on the ViCo dataset [52], which is uniquely suited to
+features by aggregating its most compatible identity features.          our task. This dataset features 483 video clips capturing face-to-face
+   Firstly, our objective is to enhance the input features and obtain       interactions between two realistic subjects in a natural environment,
+a comprehensive understanding of the existing identity feature,     with a total of over 0.1 million frames. Specifically, it includes the
+which guides the generation of the noise term. Taking inspiration       identities of 76 listeners and 67 speakers, and each response is
+from the traditional face swapping work FaceShifter [20], we design     manually annotated as positive, neutral, or negative attitude. As
+our approach by incorporating the identity information into the      the only audio-visual dataset of its kind, ViCo provides an ideal
+latent feature map using the SPADE-like [29] module. This inte-     benchmark for evaluating our approach.
+gration ensures that the explicit identity information is embedded
+                                                                                    4.1.2  Comparison Methods. Two responsive listener head genera-throughout the entire generation process, thereby effectively pre-
+                                                                          tion methods are adopted as comparing methods: ViCo [52] adoptsserving the relevant information. Then we draw inspiration from
+                                                                   the LSTM-based Sequential Decoder to predict the pose and ex-the implementation of Transformer [42] and utilize the multi-head
+                                                                      pression features of the listener subject and renders them into newself-attention module. Specifically, details of this process can be
+                                                                  responsive heads. PCHG [16] post-process the generated videosformulated as follows:
+                                                              with a segmentation model to improve the stability of the back-
+                          𝑄𝑊𝑞(𝐾𝑊𝑘)𝑇 !                  ground. Each method is trained on the training set D𝑡𝑟𝑎𝑖𝑛of ViCo,
+      Attention(𝑄, 𝐾,𝑉) = Softmax    √      𝑉𝑊𝑣,     (5)
+                              𝐶                     and further evaluated on the test set D𝑡𝑒𝑠𝑡and out-of-domain set
+                                                            D𝑜𝑜𝑑. Specifically, all identities in D𝑡𝑒𝑠𝑡have appeared in D𝑡𝑟𝑎𝑖𝑛
+where 𝑊𝑞,𝑊𝑘,𝑊𝑣are projection parameters and 𝑄, 𝐾,𝑉are the      while identities in D𝑜𝑜𝑑have no overlap with ones in D𝑡𝑟𝑎𝑖𝑛.
+query, key, and value respectively. During feature enhancing, we
+employ different projection weights on the combination of the        4.1.3  Implementation Details. The face video frames are cropped
+identity feature and latent feature.                                      to 256 × 256 size at 30 FPS and the audio signals are extracted into
+   Secondly, to fusion the listener identity information into speaker      45-dimensional acoustic features, including 14-dim mel-frequency
+driving features of another identity, we adopt the feature fusion       cepstral coefficients (MFCC), 28-dim MFCC-Delta, energy, Zero
+module to build the correlation between input processed identity      Crossing Rate and loudness. The listener attitude information is
+features and driving speaker features. The detailed formulation      denoted as the one-hot label. The window length of the speaker clip
+is the same as Equation 5 except that the key and value are from        is set to be 40 frames with a sliding window length of 20 frames. As
+features from speaker clip 𝑉𝑠, listener attitude 𝐹𝑎𝑡𝑡𝑙   and time step 𝑡.      for model details, we utilize multi-head attention with 8 heads and
+   Finally, the feed-forward module is adopted to predict the noise      4 layers. The identity feature is extracted from the face recognition
+term. Here we omit the residual connection and LayerNorm [2]     model [5], while the pose and expression features are from the
+operation in each formula for simplification. The loss term in Equa-      angles and translation coefficients of face 3DMM reconstruction
+tion 3 is utilized to train the module. Thanks to the Feature Aggre-      operation [10] on the frames in each video. All experiments use an
+gation Module, the listener identity information is enhanced and     NVIDIA V100 GPU with 32 GB memory.
+injected into each driving feature, thus helping to generate accurate
+listener features in the denoising process.                        4.2  Quantitative Evaluation
+                                                                                    4.2.1  Evaluation Metrics. In order to evaluate the precision of the
+3.3  Generator                                                generated speaker pose and expression features, we adopt the eval-
+To improve the inter-frame coherence, the listener head pose fea-      uation methodology utilized by ViCo [52], which involves mea-
+tures are obtained clip by clip with a fixed window and stride      suring the 𝐿1 distance between the generated features and their
+length through the above module. After obtaining the generated      corresponding ground-truth features (FD). These features are ex-
+listener features, we adopt the state-of-the-art face reenactment      tracted from 3D facial reconstruction data, where the angle andMM ’23, October 29-November 3, 2023, Ottawa, ON, Canada                                                                                                                  Jin Liu et al.
+
+
+        Speaker
+          Video
+
+
+        Ground
+         Truth
+
+
+         ViCo
+
+
+      PCHG
+
+
+         Ours
+
+
+Figure 3: Qualitative comparisons with other state-of-the-art methods conditioned by the same listener identity (the second
+row of each group) and the same attitude (left: positive listener in D𝑜𝑜𝑑, right: positive listener in D𝑡𝑒𝑠𝑡).
+
+Table 1: The Feature Distance (×100) of different listening head generation methods. Each cell in the table represents the feature
+distance of angle/expression/translation coefficients respectively. Lower is better and the bold denotes the best result.
+
+                                         Positive               Neutral               Negative              Average
+        Method      Testset
+                               angle   exp    trans   angle   exp    trans   angle   exp    trans   angle   exp    trans
+
+                        Dtest     6.79    15.37    6.48    8.79    13.61    6.68    12.45   16.98    6.35    7.79    15.04    6.52
+       ViCO [52]
+                   Dood     9.72    24.89    9.51    6.33    23.51    8.95    8.54    18.99    5.81    8.23    22.83    8.32
+
+                        Dtest     13.73   15.36    6.94   12.32   15.35    5.58    13.48   23.72    8.85   13.37   19.98    7.74
+      PCHG [16]
+                   Dood     17.93   19.12    8.27   18.32   17.66    9.69    17.47   20.86   17.95   18.00   18.82    8.76
+
+                        Dtest     5.36   13.73   5.94    5.35   12.32   4.58   11.78  13.46   5.48   6.82   13.37   6.02
+          Ours
+                   Dood     9.03   13.72   6.29   6.27   12.96   4.77   7.77   15.51   5.78   8.12   14.70   6.37
+
+Table 2: Quantitative comparisons on image-level metrics with state-of-the-art methods on ViCo dataset. The bold and
+underlined notations represents the Top-2 results.
+
+                         Method    SSIM ↑  CPBD ↑  PSNR↑   FID ↓  CSIM ↓   Diversity ↑
+
+                      ViCO [52]     0.56       0.11      17.36    27.74     0.23         0.16
+                   PCHG [16]     0.58       0.16      18.51    21.35     0.25         0.17
+                            Ours       0.59      0.18      17.82    20.08    0.18       0.28
+
+
+translation (trans) feature track changes in head pose, while the        4.2.2  Evaluation Results. Table 1 presents the quantitative compar-
+expression (exp) feature captures variations in facial movements.       ison results for both D𝑡𝑒𝑠𝑡and D𝑜𝑜𝑑subsets of the ViCo dataset,
+  To perform a comprehensive evaluation of the video-level perfor-     with evaluations performed on head pose features including angle,
+mance, we adopt Fr’echet Inception Distance (FID) [14], Structural      expression, and translation. It is worth noting that D𝑡𝑒𝑠𝑡shares
+Similarity (SSIM) [46], Peak Signal-to-Noise Ratio (PSNR), and Cu-       listener identity overlap with the training set (D𝑡𝑟𝑎𝑖𝑛), while D𝑜𝑜𝑑
+mulative Probability of Blur Detection (CPBD) [4]. Additionally, to      does not. Results are presented for three different attitudes, as well
+assess the quality of identity preservation, we utilize cosine similar-      as their average values.
+ity (CSIM) between identity features extracted from Vggface2 [5]       MFR-Net achieves superior performance in head movements and
+on generated and ground truth images. Furthermore, in order to val-       facial expressions across all three attitudes. On average evaluation
+idate the diversity of the generated head motions, we compute the      using the D𝑡𝑒𝑠𝑡subset, angle, expression, and translation features
+standard deviation of head motion feature embeddings extracted     show improvements of 0.97, 1.67, and 0.5 respectively. Notably,
+from the generated frames using Hopenet [39], which follows the     when generating unseen identities in D𝑜𝑜𝑑, the performance of
+methodology of SadTalker [48].                                      other methods declines significantly compared to results obtainedMFR-Net: Multi-faceted Responsive Listening Head Generation via Denoising Diffusion Model          MM ’23, October 29-November 3, 2023, Ottawa, ON, Canada
+
+
+       Table 3: User study results on ViCo dataset.
+                                                                                                                                         Speaker
+                Overall    Motion     Identity    Attitude                                                                        Video
+   Method
+              Naturalness  Diversity  Preserving  Matching
+                                                                                       Listener
+  ViCO [52]     18.3%       11.7%      13.3%      29.7%               Identity                                                Ours w/o                                                                                                                       DIFF
+ PCHG [16]     36.6%       25.7%      25.0%      33.7%
+    Ours       49.0%      62.7%     61.7%     36.7%                                                                                                                              Ours w/o
+                                                                                              FAM
+on D𝑡𝑒𝑠𝑡. In contrast, MFR-Net maintains relatively competitive
+performance, demonstrating its exceptional ability to generalize on                                                              Ours w/o
+unseen identities. These outstanding results are attributable to the
+proposed Feature Aggregation Module, which enhances and fuses                                                                                                                                                                                                                                                                                                                                                        𝓛𝓛𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊
+identity information with speaker-related features.
+                                                                                                                                Ours   Table 2 presents image-level metrics for both D𝑜𝑜𝑑and D𝑡𝑒𝑠𝑡.
+The results demonstrate that MFR-Net outperforms other methods
+in terms of CSIM and Diversity scores, indicating superior preser-     Figure 4: Qualitative results of ablation study on denoising
+vation of identity information and generation of diverse images.     diffusion model (DIFF), Feature Aggregation Module (FDM)
+Moreover, our method achieves competitive results with respect     and the identity consistency loss L𝑖𝑑𝑒𝑛𝑡𝑖𝑡𝑦.
+to image quality. Although PCHG achieves a slightly higher PSNR
+score due to its complicated post-processing on background pixels,     Table 4: Ablation study for each proposed component in MFR-
+MFR-Net generates images with accurate head pose features and     Net tested on both D𝑜𝑜𝑑and D𝑡𝑒𝑠𝑡of ViCo dataset.
+natural-looking diverse interaction patterns.
+                                                          Method     angle ↓exp ↓trans ↓CSIM ↓Diversity ↑
+4.3  Qualitative Evaluation                              w/o DIFF      7.48   14.89   6.39     0.21       0.15
+In this section, we present the qualitative results from the generated        w/o FAM      7.52   18.27   7.49     0.27       0.26
+responsive listening head frames using each method. The results       w/o L𝑖𝑑𝑒𝑛𝑡𝑖𝑡𝑦       -        -        -      0.20       0.28
+are depicted in Fig. 3. Our findings reveal that MFR-Net offers a                                                               Ours        7.47   14.04   6.20     0.18       0.28
+reasonable response that may differ from the ground-truth, yet
+remains coherent. In comparison, other methods such as ViCo fail
+to maintain accurate facial contours and generate visible artifacts,     (FAM) and whether to utilize the identity loss L𝑖𝑑𝑒𝑛𝑡𝑖𝑡𝑦in the ren-
+while PCHG produces stiffresponse head videos that lack inter-      derer. Specifically, we compare our method without DIFF, which
+active features with the speaker video. Conversely, our approach      employs a simple LSTM-based model as the backbone for predicting
+ensures the preservation of accurate identity information with no      noise terms, and our method without FAM, which concatenates all
+visible artifacts. Additionally, the generated videos appear more       features directly and inputs them into the diffusion model. The re-
+visually plausible with natural and synchronized head motions and       sults of both the qualitative and quantitative analyses are presented
+corresponding attitudes. For a detailed video-format comparison,      in Fig. 4 and Table 4, respectively.
+please refer to the supplementary material.                        The experimental results demonstrate that incorporating the
+                                                                  denoising diffusion model into MFR-Net leads to a significant im-
+4.4  User Study                                           provement in generation diversity, owing to its probabilistic nature,
+                                                                 while also ensuring the accurate synthesis of head features. More-We conduct user studies to evaluate the performance of all methods.
+                                                                            over, the Feature Aggregation Module and the identity consistencyWe randomly choose 10 speaker videos and 10 listeners. For each
+                                                                           loss effectively preserve the precise listener identity information.cross-combination, three responsive videos of each attitude are gen-
+                                                       The image-level results also attest to the effectiveness of our ap-erated. This process results in 300 generated videos for each method.
+                                                                    proach. Notably, when generating previously unseen identities inTo assess the quality, we asked 10 participants to watch the videos
+                                                                    the out-of-distribution dataset D𝑜𝑜𝑑, the FAM enhances the iden-and choose the best method based on overall naturalness, motion
+                                                                                  tity information and fuses it with other speaker-related features,diversity, identity preservation, and attitude matching quality. The
+                                                                          resulting in natural-looking listening head videos. It is worth high-results of the study are presented in Table 3. MFR-Net outperformed
+                                                                         lighting that this increased diversity in generated responses doesall other methods in all aspects, especially with regard to motion
+                                                                  not come at the cost of reduced accuracy in head feature synthesis.diversity and identity preservation. These findings indicate the
+superiority of our proposed Feature Aggregation Module and the        4.5.2   Interaction Patterns. As highlighted in Section 1, generating
+effectiveness of our model.                                          responsive listening heads that can facilitate interaction is criti-
+                                                                                     cal. To this end, we present several typical patterns generated by
+4.5  Further Analysis                                   MFR-Net, as illustrated in Fig. 5. In the upper pairs, we observe
+4.5.1  Ablation Study. To assess the effectiveness of the designed      that when listeners intend to show agreement, they tend to nod
+components in MFR-Net, we conduct the ablation study on the       their heads or smile. Similarly, the lower pairs demonstrate how
+denoising diffusion model (DIFF), the Feature Aggregation Module     MFR-Net can model disagreement by shaking heads or expressingMM ’23, October 29-November 3, 2023, Ottawa, ON, Canada                                                                                                                  Jin Liu et al.
+
+
+ Speaker                                                                                                                                          Negative
+  Video                                                                                                                                                  Attitude
+
+                                                                                        Listener
+ Listening                                                                                                                                         Neutral                                                                                             Identity
+  Video                                                                                                                                                  Attitude
+
+ Speaker                                                                                                                                                           Positive
+  Video                                                                                                                                                  Attitude
+
+                                                                                        Listener Listening                                                                                                                                         Neutral                                                                                             Identity  Video                                                                                                                                                  Attitude
+
+Figure 5: Visual interaction patterns in MFR-Net. The upper     Figure 7: Visual results generated by MFR-Net conditioned
+pairs show nodding and smiling for agreement, while the     by same speaker video and listener but different attitudes.
+lower pairs display shaking for disagreement and a neutral
+attitude.
+                                                         4.6  Limitation
+                                                             While MFR-Net shows promising results in generating realistic and
+                                                             Speaker        diverse listening head videos given a speaker video and listener head
+                                                               Video                                                                 image, there are still some limitations that need to be addressed.
+                                                   One of the limitations is that 3DMMs do not model the variation
+  Listener
+  Identity                                                          Listening        of eyes and teeth, which may cause difficulties in synthesizing the
+                                                                    Results #1                                                                           finer details of teeth. Additionally, we only consider the speaker
+                                                                frames and audio signal without taking into account the semantic
+                                                                    Listening       information contained in speech, such as speaker emotions and
+                                                                    Results #2                                                                    viewpoints. In future works, we plan to incorporate these factors
+                                                                        to build a more realistic and highly interpretable system.
+Figure 6: Visual results of diverse generation. To convey a
+negative attitude, frowning or serious emotion can be pro-    5  ETHICAL CONSIDERATIONS
+duced by MFR-Net.                                                       MFR-Net is designed for modeling face-to-face communication
+                                                                       scenarios and can be potentially utilized in world-positive use cases
+neutrality through stationary head movements. These results indi-     and applications, like digital avatar conversation and virtual online
+cate that MFR-Net is capable of generating diverse responses that      meetings. In case of misuse of the proposed method, we strongly
+can effectively facilitate interaction.                                 support all relevant safeguarding measures against such malicious
+                                                                         applications. We believe the proper usage of this technique will
+4.5.3  Generation Diversity. The denoising diffusion model within     enhance the development of artificial intelligence research and
+MFR-Net exhibits a probabilistic property that enables the genera-      relevant multimedia applications.
+tion of a diverse range of responsive listening heads, as illustrated in
+Fig. 6. Instead of producing entirely random output, MFR-Net gen-    6  CONCLUSION
+erates varied results based on the listener identity image, speaker                                                                This paper proposes a novel method for generating responsive
+video, and attitude label. Depicted in Fig. 6, MFR-Net produces a                                                                         listening head videos. Our proposed MFR-Net utilizes the proba-
+frowning expression or a serious demeanor to convey negative                                                                                        bilistic denoising diffusion model to predict the listener head pose
+attitudes. By leveraging this probabilistic mechanism, MFR-Net                                                          and expression features, thereby generating diverse and natural
+achieves greater flexibility and effectiveness in generating responses                                                                                 results. To achieve high-quality outputs with accurate response to
+that accurately reflect the given conditions.                                                                   speaker video while expressing certain attitude and preserving the
+                                                                            listener identity, the Feature Aggregation Module is introduced,4.5.4   Attitude Analysis. To validate the response on attitude label,
+                                                         which enhances and fuses the multi-faceted responsive features.we show results generated by MFR-Net conditioned by the same
+                                                        The proposed method is evaluated both quantitatively and qualita-speaker video and listener but different attitude labels, as shown in
+                                                                                    tively, and the experimental results demonstrate its superiority inFig. 7, where two distinct categories of output are displayed. Our
+                                                                   generating precise and diverse listener head responses.analysis shows that the facial expressions and head motions gener-
+ated by MFR-Net are highly expressive and distinguishable across
+various attitude labels, indicating the model’s ability to produce   ACKNOWLEDGEMENT
+multi-faceted responses. These findings contribute to a growing      This research is supported in part by the National Key Research
+body of evidence supporting the efficacy of utilizing MFR-Net for     and Development Program of China (2020AAA0140000), and the
+generating natural responses with respect to human attitudes.         National Natural Science Foundation of China (No. 61702502).MFR-Net: Multi-faceted Responsive Listening Head Generation via Denoising Diffusion Model          MM ’23, October 29-November 3, 2023, Ottawa, ON, Canada
+
+REFERENCES                                                                    [25] Yisroel Mirsky and Wenke Lee. 2021. The creation and detection of deepfakes: A
+ [1] Mohammed M Alghamdi, He Wang, Andrew J Bulpitt, and David C Hogg. 2022.             survey. ACM Computing Surveys (CSUR) 54, 1 (2021), 1–41.
+     Talking Head from Speech Audio using a Pre-trained Image Generator. In Pro-        [26] Alex Nichol, Prafulla Dhariwal, Aditya Ramesh, Pranav Shyam, Pamela Mishkin,
+     ceedings of the 30th ACM International Conference on Multimedia. 5228–5236.             Bob McGrew, Ilya Sutskever, and Mark Chen. 2021. Glide: Towards photorealistic
+ [2] Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E Hinton. 2016. Layer normaliza-           image generation and editing with text-guided diffusion models. arXiv preprint
+      tion. arXiv preprint arXiv:1607.06450 (2016).                                                arXiv:2112.10741 (2021).
+ [3] Larry L Barker. 1971. Listening Behavior. (1971).                                       [27] Alexander Quinn Nichol and Prafulla Dhariwal. 2021. Improved denoising diffu-
+ [4] P Bohr, Rupali Gargote, Rupali Vhorkate, RU Yawle, and VK Bairagi. 2013. A             sion probabilistic models. In International Conference on Machine Learning. PMLR,
+    no reference image blur detection using cumulative probability blur detection             8162–8171.
+    (CPBD) metric.  International Journal of Science and Modern Engineering 1, 5        [28] Se Jin Park, Minsu Kim, Joanna Hong, Jeongsoo Choi, and Yong Man Ro. 2022.
+      (2013).                                                                               SyncTalkFace: Talking Face Generation with Precise Lip-syncing via Audio-Lip
+ [5] Qiong Cao, Li Shen, Weidi Xie, Omkar M Parkhi, and Andrew Zisserman. 2018.           Memory. In 36th AAAI Conference on Artificial Intelligence (AAAI 22). Association
+     Vggface2: A dataset for recognising faces across pose and age. In 2018 13th IEEE              for the Advancement of Artificial Intelligence.
+      international conference on automatic face & gesture recognition (FG 2018). IEEE,        [29] Taesung Park, Ming-Yu Liu, Ting-Chun Wang, and Jun-Yan Zhu. 2019. Semantic
+     67–74.                                                                      image synthesis with spatially-adaptive normalization. In Proceedings of the
+ [6] Lele Chen, Guofeng Cui, Ziyi Kou, Haitian Zheng, and Chenliang Xu. 2020. What            IEEE/CVF conference on computer vision and pattern recognition. 2337–2346.
+     comprises a good talking-head video generation?: A survey and benchmark.        [30] Rachel Paul, Jesse Sharrard, and Song Xiong. 2016. The importance of face-to-face
+     arXiv preprint arXiv:2005.03201 (2020).                                              communication in the digital world. Journal of Nutrition Education and Behavior
+ [7] Lele Chen, Guofeng Cui, Celong Liu, Zhong Li, Ziyi Kou, Yi Xu, and Chenliang               48, 10 (2016), 681.
+     Xu. 2020. Talking-head generation with rhythmic head motion. In European        [31] KR Prajwal, Rudrabha Mukhopadhyay, Vinay P Namboodiri, and CV Jawahar.
+     Conference on Computer Vision. Springer, 35–51.                                             2020. A lip sync expert is all you need for speech to lip generation in the wild. In
+ [8] Lele Chen, Ross K Maddox, Zhiyao Duan, and Chenliang Xu. 2019. Hierarchical             Proceedings of the 28th ACM International Conference on Multimedia. 484–492.
+     cross-modal talking face generation with dynamic pixel-wise loss. In Proceedings        [32] Xuebin Qin, Zichen Zhang, Chenyang Huang, Masood Dehghan, Osmar Zaiane,
+      of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. 7832–           and Martin Jagersand. 2020. U2-Net: Going Deeper with Nested U-Structure for
+     7841.                                                                                          Salient Object Detection. Pattern Recognition 106, 107404.
+ [9] Kun Cheng, Xiaodong Cun, Yong Zhang, Menghan Xia, Fei Yin, Mingrui Zhu,        [33] Xuebin Qin, Zichen Zhang, Chenyang Huang, Masood Dehghan, Osmar R Zaiane,
+    Xuan Wang, Jue Wang, and Nannan Wang. 2022. VideoReTalking: Audio-based           and Martin Jagersand. 2020. U2-Net: Going deeper with nested U-structure for
+     Lip Synchronization for Talking Head Video Editing In the Wild. In SIGGRAPH               salient object detection. Pattern recognition 106 (2020), 107404.
+     Asia 2022 Conference Papers. 1–9.                                                      [34] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh,
+[10] Yu Deng, Jiaolong Yang, Sicheng Xu, Dong Chen, Yunde Jia, and Xin Tong. 2019.            Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark,
+     Accurate 3D Face Reconstruction with Weakly-Supervised Learning: From Single               et al. 2021. Learning transferable visual models from natural language supervision.
+     Image to Image Set. In IEEE Computer Vision and Pattern Recognition Workshops.              In International conference on machine learning. PMLR, 8748–8763.
+[11] Emily Drago. 2015. The effect of technology on face-to-face communication.        [35] Aditya Ramesh, Prafulla Dhariwal, Alex Nichol, Casey Chu, and Mark Chen.
+     Elon Journal of Undergraduate Research in Communications 6, 1 (2015).                      2022. Hierarchical text-conditional image generation with clip latents. arXiv
+[12] Ohad Fried, Ayush Tewari, Michael Zollhöfer, Adam Finkelstein, Eli Shecht-              preprint arXiv:2204.06125 (2022).
+    man, Dan B Goldman, Kyle Genova, Zeyu Jin, Christian Theobalt, and Maneesh        [36] Yurui Ren, Ge Li, Yuanqi Chen, Thomas H Li, and Shan Liu. 2021. Pirenderer: Con-
+     Agrawala. 2019. Text-based editing of talking-head video. ACM Transactions on               trollable portrait image generation via semantic neural rendering. In Proceedings
+     Graphics (TOG) 38, 4 (2019), 1–14.                                                               of the IEEE/CVF International Conference on Computer Vision. 13759–13768.
+[13] Yudong Guo, Keyu Chen, Sen Liang, Yong-Jin Liu, Hujun Bao, and Juyong Zhang.        [37] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn
+     2021. Ad-nerf: Audio driven neural radiance fields for talking head synthesis. In          Ommer. 2022. High-resolution image synthesis with latent diffusion models. In
+     Proceedings of the IEEE/CVF International Conference on Computer Vision. 5784–             Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition.
+     5794.                                                                               10684–10695.
+[14] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and        [38] Olaf Ronneberger, Philipp Fischer, and Thomas Brox. 2015. U-net: Convolu-
+     Sepp Hochreiter. 2017. Gans trained by a two time-scale update rule converge to               tional networks for biomedical image segmentation. In Medical Image Computing
+     a local nash equilibrium. Advances in neural information processing systems 30           and Computer-Assisted Intervention–MICCAI 2015: 18th International Conference,
+      (2017).                                                                            Munich, Germany, October 5-9, 2015, Proceedings, Part III 18. Springer, 234–241.
+[15] Jonathan Ho, Ajay Jain, and Pieter Abbeel. 2020. Denoising diffusion probabilistic        [39] Nataniel Ruiz, Eunji Chong, and James M Rehg. 2018. Fine-grained head pose
+     models. Advances in Neural Information Processing Systems 33 (2020), 6840–6851.              estimation without keypoints. In Proceedings of the IEEE conference on computer
+[16] Ailin Huang, Zhewei Huang, and Shuchang Zhou. 2022. Perceptual Conver-              vision and pattern recognition workshops. 2074–2083.
+     sational Head Generation with Regularized Driver and Enhanced Renderer. In        [40] Chitwan Saharia, William Chan, Saurabh Saxena, Lala Li, Jay Whang, Emily L
+     Proceedings of the 30th ACM International Conference on Multimedia. 7050–7054.             Denton, Kamyar Ghasemipour, Raphael Gontijo Lopes, Burcu Karagol Ayan, Tim
+[17] Xinya Ji, Hang Zhou, Kaisiyuan Wang, Qianyi Wu, Wayne Wu, Feng Xu, and             Salimans, et al. 2022. Photorealistic text-to-image diffusion models with deep
+    Xun Cao. 2022. EAMM: One-Shot Emotional Talking Face via Audio-Based            language understanding. Advances in Neural Information Processing Systems 35
+    Emotion-Aware Motion Model. arXiv preprint arXiv:2205.15278 (2022).                        (2022), 36479–36494.
+[18] Xinya Ji, Hang Zhou, Kaisiyuan Wang, Wayne Wu, Chen Change Loy, Xun Cao,        [41] Sanjana Sinha, Sandika Biswas, Ravindra Yadav, and Brojeshwar Bhowmick.
+    and Feng Xu. 2021. Audio-driven emotional video portraits. In Proceedings of the              2022. Emotion-Controllable Generalized Talking Face Generation. arXiv preprint
+     IEEE/CVF Conference on Computer Vision and Pattern Recognition. 14080–14089.              arXiv:2205.01155 (2022).
+[19] Avisek Lahiri, Vivek Kwatra, Christian Frueh, John Lewis, and Chris Bregler. 2021.        [42] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
+     Lipsync3d: Data-efficient learning of personalized 3d talking faces from video           Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. 2017.  Attention is all
+     using pose and lighting normalization. In Proceedings of the IEEE/CVF conference           you need. Advances in neural information processing systems 30 (2017).
+     on computer vision and pattern recognition. 2755–2764.                                 [43] Duomin Wang, Yu Deng, Zixin Yin, Heung-Yeung Shum, and Baoyuan Wang. 2022.
+[20] Lingzhi Li, Jianmin Bao, Hao Yang, Dong Chen, and Fang Wen. 2019. Faceshifter:             Progressive Disentangled Representation Learning for Fine-Grained Controllable
+    Towards high fidelity and occlusion aware face swapping.  arXiv preprint             Talking Head Synthesis. arXiv preprint arXiv:2211.14506 (2022).
+     arXiv:1912.13457 (2019).                                                               [44] Kaisiyuan Wang, Qianyi Wu, Linsen Song, Zhuoqian Yang, Wayne Wu, Chen
+[21] Borong Liang, Yan Pan, Zhizhi Guo, Hang Zhou, Zhibin Hong, Xiaoguang Han,             Qian, Ran He, Yu Qiao, and Chen Change Loy. 2020. Mead: A large-scale audio-
+     Junyu Han, Jingtuo Liu, Errui Ding, and Jingdong Wang. 2022. Expressive talking              visual dataset for emotional talking-face generation. In European Conference on
+     head generation with granular audio-visual control. In Proceedings of the IEEE/CVF            Computer Vision. Springer, 700–717.
+     Conference on Computer Vision and Pattern Recognition. 3387–3396.                     [45] Suzhen Wang, Lincheng Li, Yu Ding, and Xin Yu. 2022. One-shot talking face
+[22]  Jin Liu, Xi Wang, Xiaomeng Fu, Yesheng Chai, Cai Yu, Jiao Dai, and Jizhong Han.             generation from single-speaker audio-visual correlation learning. In Proceedings
+     2023. FONT: Flow-guided One-shot Talking Head Generation with Natural Head               of the AAAI Conference on Artificial Intelligence, Vol. 36. 2531–2539.
+     Motions. arXiv preprint arXiv:2303.17789 (2023).                                       [46] Zhou Wang, Alan C Bovik, Hamid R Sheikh, and Eero P Simoncelli. 2004. Image
+[23]  Jin Liu, Xi Wang, Xiaomeng Fu, Yesheng Chai, Cai Yu, Jiao Dai, and Jizhong Han.              quality assessment: from error visibility to structural similarity. IEEE transactions
+     2023. OPT: One-shot Pose-Controllable Talking Head Generation. arXiv preprint            on image processing 13, 4 (2004), 600–612.
+     arXiv:2302.08197 (2023).                                                               [47] Chenxu Zhang, Yifan Zhao, Yifei Huang, Ming Zeng, Saifeng Ni, Madhukar
+[24] Ben Mildenhall, Pratul P Srinivasan, Matthew Tancik, Jonathan T Barron, Ravi             Budagavi, and Xiaohu Guo. 2021. Facial: Synthesizing dynamic talking face with
+     Ramamoorthi, and Ren Ng. 2021. Nerf: Representing scenes as neural radiance               implicit attribute learning. In Proceedings of the IEEE/CVF international conference
+      fields for view synthesis. Commun. ACM 65, 1 (2021), 99–106.                           on computer vision. 3867–3876.
+                                                                                            [48] Wenxuan Zhang, Xiaodong Cun, Xuan Wang, Yong Zhang, Xi Shen, Yu Guo, Ying
+                                                                                          Shan, and Fei Wang. 2022. SadTalker: Learning Realistic 3D Motion CoefficientsMM ’23, October 29-November 3, 2023, Ottawa, ON, Canada                                                                                                                  Jin Liu et al.
+
+
+
+      for Stylized Audio-Driven Single Image Talking Face Animation. arXiv preprint        [51] Hang Zhou, Yasheng Sun, Wayne Wu, Chen Change Loy, Xiaogang Wang, and
+     arXiv:2211.12194 (2022).                                                              Ziwei Liu. 2021. Pose-controllable talking face generation by implicitly modular-
+[49] Zhimeng Zhang, Lincheng Li, Yu Ding, and Changjie Fan. 2021. Flow-guided             ized audio-visual representation. In Proceedings of the IEEE/CVF Conference on
+     one-shot talking face generation with a high-resolution audio-visual dataset. In            Computer Vision and Pattern Recognition. 4176–4186.
+     Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition.        [52] Mohan Zhou, Yalong Bai, Wei Zhang, Ting Yao, Tiejun Zhao, and Tao Mei. 2022.
+     3661–3670.                                                                       Responsive listening head generation: a benchmark dataset and baseline. In
+[50] Hang Zhou, Yu Liu, Ziwei Liu, Ping Luo, and Xiaogang Wang. 2019. Talking           Computer Vision–ECCV 2022: 17th European Conference, Tel Aviv, Israel, October
+     face generation by adversarially disentangled audio-visual representation. In             23–27, 2022, Proceedings, Part XXXVIII. Springer, 124–142.
+     Proceedings of the AAAI Conference on Artificial Intelligence, Vol. 33. 9299–9306.

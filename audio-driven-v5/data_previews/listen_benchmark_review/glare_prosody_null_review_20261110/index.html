@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GLARE 韵律输出 · 7 段复核</title>
+<style>
+:root{color-scheme:light;--ink:#17283b;--muted:#53677b;--red:#b73535;--blue:#176aa4}*{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:var(--ink);font:15px/1.65 system-ui,-apple-system,sans-serif}main{max-width:1120px;margin:auto;padding:30px 20px 65px}h1{font-size:27px;margin:0 0 10px}h2{font-size:19px;margin:4px 0 10px}h3{font-size:15px;margin:12px 0 5px}p{margin:8px 0}.intro,.card{background:white;border:1px solid #dce3eb;border-radius:12px;padding:22px;margin:18px 0}.note{background:#fff5dd;border-left:4px solid #c08413;padding:11px 16px}.muted{color:var(--muted)}.bad{color:var(--red)}.ok{color:var(--blue)}.id{font-size:12px;overflow-wrap:anywhere;color:var(--muted)}audio{width:100%;margin:8px 0}button,select,textarea{font:inherit;border:1px solid #c7d2dd;border-radius:6px;background:white;padding:6px 11px}button{cursor:pointer;color:var(--blue)}button:disabled{color:#84909c;cursor:default}.controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center}.review-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}.review-fields label{display:flex;flex-direction:column;gap:4px}textarea{width:100%;min-height:55px;margin-top:8px}.wave{width:100%;height:68px;background:#eef4f8;border-radius:6px}.axis{position:relative;height:44px;margin:15px 0 2px;background:#fce9e9;border:1px solid #e9bcbc;border-radius:5px}.actual{position:absolute;left:0;top:0;height:100%;background:#def0e6;border-right:2px solid #286c45}.range{position:absolute;top:19px;height:10px;background:#bf4545;border-radius:3px;opacity:.8}.range.in{background:#2471a5}.axislabel{position:relative;z-index:1;padding:0 6px;font-size:11px;line-height:16px}.legend{display:flex;gap:22px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.legend b{color:var(--ink)}details{margin:10px 0;border-top:1px solid #e7ecf1;padding-top:8px}summary{cursor:pointer;font-weight:600}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f4f7;padding:12px;border-radius:6px;font:12px/1.6 ui-monospace,monospace;max-height:300px;overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0}th,td{border-bottom:1px solid #dfe6ed;text-align:left;padding:8px;vertical-align:top}.scroll{overflow-x:auto}a{color:var(--blue)}.badge{font-size:12px;border-radius:20px;background:#e8eef4;padding:3px 10px;display:inline-block}footer{font-size:12px;color:var(--muted)}@media(max-width:620px){main{padding:16px 10px}.intro,.card{padding:15px}.review-fields{grid-template-columns:1fr}h1{font-size:23px}}
+</style>
+<main>
+<h1>GLARE 韵律输出：7 段人工复核</h1>
+<p class="muted">这里筛出的是不满足新增准入校验的标签输出。原始 pair 不因这些输出异常而被删除。</p>
+<section class="intro">
+<h2>怎么检查</h2>
+<p>① 播放整段 speaker 音频，确认能正常听到说话。② 试听片段内的候选位置，判断是否有明显语调、重音或节奏变化。③ 展开模型原始回答，核对它是否把时间写到了片段外。</p>
+<p class="note">越界区间无法通过听感“批准”。应重新推理或重新标注；格式错误也不能自动解释为没有事件。无需凭耳朵硬估一个精确的 0.50 或 0.80。</p>
+<p>下方 WAV 与送入模型的 float32 波形逐样本一致。绿色范围是实际音频，蓝条是片段内候选，红条是越界预测。候选尚未获得人工确认。</p>
+<div class="controls"><button id="export">导出我的复核记录</button><span id="progress" class="muted"></span></div>
+<p class="muted">复核选择保存在本浏览器；导出后可用于后续整理，不会自动修改训练标签。</p>
+</section>
+<section class="intro">
+<h2>实际执行来源</h2>
+<p>上一轮调用了官方 <a href="https://github.com/lzk901372/glare/blob/26f621e1620066885828d01739437beb71ed5204/float/models/intensity_encoder.py" target="_blank" rel="noreferrer">IntensityEncoder</a>，但输入完整 pair，并新增了审计、格式处理和重试。作者另有 <a href="https://github.com/lzk901372/visual_reaction_annotation/tree/8e7cd4b8ea1d54a55e127f530476b7033b327f78/prosody_extract" target="_blank" rel="noreferrer">2.4 秒离线提取流程</a>。这两者的差异必须披露。</p>
+<div class="scroll"><table><thead><tr><th>项目</th><th>上一轮首次</th><th>上一轮重试</th><th>作者 Seamless 离线启动配置</th></tr></thead><tbody>
+<tr><td>音频窗口</td><td>完整 pair，2–11.95s</td><td>同一完整 pair</td><td>2.4s 完整块；不足一块及尾段不处理</td></tr>
+<tr><td>额外响度归一化</td><td>未额外增加；使用最终数据音轨</td><td>同首次</td><td>整段 RMS −20dBFS，峰值上限 0.98</td></tr>
+<tr><td>提示</td><td>官方提示原文</td><td>原文＋我新增的格式／时长提醒</td><td>作者 input_prompt.txt</td></tr>
+<tr><td>生成长度</td><td>256 tokens</td><td>512 tokens</td><td>启动脚本 64 tokens</td></tr>
+<tr><td>批量</td><td>1</td><td>1</td><td>每卡上限 16</td></tr>
+<tr><td>输出准入</td><td colspan="2">新增校验：合法 NULL 与失败分开；有非法区间则整段不准入；无歧义格式恢复保留原数值</td><td>官方逐行忽略非法内容；没有保留到合法行时归 NULL</td></tr>
+</tbody></table></div>
+<p>本地两个仓库的相关文件与各自 Git 提交一致。运行时仅做了已记录的 Transformers 音频参数兼容处理。</p>
+<p id="official-global" class="muted">正在加载同片段的官方离线流程对照。</p>
+</section>
+<div id="cards">加载中…</div>
+<footer>页面只用于核查输入和模型输出。结构校验通过不等于韵律定位经过人工验收。</footer>
+</main>
+<script>
+'use strict';
+const storageKey='glare-prosody-review-20261110-v1';let decisions={};try{decisions=JSON.parse(localStorage.getItem(storageKey)||'{}')}catch(e){}
+let manifest,official;const E=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e};
+function save(){localStorage.setItem(storageKey,JSON.stringify(decisions));updateProgress()}
+function updateProgress(){const n=(manifest?.items||[]).filter(x=>decisions[x.sample_id]?.audio||decisions[x.sample_id]?.prosody||decisions[x.sample_id]?.note).length;document.getElementById('progress').textContent=`已记录 ${n} / 7 段`}
+function triples(text){const regex=/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)/g;return [...text.matchAll(regex)].map(m=>({start:+m[1],end:+m[2],score:+m[3]}))}
+function isWithin(p,d){return p.start>=0&&p.end>p.start&&p.end<=d+1e-6&&p.score>=.5&&p.score<=1}
+function playRange(audio,a,b){audio.currentTime=Math.max(0,a-.15);audio.reviewEnd=Math.min(audio.duration||b+.15,b+.15);audio.play().catch(()=>{})}
+function addSelect(parent,item,key,label,options){const wrap=E('label',label),sel=E('select');sel.setAttribute('aria-label',label);for(const [v,t] of options){const o=E('option',t);o.value=v;sel.append(o)}sel.value=decisions[item.sample_id]?.[key]||'';sel.addEventListener('change',()=>{decisions[item.sample_id]??={};decisions[item.sample_id][key]=sel.value;save()});wrap.append(sel);parent.append(wrap)}
+function render(){const container=document.getElementById('cards');container.replaceChildren();
+ for(const item of manifest.items){const card=E('article',undefined,'card');card.id='pair-'+item.number;card.append(E('h2',`${String(item.number).padStart(2,'0')} · 完整 ${item.duration_s.toFixed(3)} 秒`),E('div',item.sample_id,'id'));
+ const audio=E('audio');audio.controls=true;audio.preload='metadata';audio.src=item.audio;audio.addEventListener('timeupdate',()=>{if(audio.reviewEnd!==undefined&&audio.currentTime>=audio.reviewEnd){audio.pause();audio.reviewEnd=undefined}});audio.addEventListener('ended',()=>audio.reviewEnd=undefined);card.append(audio);
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 720 68');svg.setAttribute('class','wave');svg.setAttribute('aria-label','完整输入音频波形');const max=Math.max(...item.waveform,.001);item.waveform.forEach((p,i)=>{const bar=document.createElementNS(svg.namespaceURI,'rect');bar.setAttribute('x',i*4);bar.setAttribute('y',34-p/max*30);bar.setAttribute('width',2.8);bar.setAttribute('height',Math.max(1,p/max*60));bar.setAttribute('fill','#4484a3');svg.append(bar)});card.append(svg);
+ const pred=triples(item.raw_text),inside=pred.filter(p=>isWithin(p,item.duration_s)),outside=pred.filter(p=>!isWithin(p,item.duration_s));const extent=Math.max(item.duration_s,...pred.map(p=>p.end),1);const axis=E('div',undefined,'axis'),actual=E('div',undefined,'actual');actual.style.width=(item.duration_s/extent*100)+'%';axis.append(actual,E('div',`实际音频 0–${item.duration_s.toFixed(3)}s；预测最远 ${extent.toFixed(2)}s`,'axislabel'));
+ pred.forEach(p=>{const r=E('span',undefined,'range'+(isWithin(p,item.duration_s)?' in':''));r.style.left=Math.max(0,p.start/extent*100)+'%';r.style.width=Math.max(.3,(p.end-p.start)/extent*100)+'%';r.title=`${p.start.toFixed(2)}–${p.end.toFixed(2)}s / ${p.score.toFixed(2)}`;axis.append(r)});card.append(axis,E('div',`最终回复可提取 ${pred.length} 个数值区间，其中 ${outside.length} 个未通过范围／分数校验。整段未准入；片段内候选也需核查。`,'bad'));
+ const controls=E('div',undefined,'controls');const full=E('button','播放完整音频');full.onclick=()=>{audio.reviewEnd=undefined;audio.currentTime=0;audio.play().catch(()=>{})};controls.append(full);inside.forEach(p=>{const b=E('button',`试听候选 ${p.start.toFixed(2)}–${p.end.toFixed(2)}s`);b.onclick=()=>playRange(audio,p.start,p.end);controls.append(b)});card.append(controls);
+ const failureKinds=[...new Set(item.errors.map(e=>e.reason))];card.append(E('p','整段未准入原因：'+failureKinds.map(k=>k==='invalid_time_interval'?'预测区间超出实际音频或不合法':k==='invalid_format_or_non_numeric_suffix'?'含无法解析的非数值／NULL混合行':k).join('；'),'bad'));
+ const why=E('details');why.append(E('summary','具体失败位置与原因'));const table=E('table'),thead=E('tr');['区间','分数','范围校验'].forEach(t=>thead.append(E('th',t)));table.append(thead);pred.forEach(p=>{const tr=E('tr');tr.append(E('td',`${p.start.toFixed(2)}–${p.end.toFixed(2)}s`),E('td',p.score.toFixed(2)),E('td',isWithin(p,item.duration_s)?'片段内候选，待人工判断':'越界或不合法',isWithin(p,item.duration_s)?'ok':'bad'));table.append(tr)});why.append(table,E('pre',JSON.stringify(item.errors,null,2)));card.append(why);
+ item.attempts.forEach((a,i)=>{const d=E('details');d.append(E('summary',i===0?'首次回答 · 官方基础提示 / 256 tokens':'重试回答 · 新增提醒 / 最多 512 tokens'));d.append(E('p',`状态：${a.analysis.status}；声学编码与融合已验证。`),E('pre',a.analysis.raw_text||'(无原始文本)'));const expanded=(a.analysis.raw_text||'').replace(/\\+n/g,'\n');if(expanded!==a.analysis.raw_text){d.append(E('p','下方仅将转义换行展开，方便阅读；未改变任何数字：'),E('pre',expanded))}const pp=E('details');pp.append(E('summary','查看实际完整提示'),E('pre',a.prompt_text));d.append(pp);card.append(d)});
+ const comp=E('details');comp.open=true;comp.append(E('summary','同段音频：作者 2.4 秒离线流程对照'));
+ if(!official){comp.append(E('p','对照结果尚在准备。','muted'))}else{const pair=official.pairs.find(p=>p.sample_id===item.sample_id);if(pair){comp.append(E('p',pair.official_skips_pair?'该 pair 不足 2.4 秒，官方 split_chunks 返回空列表，整段不推理。跳过不能解释为 NULL。':`官方保留 ${pair.full_chunks} 个完整块；尾部 ${pair.dropped_tail_s.toFixed(3)} 秒未处理。此行为仅作复现对照，尚未应用到我们的生产数据。`));for(const chunk of official.chunks.filter(c=>c.sample_id===item.sample_id)){if(chunk.audio){const oa=E('audio');oa.controls=true;oa.preload='metadata';oa.src=chunk.audio;oa.setAttribute('aria-label','官方2.4秒归一化输入');comp.append(E('p','试听官方实际输入（已归一化的2.4秒块）'),oa)}comp.append(E('p',`块 ${chunk.start_s.toFixed(2)}–${chunk.end_s.toFixed(2)}s · 官方规范化结果：${chunk.official_normalized} · 审计：${chunk.audit.status}`),E('pre',chunk.raw_text))}}}card.append(comp);
+ const fields=E('div',undefined,'review-fields');addSelect(fields,item,'audio','原始音频',[['','未复核'],['normal','说话正常、可听清'],['bad','音频本身有问题'],['unsure','不确定']]);addSelect(fields,item,'prosody','可听范围内的韵律变化',[['','未复核'],['yes','能听到明显变化'],['no','没有听到明显变化'],['unsure','不确定']]);card.append(fields);const note=E('textarea');note.placeholder='可选：记录明显变化的位置、需要重推的部分等';note.setAttribute('aria-label','复核备注');note.value=decisions[item.sample_id]?.note||'';note.oninput=()=>{decisions[item.sample_id]??={};decisions[item.sample_id].note=note.value;save()};card.append(note);container.append(card)}
+ const g=document.getElementById('official-global');g.textContent=official?`已执行官方离线函数对照：${official.chunks.length} 个 2.4 秒块；${official.pairs.filter(x=>x.official_skips_pair).length} 段因不足 2.4 秒被原样跳过。已记录 Transformers 参数兼容适配。`:'官方流程对照尚在准备，当前页面可先试听。';updateProgress();
+}
+document.addEventListener('play',e=>{if(e.target.tagName==='AUDIO')document.querySelectorAll('audio').forEach(a=>{if(a!==e.target)a.pause()})},true);
+document.getElementById('export').onclick=()=>{const payload={schema:'glare-prosody-human-review-v1',created_at:new Date().toISOString(),scope:'7 failed outputs; not automatic training admission',records:manifest.items.map(x=>({sample_id:x.sample_id,duration_s:x.duration_s,waveform_sha256:x.waveform_sha256,...(decisions[x.sample_id]||{})}))};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=E('a');a.href=url;a.download='glare_prosody_human_review.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+Promise.all([fetch('data.json').then(r=>r.json()),fetch('official.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null)]).then(([d,o])=>{manifest=d;official=o;render()}).catch(e=>document.getElementById('cards').textContent='加载失败：'+e.message);
+</script>
+</html>

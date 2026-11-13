@@ -1,0 +1,7 @@
+# RealTalk approved boundary v2 full application
+
+Apply the user-approved pilot rules to all 692 raw sources. The original manifest is used only as source/annotation metadata and historical comparison. New pairs are generated from actual decoded frames, fresh word ASR and the unchanged approved boundary_core.py. Preserve short responses, cut before formal takeover, continue with exchanged roles, split scene/layout/black boundaries and prefer complete words/sentences within 275 frames. Unknown/overlap intervals remain in the complete frame ledger.
+
+Separation uses the previously verified AV_MossFormer2_TSE_16K checkpoint and original mixture, bound to the new listener identity. Only that person's separated audio is scored against that person's face. Short-clip context stays within the corrected role interval. No padding for SyncNet scoring. Raw and adaptive-optimized audio and scores are both retained. Short/silent/identity-pending records are reported separately, never called ordinary failures or training-qualified. No resolution cutoff is applied. Native crop exports remain samples pending the user's resolution decision.
+
+Use a new output root, immutable code hashes, per-video locks/checkpoints, bounded retries and persistent GPU models. Preserve all old results. Final report includes all source states and errors, candidate duration, raw/optimized SyncNet passes, short/silent/pending categories and sampled before/after listener videos. Automatic scores are not semantic or audible-quality certification.

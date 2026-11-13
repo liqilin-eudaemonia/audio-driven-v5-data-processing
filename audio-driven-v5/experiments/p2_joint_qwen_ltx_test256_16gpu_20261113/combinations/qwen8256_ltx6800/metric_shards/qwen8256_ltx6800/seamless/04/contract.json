@@ -1,0 +1,622 @@
+{
+  "schema": "omniresponse-paired-video-v1",
+  "implementation_revision": "2026-11-02-seamless-lazy-gt",
+  "datasets": [
+    "seamless"
+  ],
+  "arguments": {
+    "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_joint_qwen_ltx_test256_16gpu_20261113/combinations/qwen8256_ltx6800/metric_manifests/qwen8256_ltx6800/seamless/04.jsonl",
+    "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_joint_qwen_ltx_test256_16gpu_20261113/combinations/qwen8256_ltx6800/metric_shards/qwen8256_ltx6800/seamless/04",
+    "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+    "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+    "device": "cuda:0",
+    "face_device": "cuda:0",
+    "emotion_device": "cuda:0",
+    "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_combined_whisper_eval_20261106/gt_cache",
+    "pixel_workers": 4,
+    "threads": 4,
+    "batch_size": 64,
+    "face_padding": 0,
+    "fid_frames": 32,
+    "fvd_frames": 32,
+    "fvd_stride": 1,
+    "whole_clip_listening": false,
+    "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_joint_qwen_ltx_test256_16gpu_20261113/combinations/qwen8256_ltx6800/metric_shards/qwen8256_ltx6800/seamless/04/features.npz",
+    "allow_partial": true
+  },
+  "manifest_sha256": "b695dae21a0f01f9d0946c5186eccaad4a41fda697c8596609e7d3511a7af6b7",
+  "emotion_labels": [
+    "angry",
+    "disgust",
+    "fear",
+    "happy",
+    "sad",
+    "surprise",
+    "neutral"
+  ],
+  "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+  "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+  "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+  "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+  "assets": {
+    "alexnet": {
+      "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+      "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+    },
+    "fid_inception": {
+      "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+      "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+    },
+    "i3d": {
+      "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+      "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+    },
+    "emotion": {
+      "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+      "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+    },
+    "insightface_root": {
+      "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+      "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+    }
+  },
+  "versions": {
+    "numpy": "1.26.4",
+    "scipy": "1.15.3",
+    "torch": "2.6.0+cu126",
+    "torchvision": "0.21.0+cu126",
+    "opencv-python": null,
+    "scikit-image": "0.25.2",
+    "lpips": "0.1.4",
+    "pytorch-fid": "0.3.0",
+    "deepface": "0.0.99",
+    "tensorflow": "2.21.0",
+    "insightface": "0.7.3",
+    "onnxruntime": null,
+    "onnxruntime-gpu": "1.22.0",
+    "av": "17.0.1"
+  },
+  "code": {
+    "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+    "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+    "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+    "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+    "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+    "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+    "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+    "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+    "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+    "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+    "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6",
+    "../../seamless/reader.py": "b56b68ee3837858a5ba71ac518f89d2e0bf207b6fa962b818653d5d6cfaf9819"
+  },
+  "execution": {
+    "face_device": "cuda:0",
+    "emotion_device": "cuda:0",
+    "pixel_workers": 4,
+    "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_combined_whisper_eval_20261106/gt_cache",
+    "face_backend": {
+      "face_device": "cuda:0",
+      "emotion_device": "cuda:0",
+      "detector_providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "landmark_providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    "cpu_pipeline": {
+      "schema": "native-video-metrics-cpu-pipeline-v1",
+      "wrapper_sha256": "e1859a2d88a088c0d1e490f93a9db15711bb5eea01af7683afbf8dd6789b01af",
+      "prefetch_depth": 2,
+      "pixel_workers": 4,
+      "compute_pixels": true,
+      "events": [
+        {
+          "id": "improvised_V01_S0338_I00001105_local_384c86d7e2a4",
+          "decode_cpu_seconds": 2.497616888023913,
+          "pixels_cpu_seconds": 15.909499923000112,
+          "wait_seconds": 3.6407655209768564,
+          "pixel_frames": 287,
+          "pixel_error": null
+        },
+        {
+          "id": "improvised_V00_S2019_I00001095_local_d90a2113eb03",
+          "decode_cpu_seconds": 1.5286537748761475,
+          "pixels_cpu_seconds": 8.985393340932205,
+          "wait_seconds": 5.105813033878803e-05,
+          "pixel_frames": 277,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V00_S0282_I00000487_local_35b7f0b63104",
+          "decode_cpu_seconds": 0.958226511022076,
+          "pixels_cpu_seconds": 6.893651861930266,
+          "wait_seconds": 4.196399822831154e-05,
+          "pixel_frames": 277,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V00_S0428_I00000484_local_098ec2172130",
+          "decode_cpu_seconds": 0.38196742511354387,
+          "pixels_cpu_seconds": 7.137999586993828,
+          "wait_seconds": 7.062009535729885e-05,
+          "pixel_frames": 279,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V01_S0163_I00000309_local_a70e2d59eb2e",
+          "decode_cpu_seconds": 0.89341706992127,
+          "pixels_cpu_seconds": 7.351802343036979,
+          "wait_seconds": 0.25069668609648943,
+          "pixel_frames": 279,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V03_S0870_I00000059_local_be8bd82022d8",
+          "decode_cpu_seconds": 1.2448343250434846,
+          "pixels_cpu_seconds": 6.898904788075015,
+          "wait_seconds": 4.348376963054761,
+          "pixel_frames": 278,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V03_S1930_I00000115_local_0bfdc165bc9e",
+          "decode_cpu_seconds": 0.9616132329683751,
+          "pixels_cpu_seconds": 6.9761107380036265,
+          "wait_seconds": 2.8472688840702176,
+          "pixel_frames": 276,
+          "pixel_error": null
+        },
+        {
+          "id": "improvised_V01_S1545_I00000134_local_049d74dd876a",
+          "decode_cpu_seconds": 0.3655706460122019,
+          "pixels_cpu_seconds": 6.6848003880586475,
+          "wait_seconds": 4.04976229602471,
+          "pixel_frames": 271,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V00_S1997_I00000184_local_c2d165508e31",
+          "decode_cpu_seconds": 0.4131852157879621,
+          "pixels_cpu_seconds": 7.034281803062186,
+          "wait_seconds": 4.585389979183674e-05,
+          "pixel_frames": 272,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V00_S1997_I00000186_local_9328a38ce535",
+          "decode_cpu_seconds": 0.43780959700234234,
+          "pixels_cpu_seconds": 6.653667008969933,
+          "wait_seconds": 2.9868991128169,
+          "pixel_frames": 271,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V01_S0066_I00000309_local_900fd87917d7",
+          "decode_cpu_seconds": 1.4024503869004548,
+          "pixels_cpu_seconds": 6.65777064091526,
+          "wait_seconds": 4.163792757084593,
+          "pixel_frames": 270,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V03_S2084_I00000242_local_8447d6b35be3",
+          "decode_cpu_seconds": 1.7631900650449097,
+          "pixels_cpu_seconds": 7.181094483938068,
+          "wait_seconds": 2.4263006791006774,
+          "pixel_frames": 269,
+          "pixel_error": null
+        },
+        {
+          "id": "improvised_V00_S2035_I00000993_local_4134365c6233",
+          "decode_cpu_seconds": 0.40264212409965694,
+          "pixels_cpu_seconds": 6.548798518953845,
+          "wait_seconds": 0.7362992588896304,
+          "pixel_frames": 263,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V00_S0282_I00000482_local_8b11ada4929e",
+          "decode_cpu_seconds": 0.4049012949690223,
+          "pixels_cpu_seconds": 6.633949944050983,
+          "wait_seconds": 3.2808363810181618,
+          "pixel_frames": 264,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V00_S1469_I00000196_local_e68eec9d1933",
+          "decode_cpu_seconds": 1.0689375719521195,
+          "pixels_cpu_seconds": 6.861738599138334,
+          "wait_seconds": 3.1600393240805715,
+          "pixel_frames": 265,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V01_S0039_I00000126_local_df73b5aa76eb",
+          "decode_cpu_seconds": 2.4281600271351635,
+          "pixels_cpu_seconds": 6.752696071984246,
+          "wait_seconds": 4.038456030888483,
+          "pixel_frames": 264,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V01_S0066_I00000140_local_ea2f9623cda6",
+          "decode_cpu_seconds": 2.645381920039654,
+          "pixels_cpu_seconds": 6.557876685867086,
+          "wait_seconds": 4.244125847937539,
+          "pixel_frames": 264,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V02_S5153_I00000305_local_f166626191a9",
+          "decode_cpu_seconds": 1.2268989570438862,
+          "pixels_cpu_seconds": 6.71134287212044,
+          "wait_seconds": 4.297727379947901,
+          "pixel_frames": 265,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V03_S0225_I00000381_local_9f75e9d8969e",
+          "decode_cpu_seconds": 0.39609714807011187,
+          "pixels_cpu_seconds": 6.979014893993735,
+          "wait_seconds": 1.5813143660780042,
+          "pixel_frames": 260,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V03_S0600_I00000031_local_4536eb050254",
+          "decode_cpu_seconds": 0.7666560159996152,
+          "pixels_cpu_seconds": 6.628210814902559,
+          "wait_seconds": 2.9175486059393734,
+          "pixel_frames": 261,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V01_S0039_I00000127_local_e9cb4012b00f",
+          "decode_cpu_seconds": 0.5532401921227574,
+          "pixels_cpu_seconds": 6.28944285097532,
+          "wait_seconds": 3.6867174410726875,
+          "pixel_frames": 252,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V01_S0162_I00000307_local_3c7fc50204c7",
+          "decode_cpu_seconds": 0.39189291396178305,
+          "pixels_cpu_seconds": 6.38204564107582,
+          "wait_seconds": 0.9996751840226352,
+          "pixel_frames": 254,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V02_S5100_I00000281_local_910ba1b385e3",
+          "decode_cpu_seconds": 0.750170995015651,
+          "pixels_cpu_seconds": 6.342350516933948,
+          "wait_seconds": 2.837002503918484,
+          "pixel_frames": 253,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V03_S0208_I00000483_local_fc202bcb3afb",
+          "decode_cpu_seconds": 0.7771634228993207,
+          "pixels_cpu_seconds": 6.261249564122409,
+          "wait_seconds": 2.60682226694189,
+          "pixel_frames": 251,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V03_S1498_I00000015_local_8361b54ba44c",
+          "decode_cpu_seconds": 0.9987204771023244,
+          "pixels_cpu_seconds": 7.332112938864157,
+          "wait_seconds": 2.6310942280106246,
+          "pixel_frames": 252,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V03_S1870_I00000196_local_a2ee1b0abf8c",
+          "decode_cpu_seconds": 0.4035546318627894,
+          "pixels_cpu_seconds": 6.230005601188168,
+          "wait_seconds": 3.706855689175427,
+          "pixel_frames": 252,
+          "pixel_error": null
+        },
+        {
+          "id": "improvised_V01_S0223_I00000138_local_04096f0117e4",
+          "decode_cpu_seconds": 1.8613613790366799,
+          "pixels_cpu_seconds": 6.1067993571050465,
+          "wait_seconds": 3.63568724389188,
+          "pixel_frames": 244,
+          "pixel_error": null
+        },
+        {
+          "id": "improvised_V01_S0563_I00001227_local_0a1cef3547d7",
+          "decode_cpu_seconds": 1.1439460611436516,
+          "pixels_cpu_seconds": 6.159691961016506,
+          "wait_seconds": 2.704991556936875,
+          "pixel_frames": 243,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V00_S0557_I00000486_local_1e6f57e247de",
+          "decode_cpu_seconds": 0.37468462297692895,
+          "pixels_cpu_seconds": 6.43377201911062,
+          "wait_seconds": 0.6878699350636452,
+          "pixel_frames": 249,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V01_S0157_I00000135_local_932c98910524",
+          "decode_cpu_seconds": 0.36715067899785936,
+          "pixels_cpu_seconds": 6.269247161922976,
+          "wait_seconds": 2.76226197113283,
+          "pixel_frames": 246,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V02_S5153_I00000286_local_453836067436",
+          "decode_cpu_seconds": 0.35712407203391194,
+          "pixels_cpu_seconds": 6.061561377951875,
+          "wait_seconds": 3.6563615859486163,
+          "pixel_frames": 246,
+          "pixel_error": null
+        },
+        {
+          "id": "naturalistic_V03_S0139_I00000490_local_c3efc6ad2df8",
+          "decode_cpu_seconds": 0.6318947300314903,
+          "pixels_cpu_seconds": 6.095199015922844,
+          "wait_seconds": 3.759180000051856,
+          "pixel_frames": 246,
+          "pixel_error": null
+        }
+      ],
+      "native_loader_and_pixel_formulas_unchanged": true,
+      "native_metric_frame_and_aggregation_order_unchanged": true,
+      "closed": true
+    },
+    "decoded_gt_cache": {
+      "identity": {
+        "schema": "seamless-decoded-rgb-cache-v1",
+        "wrapper_sha256": "87f8e9391b6589f49847e2ee7ed33ad638715976f0a0d4008210ba50f27258a6",
+        "reader_sha256": "b56b68ee3837858a5ba71ac518f89d2e0bf207b6fa962b818653d5d6cfaf9819",
+        "versions": {
+          "av": "17.0.1",
+          "numpy": "1.26.4",
+          "Pillow": "10.4.0"
+        }
+      },
+      "root": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx15_test64_sft2752_20261113/decoded_gt",
+      "hits": 32,
+      "misses": 0,
+      "events": [
+        {
+          "id": "improvised_V01_S0338_I00001105_local_384c86d7e2a4",
+          "hit": true,
+          "seconds": 0.23856898001395166,
+          "key": "35be6fd1e5f16c58f6af66161eb828f1b7b7e0c9a364b394314948ad86f714b2",
+          "rgb_sha256": "de5966be023c2d936b6c671edba50f53aa03678655993e1d8243567182a5d918"
+        },
+        {
+          "id": "improvised_V00_S2019_I00001095_local_d90a2113eb03",
+          "hit": true,
+          "seconds": 0.33615625998936594,
+          "key": "25ba65d990ee84da151c38bc7daa5016ae4ac17e7bb617491adef551341dd2fa",
+          "rgb_sha256": "6e0f766d9cc20552ee38e7e156651863bba2e169e6fdeb3d2e861deec4d43d00"
+        },
+        {
+          "id": "naturalistic_V00_S0282_I00000487_local_35b7f0b63104",
+          "hit": true,
+          "seconds": 0.19236129708588123,
+          "key": "ab260e7100c08e3883bdd34c17c0a6fb0469c0cc3f982a4d4ead8d81361b1225",
+          "rgb_sha256": "d14cc4fb8ada274a6828af0f418cdcb6766855476776662e8cb08623721064cb"
+        },
+        {
+          "id": "naturalistic_V00_S0428_I00000484_local_098ec2172130",
+          "hit": true,
+          "seconds": 0.19590887590311468,
+          "key": "0badb603458e5a02373f5fad4a0e29cbc8fa9b732a09a5910f38377dff833c8a",
+          "rgb_sha256": "dd7ac778ce2de7898cd4c08f3effe9e4521cf423702ff0194ca92eb6ba71cf1d"
+        },
+        {
+          "id": "naturalistic_V01_S0163_I00000309_local_a70e2d59eb2e",
+          "hit": true,
+          "seconds": 0.2010344029404223,
+          "key": "db038fc22c0cb0dd56f3decb93d5d468c100ed914b95ea10886ac84a3e26c49f",
+          "rgb_sha256": "e54a16b267b15e3cbc1e69a7917d2fa13f06846f0bae4c48d661c46093ee30eb"
+        },
+        {
+          "id": "naturalistic_V03_S0870_I00000059_local_be8bd82022d8",
+          "hit": true,
+          "seconds": 0.4389587661717087,
+          "key": "31232f6cd42e4daec66ee6ed483aaaaa167de603a4e7b54ddc6b2576f36ecf0d",
+          "rgb_sha256": "683b99823ec624e6e1b4f7c667f23111e3d260c20dcca7e1102bcb44417c093b"
+        },
+        {
+          "id": "naturalistic_V03_S1930_I00000115_local_0bfdc165bc9e",
+          "hit": true,
+          "seconds": 0.36134828883223236,
+          "key": "b2f1ccccd842733beed5ff6a25059806e430e62bb38bf9068199efd120371ddc",
+          "rgb_sha256": "6bd16805b727f937ec4c999eb0a3eeb2d1402a72fd89d9dbc30833ada1ee826c"
+        },
+        {
+          "id": "improvised_V01_S1545_I00000134_local_049d74dd876a",
+          "hit": true,
+          "seconds": 0.19910731492564082,
+          "key": "c01255e51a26821de62da4b25694e4e215732a0cb1405abc1d5cde177086e791",
+          "rgb_sha256": "6594ad15394b4c327f92d2a851db5288bb693c76a4f6ad1f4ba828eabc8aa27e"
+        },
+        {
+          "id": "naturalistic_V00_S1997_I00000184_local_c2d165508e31",
+          "hit": true,
+          "seconds": 0.2041132829617709,
+          "key": "95aa41cccbd79698b328324a2dd7c43198ea6625eb5ff5e900eac561b5982848",
+          "rgb_sha256": "15b317630b259f3710a992ae4398c951e8f1b0d9c0e1f8f32a7afeb3c1cdd0dc"
+        },
+        {
+          "id": "naturalistic_V00_S1997_I00000186_local_9328a38ce535",
+          "hit": true,
+          "seconds": 0.20483940211124718,
+          "key": "b0d374ead83f5d6e7ecb2ad94113dd06d116b1d3544a3b084b8f7aeda22d74e2",
+          "rgb_sha256": "09b34c446463af1f5e2f6743e976bda2667983ce490a05ae7176bd2a83810d8a"
+        },
+        {
+          "id": "naturalistic_V01_S0066_I00000309_local_900fd87917d7",
+          "hit": true,
+          "seconds": 0.5204154420644045,
+          "key": "bdf8df42f49fc38fab25e15838059bc10a60504e9c8eceac9ba64dabe782825f",
+          "rgb_sha256": "7f691e28cb4e8172ae5068460e92e47cf6f3d01636444e4bc58d6c74fc44e8ae"
+        },
+        {
+          "id": "naturalistic_V03_S2084_I00000242_local_8447d6b35be3",
+          "hit": true,
+          "seconds": 0.20249630603939295,
+          "key": "74541b8bf05a823fc0b839fcfd308b69a04de7dfa83e757f448aeb6049bc2c1a",
+          "rgb_sha256": "7a2c56302ab7d5775fd4f97555abb28b5d7032169c3ce44bebcc4ce31eaf9c70"
+        },
+        {
+          "id": "improvised_V00_S2035_I00000993_local_4134365c6233",
+          "hit": true,
+          "seconds": 0.19702477706596255,
+          "key": "b0400097d56fa232e6a842cdfd0f35ec3fda3c1fbe2a80ff9c4d8c9ffec1ab86",
+          "rgb_sha256": "8c3d162ad8c90acdc30968a0e720cb4bd480d3a85dff4358c400c5c8a57fa558"
+        },
+        {
+          "id": "naturalistic_V00_S0282_I00000482_local_8b11ada4929e",
+          "hit": true,
+          "seconds": 0.19560496089980006,
+          "key": "758c399cbe6ac08cc2fbfd5f533c7af89367194e6d359e6083b6eda06e81c294",
+          "rgb_sha256": "a16fa66c9d7b9fc535fbd6a4bab17347853674b41504d0003f0d4c98c55905b6"
+        },
+        {
+          "id": "naturalistic_V00_S1469_I00000196_local_e68eec9d1933",
+          "hit": true,
+          "seconds": 0.19843219104222953,
+          "key": "f5e8d3b75276d6db20b097536207832e692f1622b5cb4d93f03377809b08d78c",
+          "rgb_sha256": "de365da3fd3893e7210991ba34c004d5db9325849d9b13b3b6797a78fcaa5584"
+        },
+        {
+          "id": "naturalistic_V01_S0039_I00000126_local_df73b5aa76eb",
+          "hit": true,
+          "seconds": 0.9678956400603056,
+          "key": "cf3241eacf82fa1a535b9222610a5fbc841ba3ea821de97317859329789e0549",
+          "rgb_sha256": "7af0d785bfe5726a6f6f62d34cc3c1901fa85c93a2b87bebc5088a3643256fb2"
+        },
+        {
+          "id": "naturalistic_V01_S0066_I00000140_local_ea2f9623cda6",
+          "hit": true,
+          "seconds": 1.2204402717761695,
+          "key": "601a87b1d1e3704bfe9efe2dd3c9442f4fcebd90432ba7bd574dc9169c074302",
+          "rgb_sha256": "b044b376d66118f1270e631b2d7af163545bc21451ca1e073181ba68ef67bb95"
+        },
+        {
+          "id": "naturalistic_V02_S5153_I00000305_local_f166626191a9",
+          "hit": true,
+          "seconds": 0.740470428019762,
+          "key": "10540624b6d7b9f593557dbc27eefd76ee9d8530828fb447a4050ca12b9684b6",
+          "rgb_sha256": "be9f6163b203c10373b945638cd821e22cd19642ab800f0427bb9c8c9932c50b"
+        },
+        {
+          "id": "naturalistic_V03_S0225_I00000381_local_9f75e9d8969e",
+          "hit": true,
+          "seconds": 0.18819797807373106,
+          "key": "f829020dd9edc5f0c76d28d0778614ff1aeefdbfe61ccdf8d80a7f0b16fc9909",
+          "rgb_sha256": "0525d42ced6c78d57cd3bed63aa5effad4145a9e075e997f2f24f54379e66cc8"
+        },
+        {
+          "id": "naturalistic_V03_S0600_I00000031_local_4536eb050254",
+          "hit": true,
+          "seconds": 0.2418925929814577,
+          "key": "2024c4bb722b9681f91148738166c3bd79e5780938f9bd8017f3a4d8b3f621ca",
+          "rgb_sha256": "7a5110e3138fb058d84d951cab7c39194f9fee5b9cc99c4b624b32f155bb5ca1"
+        },
+        {
+          "id": "naturalistic_V01_S0039_I00000127_local_e9cb4012b00f",
+          "hit": true,
+          "seconds": 0.27844044589437544,
+          "key": "8e057e933bf02f89dedc0439a04c353e8c29852b5ce17b6ed69fca8a62c69662",
+          "rgb_sha256": "8d7db471b29f65f33253a7768e5b255534462fab975c8d325b4244471849478a"
+        },
+        {
+          "id": "naturalistic_V01_S0162_I00000307_local_3c7fc50204c7",
+          "hit": true,
+          "seconds": 0.2018430200405419,
+          "key": "e6588fa21fc2166f9440c10b4d26bff13af742fac6032ee5b42d5f1c50cee6fe",
+          "rgb_sha256": "d44b4cb1559872a714ae09de97769ab12287d35161dc20ac40ffb6b3900d8238"
+        },
+        {
+          "id": "naturalistic_V02_S5100_I00000281_local_910ba1b385e3",
+          "hit": true,
+          "seconds": 0.4504967010580003,
+          "key": "bebf6d8be275f07d28d9a35b00c9886f8ec91334007f6822afe0c1ce28f6c13e",
+          "rgb_sha256": "4275e1dbd59d0907c81b13f46b920a052bd6016456e92da65ba96974c1a46860"
+        },
+        {
+          "id": "naturalistic_V03_S0208_I00000483_local_fc202bcb3afb",
+          "hit": true,
+          "seconds": 0.3571638979483396,
+          "key": "e7d90e1f69d703e3e80bd51e8937e3ee43f6aa4d26c7485965754fbe42023970",
+          "rgb_sha256": "332cb344655f1ac340c9d950b880811a49dc301bdcb520f53a20e2f8d852210b"
+        },
+        {
+          "id": "naturalistic_V03_S1498_I00000015_local_8361b54ba44c",
+          "hit": true,
+          "seconds": 0.5258573489263654,
+          "key": "5ba3888eddcbca0dde7bea943d7e4a45b4ceb2aeaa1e0fc9abec3e71df5c0818",
+          "rgb_sha256": "cdebc52423bc277d06bec2e5637702010515a1cb2acb8e8cc8bfdeb9d4f42e2b"
+        },
+        {
+          "id": "naturalistic_V03_S1870_I00000196_local_a2ee1b0abf8c",
+          "hit": true,
+          "seconds": 0.2078702871222049,
+          "key": "6b8df039e128f7e102339d754622bcffd4b8fb3afa75daf5227c4ab990925ec0",
+          "rgb_sha256": "a811cba09107a8e465a958fdf1106068b4f144e19b4f767b83ee383f5ed02327"
+        },
+        {
+          "id": "improvised_V01_S0223_I00000138_local_04096f0117e4",
+          "hit": true,
+          "seconds": 1.2735942918807268,
+          "key": "0048e8b5b83213ac7933d10910da62d8925da829ae9fe5cd078e02f0c6934ecc",
+          "rgb_sha256": "7bf6f99164c07a15ef90ae9e0f10e16ee6bf798d40232e85273c85029d8273ac"
+        },
+        {
+          "id": "improvised_V01_S0563_I00001227_local_0a1cef3547d7",
+          "hit": true,
+          "seconds": 0.4434020749758929,
+          "key": "e938c354197f49138e033ffef707ed3ae357a65ccd07c61cc9d1f175dae8d0a5",
+          "rgb_sha256": "ef85dcff4d181a954175f7ad6aade0b4b88cc35752baddf6bc7f637efb227229"
+        },
+        {
+          "id": "naturalistic_V00_S0557_I00000486_local_1e6f57e247de",
+          "hit": true,
+          "seconds": 0.18130663293413818,
+          "key": "e305441d0b865acaf198efbb68bb332fdbddec0f1db5140778b418932efb47b7",
+          "rgb_sha256": "9ca97fe254f24dfdd1f85f1142cf9fc555525873fb89e7bfee536c0a608a7cdf"
+        },
+        {
+          "id": "naturalistic_V01_S0157_I00000135_local_932c98910524",
+          "hit": true,
+          "seconds": 0.23362896288745105,
+          "key": "ab14b943ce75c0c488dfa3120977681e75984aeb4bb69879b8a384098ac08e9d",
+          "rgb_sha256": "50032f6eb7aae116065fe7d23c5567132b35eb6fcac3edfe6b39f93a34b50cbe"
+        },
+        {
+          "id": "naturalistic_V02_S5153_I00000286_local_453836067436",
+          "hit": true,
+          "seconds": 0.17659701290540397,
+          "key": "273c6e180a31f8095edcd6cf1ae24fec066bb96f7046a16fcc2370540c6949ac",
+          "rgb_sha256": "129ae7fa231bda5576b48d152a167f4dace9f2dd18353df9b8aec11047bf166d"
+        },
+        {
+          "id": "naturalistic_V03_S0139_I00000490_local_c3efc6ad2df8",
+          "hit": true,
+          "seconds": 0.4692444219253957,
+          "key": "a99ea2faa70e0e7abdc72aa380f79a0bbbce159de7afd16d6878b3327ee78b74",
+          "rgb_sha256": "090edbf5b9447c9066bbc115262a1b7209b19f9f33efcf24b83faef0ab73f67e"
+        }
+      ],
+      "original_reader_unchanged": true,
+      "pixel_checksum_checked_each_read": true
+    }
+  }
+}

@@ -1,0 +1,62 @@
+planner:
+  model_path: /private/ckpts/Qwen3-Omni/Instruct
+  planner_input_mode: audio_timing
+  manifests:
+    - /private/liqi_workspace/data/seamless/subset_300h_pure/train_gt_qualified_20260920/train_part0_manifest.json
+    - /private/liqi_workspace/data/seamless/subset_300h_pure/train_gt_qualified_20260920/train_part1_manifest.json
+    - /private/liqi_workspace/data/seamless/subset_300h_pure/manifests_gt_qualified_20260920/dev_manifest.json
+    - /private/liqi_workspace/data/seamless/subset_300h_pure/manifests_gt_qualified_20260920/test_manifest.json
+  validation_conditions_dir: /private/liqi_workspace/data/seamless/subset_300h_pure/omni_conditions_route_a_raw_v2_gt_qualified_20260920
+  attention_rank: 32
+  attention_alpha: 64
+  expert_rank: 2
+  expert_alpha: 4
+  lora_dropout: 0.0
+  learning_rate: 2.0e-6
+  gradient_checkpointing: true
+  max_tokens: 32768
+  audio_tail_ms: 200
+metadata_jsonl: /private/liqi_workspace/data/seamless/subset_300h_pure/ltx23_precomputed_720p_area_qualified_20260920/metadata_train.jsonl
+conditions_dir: /private/liqi_workspace/data/seamless/subset_300h_pure/omni_conditions_route_a_raw_v2_train_30fps_qualified_20260920
+output_dir: /private/liqi_workspace/project_code/Omni-LTX-stage2/outputs/qwen3_omni_route_a_planner_sft_seed45_4n32g
+expected_train_samples: 91009
+steps: 1000
+per_device_batch_size: 4
+gradient_accumulation_steps: 1
+learning_rate: 2.0e-6
+weight_decay: 0.01
+max_grad_norm: 1.0
+warmup_steps: 100
+save_interval: 100
+seed: 45
+num_dataloader_workers: 2
+resume_checkpoint: null
+validation_metadata_jsonls:
+  - /public/2_CKPT/0_WM/llq/omni_route_a_stage1_train_4n32g_20260920/probe24_single_stage.jsonl
+validation_interval: 100
+validation_max_samples: 24
+validation_generate_samples: 24
+cluster:
+  master_port: 29872
+  nproc_per_node: 8
+  nodes:
+    - name: js-public
+      host: 172.29.252.24
+      ssh_user: root
+      ssh_port: 22
+      role: master
+    - name: tokenizer-1
+      host: 172.29.104.194
+      ssh_user: root
+      ssh_port: 22
+      role: slave
+    - name: avgen-1
+      host: 172.29.112.43
+      ssh_user: root
+      ssh_port: 22
+      role: slave
+    - name: avgen-2
+      host: 172.29.15.126
+      ssh_user: root
+      ssh_port: 22
+      role: slave

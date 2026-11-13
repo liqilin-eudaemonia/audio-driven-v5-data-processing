@@ -1,0 +1,100 @@
+{
+  "success": true,
+  "at": 1794104572.4050758,
+  "original": "/private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_current_av6000_sft2752_eval_20261107.py",
+  "original_sha256": "99da679e71ac6fcff4d72f0d6fe48ec8137097932e62db66596564fe19522bbe",
+  "adaptations": [
+    {
+      "function": "prepare",
+      "original_sha256": "85c6b0ea90e134f913c054ec5e729a19c8c10621f61da28f023543f634b07454",
+      "replacements": [
+        {
+          "old": "from p2_current_av_only.checkpoint import checked",
+          "new": "from p2_current_av_feature.checkpoint import checked"
+        },
+        {
+          "old": "from p2_current_av_only.config import source_identity, validate",
+          "new": "from p2_current_av_feature.config import source_identity, validate"
+        },
+        {
+          "old": "from p2_current_av_only.data import data_config",
+          "new": "from p2_current_av_feature.data import data_config"
+        },
+        {
+          "old": "assert c['loss_weights'] == dict(av=1., event=0., video_feature=0., audio_feature=0.)",
+          "new": "assert c['loss_weights'] == dict(av=1., event=0., video_feature=.025, audio_feature=.025)"
+        },
+        {
+          "old": "schema='current500h-pure-av6000-sft2752-dual200-v1'",
+          "new": "schema='current500h-av-feature6000-sft2752-dual200-v1'"
+        },
+        {
+          "old": "kind='current500h_av_only'",
+          "new": "kind='current500h_av_feature'"
+        },
+        {
+          "old": "comparison='Current500h pureAV6000 with SFT2752 inference; joint6000 changes Event+Feature+Whisper together'",
+          "new": "comparison='Same current500h train selection/schedule and same SFT2752 dual200 conditions; feature-only increment versus current pureAV6000; joint differs by Event and Whisper'"
+        },
+        {
+          "old": "pure_av=True, source_identity_exact=True",
+          "new": "pure_av=False, feature_training=True, source_identity_exact=True"
+        }
+      ]
+    },
+    {
+      "function": "load_model",
+      "original_sha256": "068c38781f1c8b9f0ce71ab74a1a6bc6480a139d9dcb7706d8c15a5333867fa6",
+      "replacements": [
+        {
+          "old": "from p2_current_av_only.checkpoint import checked",
+          "new": "from p2_current_av_feature.checkpoint import checked"
+        },
+        {
+          "old": "from p2_current_av_only.config import source_identity, validate",
+          "new": "from p2_current_av_feature.config import source_identity, validate"
+        },
+        {
+          "old": "from p2_current_av_only.model import Model",
+          "new": "from p2_current_av_feature.model import Model"
+        },
+        {
+          "old": "assert model.qwen_targets == [] and len(model.decoders) == 0",
+          "new": "assert model.qwen_targets == [] and set(model.decoders) == {'video', 'audio'}"
+        }
+      ]
+    },
+    {
+      "function": "render",
+      "original_sha256": "d8c392dc6e797d0ec95b23c0ba1b6996f1f08c25df402700c1a5f7f189a412c5",
+      "replacements": [
+        {
+          "old": "decoders=0, text_targets=len(model.text_targets), qwen_lora=0",
+          "new": "decoders=len(model.decoders), text_targets=len(model.text_targets), qwen_lora=0"
+        }
+      ]
+    },
+    {
+      "function": "final",
+      "original_sha256": "88f6bac9dfdcea00064fd474481eafbc7f971183afee607fba5ba732366fdc84",
+      "replacements": [
+        {
+          "old": "planner_step=2752, pure_av=True, no_whisper=True, same_joint400_conditions=True",
+          "new": "planner_step=2752, pure_av=False, feature_training=True, no_whisper=True, same_joint400_conditions=True"
+        },
+        {
+          "old": "# 当前500h AV-only6000＋最新SFT2752",
+          "new": "# 当前500h AV＋Feature6000＋最新SFT2752"
+        }
+      ]
+    }
+  ],
+  "av_sampler_math_unchanged": true,
+  "no_teacher_or_event_labels_at_inference": true,
+  "feature_weights": {
+    "video": 0.025,
+    "audio": 0.025
+  },
+  "same_training_schedule_as_current_AV": true,
+  "same400_SFT2752_conditions_as_current_AV": true
+}

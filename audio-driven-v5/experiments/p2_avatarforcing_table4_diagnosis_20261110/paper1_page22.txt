@@ -1,0 +1,83 @@
+22
+M. Tran et al.
+Table 1: Modality contribution & online gen. experiment on ViCo.
+V
+A
+A+V
+Online Gen.
+Exp Pose Exp Pose Exp Pose Exp
+Pose
+MSE 0.85 0.01 0.97 0.02 0.7 0.01 0.79
+0.01
+FD
+32.8 0.07 46.9 0.08 23.9 0.06 28.4
+0.06
+experiments, we mask all inputs of a modality to zeros. For the online generation
+experiments, we add causal masks during the fine-tuning phase and reuse the
+pre-trained weights. The online generation results (which are slightly worse but
+still superior to prior work) are also reported in Table 1 for ViCo.
+C
+Generated Listener Motions User Study
+We asked 50 participants from Prolific, a crowdsourcing platform, to rate the
+quality of eight generated listeners in the test set of ViCo [84] from L2L [50],
+RLHG [84], ELP [66], and our method on a scale of 0(low) to 5(high). The
+methods were anonymized and randomly ordered for each question. The result
+is available in Table 2. The average duration of the videos is 14 seconds. Criteria
+for judgment: 1) The response from the listener provides correct feedback to the
+speaker. 2) The head motions and facial expressions are diverse and smooth.
+Table 2: User Study Results. Scale: 0-5; the higher, the better.
+Method
+Video-1 Video-2 Video-3 Video-4 Video-5 Video-6 Video-7 Video-8 Average
+ELP [62]
+2.12
+2.16
+1.98
+2.02
+2.00
+1.88
+1.80
+1.88
+1.98
+RLHG [77]
+2.45
+2.67
+2.80
+2.75
+2.74
+2.18
+2.43
+2.12
+2.51
+L2L [47]
+2.92
+2.78
+2.76
+3.20
+3.69
+2.14
+2.96
+2.63
+2.89
+Ours
+3.90
+3.72
+3.98
+3.47
+3.98
+2.94
+3.75
+3.31
+3.64
+D
+Limitations and Future Works
+D.1
+Rendering Network
+In our framework, we observed that the image quality produced by PIRen-
+derer [58] does not always meet our expectations. Specifically, the rendered im-
+ages exhibit distortions for certain individuals. Moreover, we identified a crucial
+need for individualized fine-tuning of the rendering network for each subject.
+This necessity stems from the model’s inability to effectively generalize across
+different identities, even after training. Consequently, we have adopted the strat-
+egy of training a distinct PIRenderer [58] model for every individual in our test
+set. Future research could explore the integration of a more adaptable rendering
+model into the framework, to enhance the photorealism of the generated video.

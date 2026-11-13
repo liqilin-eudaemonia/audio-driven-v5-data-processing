@@ -1,0 +1,243 @@
+"""Nine-hour hourly audit and bounded recovery; never terminate foreign jobs."""
+from pathlib import Path
+import sys,os,time,json,math,statistics,subprocess,fcntl,csv,signal,traceback
+WORK=Path(__file__).resolve().parent;sys.path.insert(0,str(WORK))
+import common as C
+OUT=C.OUT;read=C.read;write=C.atomic_json
+
+def speed_baseline():
+ c=read(OUT/'config.json')
+ with Path(c['sample_list']).open()as f:dur=[float(r['duration_s'])for r in csv.DictReader(f)]
+ pairs=read(c['duration_sampling']['manifest'])['pairs']
+ def bucket(step):return int(max(dur[i]for i,_ in pairs[(step-1)*31:step*31])//2)
+ path=WORK/'SPEED_BASELINE.json'
+ if path.exists():bins={int(k):v for k,v in read(path)['bins'].items()}
+ else:
+  rows=[json.loads(s)for s in (OUT/'metrics.jsonl').read_text().splitlines()]
+  groups={}
+  for r in rows:
+   if r['step']>=881 and 0<r['seconds']<30:groups.setdefault(bucket(r['step']),[]).append(r['seconds'])
+  bins={i:statistics.median(v)for i,v in groups.items()if len(v)>=8}
+  write(path,dict(at=time.time(),bins=bins,samples={k:len(v)for k,v in groups.items()},first_eligible_step=881,duration_bin_seconds=2))
+ def report():
+  rows=C.tail()[-32:];ratios=[r['seconds']/bins[bucket(r['step'])]for r in rows if bucket(r['step'])in bins]
+  return dict(ratio=statistics.median(ratios)if len(ratios)>=20 else None,covered=len(ratios),window=len(rows),bins=bins)
+ return report
+
+def trigger(state,ratio,slow_seconds=0,new_steps=0,grace=False):
+ if grace or state.get('complete'):return None
+ if 'stalled'in state['flags']:return 'stalled'
+ if any(x in state['flags']for x in ['nonfinite','nonfinite_gradient','wrong_loss']):return 'numerical_failure'
+ if ratio is not None and ratio>1.5 and slow_seconds>=180 and new_steps>=20:return 'sustained_slowdown'
+ return None
+
+def checkpoint_verify(path):
+ from p2_whisper_av.bootstrap import activate_ltx
+ activate_ltx()
+ import torch
+ torch.set_num_threads(2)
+ from p2_ltx_all_lora.checkpoint import checked
+ from p2_listen.training import restore_rng,rng_state
+ marker=read(path.with_suffix('.complete.json'));value=checked(path);run=read(OUT/'run.json')
+ if value['identity']!=run or value['step']!=marker['step']or len(value['rank_rng'])!=31:raise ValueError('Checkpoint identity/step/31 RNG mismatch')
+ for state in value['optimizer']['state'].values():
+  for t in state.values():
+   if torch.is_tensor(t)and not torch.isfinite(t).all():raise ValueError('Nonfinite Adam state')
+  if 'step'in state and not 0<int(state['step'])<=value['step']:raise ValueError('Invalid Adam step')
+ original=rng_state()
+ for r in value['rank_rng']:restore_rng(r)
+ restore_rng(original)
+ if torch.cuda.is_initialized():raise ValueError('Verification must be CPU only')
+ st=path.stat();receipt=dict(success=True,at=time.time(),path=str(path),step=value['step'],sha256=marker['sha256'],bytes=st.st_size,mtime_ns=st.st_mtime_ns,inode=st.st_ino,model_and_adam_finite=True,rank_rng=31,cpu_rng_restoration_checked=True,cuda_initialized=False)
+ write(WORK/'checkpoints'/f'{path.stem}.json',receipt)
+ return receipt
+
+def checked_latest():
+ rejected=[]
+ for marker in reversed(sorted(OUT.glob('step_*.complete.json'))):
+  path=marker.with_suffix('').with_suffix('.pt');cache=WORK/'checkpoints'/f'{path.stem}.json'
+  try:
+   st=path.stat();m=read(marker)
+   if cache.exists():
+    r=read(cache)
+    if r['mtime_ns']==st.st_mtime_ns and r['inode']==st.st_ino and r['bytes']==st.st_size and r['sha256']==m['sha256']:return path,r
+   env=dict(os.environ,CUDA_VISIBLE_DEVICES='',OMP_NUM_THREADS='2',OPENBLAS_NUM_THREADS='1')
+   with(WORK/'checkpoint_verify.log').open('a')as log:
+    p=subprocess.run([sys.executable,str(Path(__file__).resolve()),'verify',str(path)],env=env,stdout=log,stderr=subprocess.STDOUT,timeout=900)
+   if p.returncode:raise RuntimeError('Checkpoint verifier rejected '+str(path))
+   return path,read(cache)
+  except Exception as e:rejected.append(dict(path=str(path),error=repr(e)))
+ write(WORK/'REJECTED_CHECKPOINTS.json',rejected);raise RuntimeError('No verified complete checkpoint')
+
+def cancelled(finishing=False):
+ return C.stop_intent()or((WORK/'STOP').exists()or time.time()>=read(WORK/'protocol.json')['deadline'])and not finishing
+
+def confirm(reason,before,after,state,ratio):
+ if not C.observed(before)or not C.observed(after):return False
+ if reason=='stalled':return 'stalled'in state['flags']
+ if reason=='confirmed_dead':return not before['healthy31']and not after['healthy31']
+ if reason=='numerical_failure':return bool(set(state['flags'])&{'nonfinite','nonfinite_gradient','wrong_loss'})
+ if reason=='sustained_slowdown':return ratio is not None and ratio>1.5
+ return False
+
+def shared_compute(snap,state):
+ """Measure active, authorized co-tenants before restarting progressing training."""
+ if not snap.get('healthy31')or not C.observed(snap)or state['flags']or state['metrics_age_seconds']>60:return None
+ cluster=read(OUT/'cluster.json');node=next(n for n in cluster['nodes']if n['name']=='node11');obs=next(n for n in snap['nodes']if n['node']=='node11')
+ allowed={p['pid']for p in obs.get('foreign',[])if p.get('allowed_background')};gpus={p['gpu']for p in obs['workers']}
+ history_path=WORK/'SHARED_COMPUTE.json';history=read(history_path)if history_path.exists()else None
+ recent=None
+ if history and 0<=time.time()-history['at']<180 and('step'not in history or 0<=state.get('step',0)-history['step']<32):
+  recent=dict(history,using_recent_measurement=True,checked_at=time.time())
+ if not allowed:return recent
+ try:
+  p=subprocess.run(C.transport(cluster,node,['nvidia-smi','pmon','-c','2','-d','2','-s','um']),capture_output=True,text=True,timeout=20,check=True)
+  active={}
+  for line in p.stdout.splitlines():
+   a=line.split()
+   if len(a)>=5 and a[0].isdigit()and a[1].isdigit()and int(a[0])in gpus and int(a[1])in allowed and a[3]!='-'and float(a[3])>=10:
+    key=(int(a[0]),int(a[1]));active[key]=active.get(key,0)+1
+  if len({gpu for(gpu,pid),count in active.items()if count>=2})<2:return recent
+  return dict(at=time.time(),step=state.get('step',0),node='node11',pmon=p.stdout,active_shared_gpus=sorted({gpu for(gpu,pid),count in active.items()if count>=2}),reason='Authorized vLLM consumes shared compute while training progresses; restart cannot reclaim that compute.')
+ except(subprocess.SubprocessError,ValueError):return recent
+
+def stop_owned_controller():
+ p=WORK/'CURRENT_LAUNCHER.json'
+ if not p.exists():return
+ record=read(p)
+ if not C.alive(record):return
+ argv=Path('/proc',str(record['pid']),'cmdline').read_bytes().decode().split(chr(0))
+ allowed=(str(OUT/'network8hca_overlay/driver.py')in argv and'resume'in argv)or(str(Path(__file__).resolve())in argv and'launch'in argv)
+ if not allowed:raise ValueError('Controller does not match authorized experiment')
+ os.kill(record['pid'],signal.SIGTERM)
+
+def recover(reason):
+ with(WORK/'recovery.lock').open('a')as lock:
+  fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+  if cancelled():return dict(skipped='stop or deadline')
+  C.contract(True);checkpoint,receipt=checked_latest();before=C.probe();write(WORK/'RECOVERY_BEFORE.json',before)
+  time.sleep(10);after=C.probe();state=C.health();ratio=speed_baseline()()['ratio']
+  if not confirm(reason,before,after,state,ratio):return dict(skipped='failure no longer confirmed or observations incomplete')
+  contention=shared_compute(after,state)if reason=='sustained_slowdown'else None
+  if contention:
+   write(WORK/'SHARED_COMPUTE.json',contention);return dict(skipped='authorized shared compute remains active',evidence=contention)
+  if cancelled():return dict(skipped='stop or deadline')
+  incident=WORK/f'incident_{int(time.time())}';incident.mkdir();write(incident/'CHECKPOINT.json',receipt)
+  # A progressing slowdown should save current progress before its restart.
+  graceful=False
+  if reason=='sustained_slowdown'and after['healthy31']:
+   write(OUT/'STOP',dict(owner='nine-hour-guardian-graceful-restart',at=time.time()));graceful=True
+   until=time.time()+600
+   while time.time()<until:
+    if not C.probe()['healthy31']:break
+    time.sleep(10)
+   if read(OUT/'STOP').get('owner')!='nine-hour-guardian-graceful-restart':raise RuntimeError('New user stop overrides recovery')
+   (OUT/'STOP').unlink();checkpoint,receipt=checked_latest()
+  now=C.probe()
+  if not C.observed(now):raise RuntimeError('Observation incomplete; no termination')
+  write(incident/'termination.json',C.terminate(now))
+  until=time.time()+180
+  while True:
+   snap=C.probe();write(incident/'cleanup.json',snap)
+   if C.ready(snap):break
+   if not C.observed(snap):raise RuntimeError('Node observation failed during cleanup')
+   if time.time()>until:raise RuntimeError('Own workers or unexpected foreign work remain')
+   time.sleep(5)
+  stop_owned_controller()
+  if cancelled(finishing=True):raise RuntimeError('New explicit training stop preserved')
+  C.contract(True)
+  command=[sys.executable,'-u',str(Path(__file__).resolve()),'launch',str(checkpoint),str(incident/'nodes')]
+  with(incident/'launcher.log').open('w')as log:p=subprocess.Popen(command,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+  record=C.spawn_record(p,command=command,checkpoint=str(checkpoint),step=receipt['step'],reason=reason)
+  write(WORK/'CURRENT_LAUNCHER.json',record);write(incident/'RESTART.json',record)
+  until=time.time()+900
+  while C.alive(record)and time.time()<until:
+   rows=C.tail();fresh=(OUT/'metrics.jsonl').stat().st_mtime>=record['at']
+   if fresh and rows and rows[-1]['step']>=receipt['step']+3 and not C.health()['flags']:
+    accepted=dict(restarted=True,graceful=graceful,verified_step=rows[-1]['step'],**record);write(incident/'RESUMED_ACCEPTED.json',accepted);return accepted
+   time.sleep(5)
+  raise RuntimeError('Recovery launcher died or did not complete3 fresh updates within900s')
+
+def launch(checkpoint,logs):
+ C.contract(True);cluster=read(OUT/'cluster.json')
+ if not C.ready(C.probe()):raise RuntimeError('Selected GPUs not ready for controlled overlay')
+ import importlib.util
+ entry=Path(cluster['training_script']);spec=importlib.util.spec_from_file_location('guard_train_entry',entry);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+ m.verify();m.placement.layout=m.layout;m.native.SELF=m.SELF
+ commands=m.native.commands(read(OUT/'config.json'),str(checkpoint))
+ for node,cmd in zip(cluster['nodes'],commands):
+  if node['name']=='node11':cmd.insert(cmd.index(cluster['python']),'P2_TRAIN_MEMORY_GIB=108')
+ write(Path(logs).parent/'COMMANDS.json',commands)
+ from listen_cluster import launch as run
+ run(cluster,commands,logs)
+
+def full_report(slot,state):
+ value=dict(slot=slot,at=time.time(),health=state,cluster=C.probe(),contract=C.contract(True))
+ write(WORK/'reports'/f'hour_{slot:02d}.json',value);C.event('hourly_report',slot=slot,step=state['step'],healthy31=value['cluster']['healthy31'])
+ return value
+
+def monitor():
+ with(WORK/'guardian.lock').open('a')as lock:
+  fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+  write(WORK/'GUARDIAN.json',C.spawn_record(type('P',(),{'pid':os.getpid()})()))
+  protocol=read(WORK/'protocol.json');deadline=protocol['deadline'];speed=speed_baseline();slow_since=None;slow_step=0;last_probe=0;last_diag=None;repair=read(WORK/'CURRENT_REPAIR.json')if(WORK/'CURRENT_REPAIR.json').exists()else None;grace_until=0;attempts=read(WORK/'REPAIR_ATTEMPTS.json')['times']if(WORK/'REPAIR_ATTEMPTS.json').exists()else[]
+  last_slot=max((read(p)['slot']for p in(WORK/'reports').glob('hour_*.json')),default=-1)
+  C.event('started',deadline=deadline)
+  while True:
+   now=time.time()
+   if(WORK/'STOP').exists():write(WORK/'STOPPED.json',dict(at=now,reason='explicit_guard_stop'));return
+   try:
+    state=C.health(now);sp=speed();ratio=sp['ratio'];state.update(deadline=deadline,remaining_seconds=max(0,deadline-now),speed=sp)
+    if ratio is not None and ratio>1.5:
+     if slow_since is None:slow_since=now;slow_step=state['step']
+    else:slow_since=None;slow_step=state['step']
+    if repair and not C.alive(repair):
+     result=read(WORK/'RECOVERY_RESULT.json')if(WORK/'RECOVERY_RESULT.json').exists()else None
+     C.event('recovery_exited',result=result)
+     if result and result.get('restarted'):grace_until=result.get('at',now)+900
+     repair=None
+    state['recovery_in_progress']=bool(repair and C.alive(repair));state['startup_grace_until']=grace_until
+    due=min(9,int(max(0,now-protocol['start'])//3600))
+    if due>last_slot:
+     report=full_report(due,state);last_diag=report['cluster'];last_probe=now;last_slot=due
+    reason=trigger(state,ratio,now-slow_since if slow_since else 0,state['step']-slow_step,now<grace_until)
+    if now-last_probe>=60 or reason:
+     last_diag=C.probe();last_probe=time.time();write(WORK/'LATEST_CLUSTER.json',last_diag)
+     if C.observed(last_diag)and not last_diag['healthy31']and state['metrics_age_seconds']>30 and now>=grace_until:reason=reason or'confirmed_dead'
+    if last_diag:
+     state['last_cluster_healthy31']=last_diag['healthy31']
+     owner=read(WORK/'CURRENT_LAUNCHER.json')
+     if C.observed(last_diag)and not last_diag['healthy31']and not C.alive(owner)and state['metrics_age_seconds']>30:reason=reason or'confirmed_dead'
+    if reason=='sustained_slowdown':
+     contention=shared_compute(last_diag,state)
+     if contention:
+      write(WORK/'SHARED_COMPUTE.json',contention);state['authorized_compute_contention']=contention;reason=None
+      slow_since=now;slow_step=state['step']
+    write(WORK/'status.json',state)
+    if reason and now<deadline and not C.stop_intent()and not state['recovery_in_progress']:
+     attempts=[t for t in attempts if now-t<1800]
+     if len(attempts)>=3:
+      write(WORK/'NEEDS_AGENT.json',dict(at=now,reason='bounded recovery limit',health=state))
+     else:
+      attempts.append(now);write(WORK/'REPAIR_ATTEMPTS.json',dict(times=attempts))
+      for name in ['RECOVERY_RESULT.json','RECOVERY_ERROR.json']:
+       p=WORK/name
+       if p.exists():p.rename(WORK/(str(int(now))+'_'+name))
+      with(WORK/'recovery.log').open('a')as log:p=subprocess.Popen([sys.executable,'-u',str(Path(__file__).resolve()),'recover',reason],stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True,env=dict(os.environ,CUDA_VISIBLE_DEVICES='',OMP_NUM_THREADS='2',OPENBLAS_NUM_THREADS='1'))
+      repair=C.spawn_record(p,reason=reason);write(WORK/'CURRENT_REPAIR.json',repair);C.event('recovery_started',record=repair)
+    if now>=deadline and not state['recovery_in_progress']and last_diag and last_diag['healthy31']and not state['flags']:
+     if last_slot<9:full_report(9,state)
+     write(WORK/'WINDOW_FINISHED.json',dict(at=time.time(),start=protocol['start'],deadline=deadline,training_stopped=False,final_health=state));return
+   except Exception:
+    write(WORK/'NEEDS_AGENT.json',dict(at=time.time(),traceback=traceback.format_exc()));C.event('monitor_error',error=traceback.format_exc()[-1500:])
+   time.sleep(15)
+
+if __name__=='__main__':
+ try:
+  if len(sys.argv)>1 and sys.argv[1]=='verify':checkpoint_verify(Path(sys.argv[2]))
+  elif len(sys.argv)>1 and sys.argv[1]=='recover':
+   result=recover(sys.argv[2]);write(WORK/'RECOVERY_RESULT.json',result)
+  elif len(sys.argv)>1 and sys.argv[1]=='launch':launch(Path(sys.argv[2]),Path(sys.argv[3]))
+  else:monitor()
+ except Exception:
+  write(WORK/('RECOVERY_ERROR.json'if len(sys.argv)>1 else'GUARDIAN_ERROR.json'),dict(at=time.time(),traceback=traceback.format_exc()));raise

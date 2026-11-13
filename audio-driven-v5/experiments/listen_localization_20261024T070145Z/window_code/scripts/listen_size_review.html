@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Seamless · 全量抽样与人脸尺寸审核</title>
+<style>
+@font-face{font-family:Review;src:url(review.woff)}*{box-sizing:border-box}body{margin:0;background:#0d1524;color:#e8effa;font:15px Review,system-ui,sans-serif}main{max-width:1740px;margin:auto;padding:22px}h1{font-size:25px;margin:12px 0}h2{font-size:17px}p{line-height:1.7;color:#b9c8dd}a{color:#8cc8ff}button,select,textarea{font:inherit;background:#1b2b43;color:inherit;border:1px solid #49607e;border-radius:6px;padding:8px}button{cursor:pointer}button:hover{background:#2a4263}button:disabled{opacity:.4;cursor:default}select{max-width:100%}.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}.panel{background:#142137;border:1px solid #304663;border-radius:9px;padding:14px;min-width:0}.layout{display:grid;grid-template-columns:275px minmax(0,1fr);gap:15px}.list{max-height:940px;overflow:auto}.list button{display:block;width:100%;text-align:left;margin:6px 0;line-height:1.6;overflow-wrap:anywhere}.list button.selected{border:2px solid #83caff;background:#263c59}.players{display:grid;grid-template-columns:minmax(160px,1fr) minmax(160px,1fr) minmax(240px,512px);gap:12px}.players section{min-width:0}.players canvas{width:100%;height:auto;background:#050a12;display:block;aspect-ratio:1/1}.players h2{margin:8px 0}.caption{font-size:13px;color:#a7bdd5;line-height:1.6;margin:6px 0}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.metric{background:#1e3049;padding:10px;border-radius:6px;line-height:1.6}.metric strong{display:block;color:#fff;font-size:19px}.muted{color:#9db2ce;font-size:13px}.good{color:#7de1b4}.warn{color:#ffd18c}.badge{padding:4px 8px;background:#263b56;border-radius:5px}.title{overflow-wrap:anywhere;line-height:1.6}#time{font-variant-numeric:tabular-nums}#timeline{width:100%;height:62px;cursor:crosshair}#seek{width:100%;accent-color:#71c6fb}#notes{width:100%;height:85px}#error{color:#ffaaaa;white-space:pre-wrap}details{line-height:1.8}summary{cursor:pointer}#empty{padding:22px}video{display:none}nav{display:flex;gap:18px;flex-wrap:wrap}#transcript{line-height:1.8}#retention{line-height:1.8}#saved{color:#7de1b4}@media(max-width:1100px){.layout{grid-template-columns:220px minmax(0,1fr)}.players{grid-template-columns:1fr 1fr}.players section:last-child{grid-column:1/3;max-width:512px;width:100%;margin:auto}.metrics{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){main{padding:12px}.layout{display:flex;flex-direction:column}.list{max-height:240px}.players{gap:6px}.metrics{grid-template-columns:1fr 1fr}.metric strong{font-size:16px}h1{font-size:22px}.bar{gap:7px}}
+</style>
+<main>
+<nav><a href="?group=reserve_all">起始活动储备池抽样</a><a href="?group=random">主池随机样本</a><a href="/listen_full_source_clips/">原两条长视频审核</a><a href="/listen_v8_audio_final/">原音质验收页</a><a href="review.json" download>下载本页样本信息</a></nav>
+<h1>Seamless · 全量抽样与人脸尺寸审核</h1>
+<p id="acceptance" class="good" hidden></p>
+<p>已完成切分与音质筛选。可检查主池随机样本、人脸尺寸分档，或起始活动储备池。此页阈值仅供预览，不会修改数据筛选结果。</p>
+<div class="panel">
+<div class="bar"><label>样本分组 <select id="group" aria-label="样本分组"></select></label><label>人脸短边 p10 ≥ <select id="faceMin" aria-label="人脸阈值"></select></label><label>参考裁框边长 ≥ <select id="cropMin" aria-label="裁框阈值"></select></label><label><input type="checkbox" id="onlyPass">只显示满足当前两项阈值的样本</label></div>
+<div id="retention"></div><p class="muted">人脸短边 p10：可测量帧中约 90% 的脸部短边不小于该值。裁框是向头肩扩展的方框，尺寸不是人脸尺寸。小时数来自当前分组所属的全量池、按两项条件分别统计，不能当作二者同时满足的时长；仍需检查有效帧比例、清晰度与头部完整性。</p>
+</div>
+<p id="summary"></p>
+<div class="layout"><aside class="panel list" id="list"></aside><section class="panel">
+<div id="empty" hidden>当前条件下没有展示样本。可取消“只显示”或切换分组；这不表示全量没有对应数据。</div>
+<div id="viewer"><strong class="title" id="title"></strong><p id="sampleInfo"></p><p id="onsetInfo" class="warn" hidden></p>
+<div class="players">
+<section><h2>Speaker · 完整画幅</h2><canvas id="speakerCanvas" width="512" height="512"></canvas><div class="caption" id="speakerInfo"></div></section>
+<section><h2>Listener · 完整画幅与参考框</h2><canvas id="listenerCanvas" width="512" height="512"></canvas><div class="caption" id="listenerInfo"></div></section>
+<section><h2>Listener · 参考框 → 512×512</h2><canvas id="cropCanvas" width="512" height="512"></canvas><div class="caption">浏览器按原生参考框缩放，未锐化。桌面足够宽时按 512 像素展示；小屏会缩小显示。</div></section>
+</div>
+<div class="metrics" id="metrics"></div>
+<div class="bar"><button id="prev">上一条</button><button id="play">播放 / 暂停</button><button id="next">下一条</button><select id="view" aria-label="播放范围"><option value="context">前后各最多 3 秒上下文</option><option value="clip">仅切分片段</option></select><select id="channel" aria-label="试听音轨"><option value="both">双方音轨</option><option value="listener">只听 listener</option><option value="speaker">只听 speaker</option><option value="mute">静音看画面</option></select><label><input type="checkbox" id="boxes" checked>显示参考框</label></div>
+<canvas id="timeline" width="1000" height="62" aria-label="切分边界时间轴"></canvas><input id="seek" aria-label="播放进度" type="range" min="0" max="1" step="0.01" value="0">
+<div id="time"></div><div class="bar"><button id="startBoundary">查看切入前 3 秒</button><button id="endBoundary">查看切出前 3 秒</button><button id="inside">跳到正式片段</button></div>
+<p class="muted">绿色区间才是该片段；黄色线标明切入/切出。上下文内角色可能变化，参考框也不保证覆盖上下文。音轨名称始终按正式片段固定。</p>
+<p id="transcript"></p><details><summary>边界、音质及尺寸信息</summary><div id="details"></div></details>
+<div class="bar" id="downloads"></div>
+<div class="bar"><label>结论 <select id="decision"><option value="pending">待检查</option><option value="keep">可保留</option><option value="audio">音质 / 串音问题</option><option value="onset_keep">开头短反应可接受</option><option value="onset_cut">开头反应被截断</option><option value="boundary">切分边界问题</option><option value="face_small">人脸太小 / 模糊</option><option value="crop">裁框 / 头部不完整</option><option value="role">角色问题</option></select></label><button id="save">保存本条反馈</button><button id="export">导出全部反馈</button><span id="saved"></span></div>
+<textarea id="notes" placeholder="例如：128px 档可以接受；框顶切到头发；终点前有 speaker 串音"></textarea><p class="muted">反馈保存在当前浏览器；请导出 JSON 后发回。仅浏览或调整阈值不会改变生产数据。</p>
+</div></section></div><p id="error"></p>
+<video id="listenerVideo" playsinline preload="metadata"></video><video id="speakerVideo" playsinline preload="metadata"></video>
+</main>
+<script>
+const $=id=>document.getElementById(id),L=$('listenerVideo'),S=$('speakerVideo');
+let data,rows=[],current=null;const storageKey='seamless-size-review-20261024';let notes={};
+try{notes=JSON.parse(localStorage.getItem(storageKey)||'{}')}catch{}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fixed=(v,n=1)=>Number.isFinite(v)?v.toFixed(n):'未测量';
+function face(r){return r.face_geometry.listener.face_short_side_px?.p10}
+function crop(r){return r.crop_proposals.listener}
+function passes(r){return (+$('faceMin').value===0||face(r)>=$('faceMin').value)&& (+$('cropMin').value===0||crop(r).size>=$('cropMin').value)}
+function range(){return $('view').value==='context'?current.segment_in_context_s:[0,current.duration_s]}
+function duration(){return $('view').value==='context'?current.context_source_end_s-current.context_source_start_s:current.duration_s}
+function origin(){return $('view').value==='context'?current.context_source_start_s:current.source_start_s}
+function retention(){const pool=data.groups.find(g=>g.id===$('group').value)?.pool||'primary';const st=data.statistics_by_pool?.[pool]||data.statistics,f=+$('faceMin').value,c=+$('cropMin').value;const fh=f?st.face.p10_short_side_threshold_seconds[String(f)]/3600:st.main_hours;let ch=st.main_hours;if(c){const i=st.pixel_edges.indexOf(c);ch=st.crop.side_seconds.slice(i).reduce((a,b)=>a+b,0)/3600}
+$('retention').innerHTML=`全量${pool==='onset_reserve'?'起始活动储备池':'训练主池'} <b>${fixed(st.main_hours)} h</b>　｜　单独应用人脸条件：<b>${fixed(fh)} h / ${fixed(100*fh/st.main_hours)}%</b>　｜　单独应用裁框条件：<b>${fixed(ch)} h / ${fixed(100*ch/st.main_hours)}%</b>`}
+function audio(){const channel=$('channel').value;L.muted=!['both','listener'].includes(channel);S.muted=!['both','speaker'].includes(channel);L.volume=S.volume=channel==='both'?.7:1}
+function pause(){L.pause();S.pause()}
+function seek(t){if(!current)return;const target=Math.min(Math.max(0,t),duration()-.01);L.currentTime=target;S.currentTime=target;draw()}
+function play(){audio();S.currentTime=L.currentTime;Promise.all([L.play(),S.play()]).catch(e=>{$('error').textContent='播放失败：'+e.message;pause()})}
+function mediaLoad(time=0){pause();$('error').textContent='';const key=$('view').value==='context'?'context_video':'clip_video';for(const [role,v] of [['listener',L],['speaker',S]]){v.src=current.roles[role][key];v.load();v.onloadedmetadata=()=>{v.currentTime=Math.min(time,Math.max(0,v.duration-.01));draw()}}
+$('seek').max=duration();$('seek').value=time;audio();draw()}
+function choose(r){pause();current=r;window.currentSample=r;$('empty').hidden=!!r;$('viewer').hidden=!r;if(!r){L.removeAttribute('src');S.removeAttribute('src');L.load();S.load();return}
+$('title').textContent=`${rows.indexOf(r)+1} / ${rows.length} · ${r.sample_id}`;const c=crop(r),f=r.face_geometry.listener;
+$('sampleInfo').innerHTML=`<span class="badge good">${r.admission_pool==='onset_reserve'?'起始活动储备池 · 音质通过':'主池音质通过候选'}</span>　<span class="${passes(r)?'good':'warn'}">${passes(r)?'满足当前尺寸阈值':'未满足当前尺寸阈值'}</span>　原片 ${fixed(r.source_start_s,3)}–${fixed(r.source_end_s,3)} 秒 · ${fixed(r.duration_s,3)} 秒`;
+const onset=r.onset_evidence;$('onsetInfo').hidden=!onset;
+if(onset){const b=onset.boundary_activity;const windows=onset.listener_vad_source.filter(([a,z])=>a<r.source_start_s+.5&&z>r.source_start_s).map(([a,z])=>`${fixed(a-r.source_start_s,3)}～${fixed(z-r.source_start_s,3)}s`).join('；');
+$('onsetInfo').textContent=`归入储备池的原因：${b.onset_crossing?'listener 人声跨过切入点':'listener 在切入后前 0.5 秒内起声'}。触发 VAD 区间（相对切入点，负数在切入前）：${windows}。源转写是否标为短反馈：${b.onset_transcribed_feedback?'是':'否'}。时间轴橙色为前 0.5 秒判定窗口，蓝色条为源 VAD；它们不是人工确认的 backchannel，也不证明声音被切坏。`;}
+$('speakerInfo').textContent=r.roles.speaker.person_id;$('listenerInfo').textContent=r.roles.listener.person_id;
+const metrics=[['原生人脸短边 p10',fixed(face(r))+' px'],['原生人脸宽 × 高 p50',fixed(f.face_width_px?.p50)+' × '+fixed(f.face_height_px?.p50)+' px'],['原生参考裁框边长',fixed(c.size)+' px'],['512 框内人脸高度',fixed(c.output_face_height_px)+' px'],['框内面部面积占比',Number.isFinite(c.face_area_fraction)?fixed(c.face_area_fraction*100)+'%':'未测量'],['关键点有效帧 / 头部完整',fixed(f.valid_fraction*100)+'% / '+(c.status!=='proposal_only'?'未测量':c.fits_estimated_head?'估计包含':'可能缺失')]];
+$('metrics').innerHTML=metrics.map(([k,v])=>`<div class="metric">${k}<strong>${esc(v)}</strong></div>`).join('');
+$('transcript').textContent='源转写：'+r.transcript;$('details').innerHTML=`音质判定：${esc(r.audio_final.reasons.join('；'))}<br>音质提示：${esc(r.audio_final.advisory_reasons.join('；')||'无')}<br>边界标记：${esc(r.boundary_review_flags.join('；')||'无')}<br>原画面面部面积占比 p50：${fixed(f.face_area_fraction?.p50*100,2)}%<br>参考框：x=${fixed(c.x)}, y=${fixed(c.y)}, size=${fixed(c.size)}；${esc(c.status)}<br>仅用于预览，未应用视觉准入。未测量样本不能按已知尺寸处理。`;
+$('downloads').innerHTML=[['listener WAV',r.roles.listener.audio_wav],['speaker WAV',r.roles.speaker.audio_wav],['listener 原画幅片段',r.roles.listener.clip_video],['原始元数据',r.metadata_file]].map(([label,url])=>`<a href="${esc(url)}" download>${label}</a>`).join('');
+const n=notes[r.sample_id];$('decision').value=n?.decision||'pending';$('notes').value=n?.text||'';$('saved').textContent=n?'已有保存的反馈':'';
+$('prev').disabled=rows.indexOf(r)===0;$('next').disabled=rows.indexOf(r)===rows.length-1;
+document.querySelectorAll('#list button').forEach(b=>b.classList.toggle('selected',b.dataset.id===r.sample_id));mediaLoad()}
+function listing(){retention();const group=$('group').value;rows=data.items.filter(r=>r.cohorts.includes(group)&&(!$('onlyPass').checked||passes(r)));const g=data.groups.find(g=>g.id===group);$('summary').textContent=`${g.name} · 本页显示 ${rows.length} 条`+(group==='random'||g.sampling==='random'?'（均匀随机抽样）':` · 全量对应池/类型共 ${g.count.toLocaleString()} 条（含补充样本，展示比例不代表总体比例）`);
+$('list').innerHTML=rows.map((r,i)=>`<button data-id="${esc(r.sample_id)}"><b>${i+1}. 人脸 ${fixed(face(r))}px</b><br>裁框 ${fixed(crop(r).size)}px · ${fixed(r.duration_s)}s<br><span class="${passes(r)?'good':'warn'}">${passes(r)?'满足当前阈值':'低于阈值 / 未测量'}</span><br><small>${esc(r.sample_id)}</small></button>`).join('');
+document.querySelectorAll('#list button').forEach(b=>b.onclick=()=>choose(rows.find(r=>r.sample_id===b.dataset.id)));choose(rows.find(r=>r.sample_id===current?.sample_id)||rows[0])}
+function originalCanvas(id,v,role){const canvas=$(id),ctx=canvas.getContext('2d');ctx.fillStyle='#050a12';ctx.fillRect(0,0,512,512);if(!current||v.readyState<2)return;const scale=Math.min(512/v.videoWidth,512/v.videoHeight),w=v.videoWidth*scale,h=v.videoHeight*scale,x=(512-w)/2,y=(512-h)/2;ctx.drawImage(v,x,y,w,h);const c=current.crop_proposals[role];if($('boxes').checked&&c.status==='proposal_only'){ctx.strokeStyle=c.fits_estimated_head?'#70ffc3':'#ffbc65';ctx.lineWidth=2;ctx.strokeRect(x+c.x*scale,y+c.y*scale,c.size*scale,c.size*scale)}}
+function draw(){originalCanvas('speakerCanvas',S,'speaker');originalCanvas('listenerCanvas',L,'listener');const cc=$('cropCanvas').getContext('2d');cc.fillStyle='#050a12';cc.fillRect(0,0,512,512);if(!current)return;const c=crop(current);if(c.status==='proposal_only'&&L.readyState>=2){cc.imageSmoothingEnabled=true;cc.imageSmoothingQuality='high';cc.drawImage(L,c.x,c.y,c.size,c.size,0,0,512,512)}else{cc.fillStyle='#ccd9ec';cc.font='20px Review, sans-serif';cc.fillText(c.status==='proposal_only'?'视频加载中…':'无可用参考框',100,256)}
+const [a,b]=range(),t=L.currentTime||0,d=duration();const canvas=$('timeline'),ctx=canvas.getContext('2d'),left=20,width=960;ctx.clearRect(0,0,1000,62);ctx.fillStyle='#33455e';ctx.fillRect(left,23,width,20);ctx.fillStyle='#238b6e';ctx.fillRect(left+a/d*width,23,(b-a)/d*width,20);
+if(current.onset_evidence){ctx.fillStyle='#b46e1b';ctx.fillRect(left+a/d*width,23,Math.min(.5,b-a)/d*width,20);ctx.fillStyle='#72baff';for(const [x,y] of current.onset_evidence.listener_vad_source){const lo=Math.max(0,x-origin()),hi=Math.min(d,y-origin());if(hi>lo)ctx.fillRect(left+lo/d*width,50,(hi-lo)/d*width,6)}}
+ctx.font='14px Review, sans-serif';ctx.fillStyle='#ffce74';ctx.textAlign='center';for(const [v,label] of [[a,'切入'],[b,'切出']]){const x=left+v/d*width;ctx.fillRect(x-1,19,2,29);ctx.fillText(label+' '+fixed(v,2)+'s',Math.max(65,Math.min(935,x)),15)}ctx.fillStyle='white';ctx.fillRect(left+t/d*width-1,19,2,29);$('seek').value=t;$('time').textContent=`${t>=a&&t<=b?'正式片段内':'前后文（不在该片段内）'} · 播放 ${fixed(t,2)} / ${fixed(d,2)} 秒 · 原视频 ${fixed(origin()+t,3)} 秒`}
+function animate(){if(!L.paused&&!S.seeking&&S.readyState>=2&&Math.abs(L.currentTime-S.currentTime)>.12)S.currentTime=L.currentTime;draw();requestAnimationFrame(animate)}
+$('group').onchange=$('faceMin').onchange=$('cropMin').onchange=$('onlyPass').onchange=listing;
+$('prev').onclick=()=>choose(rows[rows.indexOf(current)-1]);$('next').onclick=()=>choose(rows[rows.indexOf(current)+1]);$('play').onclick=()=>L.paused?play():pause();
+$('view').onchange=()=>mediaLoad();$('channel').onchange=audio;$('seek').oninput=()=>seek(+$('seek').value);$('timeline').onclick=e=>{if(current){const rect=e.currentTarget.getBoundingClientRect();seek((((e.clientX-rect.left)/rect.width*1000)-20)/960*duration())}};
+function boundary(which){const absolute=current[which]-3;$('view').value='context';mediaLoad(Math.max(0,absolute-current.context_source_start_s))}
+$('startBoundary').onclick=()=>boundary('source_start_s');$('endBoundary').onclick=()=>boundary('source_end_s');$('inside').onclick=()=>seek(range()[0]);L.onended=pause;
+for(const v of [L,S])v.onerror=()=>{$('error').textContent='视频加载失败：'+(v.error?.message||v.src);pause()};
+$('save').onclick=()=>{notes[current.sample_id]={sample_id:current.sample_id,decision:$('decision').value,text:$('notes').value,face_threshold_px:+$('faceMin').value,crop_threshold_px:+$('cropMin').value,source_start_s:current.source_start_s,source_end_s:current.source_end_s,utc:new Date().toISOString()};localStorage.setItem(storageKey,JSON.stringify(notes));$('saved').textContent='已保存到当前浏览器'};
+$('export').onclick=()=>{const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([JSON.stringify({revision:data.revision,notes:Object.values(notes)},null,2)],{type:'application/json'}));link.download='seamless-face-size-feedback.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)};
+async function init(){const response=await fetch('review.json',{cache:'no-store'});if(!response.ok)throw Error('无法读取样本清单');data=await response.json();window.reviewData=data;
+if(data.accepted_audio_candidates){const a=data.accepted_audio_candidates;$('acceptance').hidden=false;$('acceptance').textContent=`已按最新反馈保留音质通过的起始活动池，与主池合计 ${a.hours.toFixed(2)} 小时 / ${a.clips.toLocaleString()} 段，等待视觉筛选。下方主池/储备池名称和小时数仍按原来源分组展示；起始活动本身不再单独阻止纳入候选。`;}
+$('group').innerHTML=data.groups.map(g=>`<option value="${g.id}">${esc(g.name)}${!data.items.some(r=>r.cohorts.includes(g.id))?'（无样本）':''}</option>`).join('');
+for(const [id,values] of [['faceMin',[0,64,96,128,160,192,256,320,384,448,512]],['cropMin',[0,256,320,384,448,512,640,768]]])$(id).innerHTML=values.map(x=>`<option value="${x}">${x?x+' px':'不限制'}</option>`).join('');const requested=new URLSearchParams(location.search).get('group');if(data.groups.some(g=>g.id===requested))$('group').value=requested;if(data.groups.find(g=>g.id===$('group').value)?.pool==='onset_reserve')$('channel').value='listener';listing();animate()}
+init().catch(e=>$('error').textContent=e.message);
+</script></html>

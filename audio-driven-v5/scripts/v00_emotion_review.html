@@ -1,0 +1,44 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V00 视频与情绪字段同步复核</title>
+<style>body{font:16px/1.6 system-ui,sans-serif;background:#f2f5f8;color:#192939;margin:20px auto;padding:0 20px;max-width:1320px}h1{font-size:25px}h2{font-size:20px}h3{font-size:16px}a{color:#215d9d}button,select{font:inherit;padding:7px;margin:4px;border:1px solid #b7c6d8;background:#fff;border-radius:6px;cursor:pointer}.layout{display:grid;grid-template-columns:512px 1fr;gap:26px;background:white;padding:20px;border-radius:12px}.player{position:sticky;top:15px;align-self:start}video{width:512px;max-width:100%;background:#111}.overlay{padding:12px;background:#13283c;color:white;min-height:90px}.box{border:1px solid #d1dbe5;padding:12px;margin:12px 0;border-radius:8px}.muted{color:#536579;font-size:14px}.notice{background:#fff4d9;padding:12px;border-radius:8px}table{border-collapse:collapse;width:100%}td,th{text-align:left;border-bottom:1px solid #e3e9ef;padding:5px 10px}.current{background:#e8f3ff}.metrics{display:flex;gap:30px}.metrics b{font-size:25px}.id{overflow-wrap:anywhere}textarea{width:95%;min-height:70px;font:inherit;padding:8px}.legend{font-size:14px}#error{color:#b12626}@media(max-width:980px){.layout{grid-template-columns:1fr}.player{position:static}}
+</style>
+<h1>V00：裁剪视频＋情绪字段同步复核</h1>
+<p>同一批5段，使用原记录裁框输出512×512视频；音轨为此前净化的 listener 音轨。可直接下载视频，原始字段另有JSON。</p>
+<p class="notice"><b>现在显示明确的类别名称，但属于暂定映射，仍需核对。</b>按官方README列举顺序解释8维分数：愤怒、轻蔑、厌恶、恐惧、快乐、中性、悲伤、惊讶。官方未明确说明维度索引；这些是原模型分数导出的候选标签，不是已确认情绪或训练真值。最高分类别也不等于画面有明显情绪。</p>
+<nav id="nav"></nav><p id="error"></p><main hidden id="main"><h2 id="title"></h2><p class="id" id="sid"></p>
+<div class="layout"><div class="player"><video id="video" controls playsinline preload="metadata"></video>
+<div class="overlay"><div id="time"></div><div id="label"></div></div>
+<p><button id="prev">上一帧</button><button id="next">下一帧</button><label>速度 <select id="speed"><option value="0.5">0.5×</option><option selected value="1">1×</option></select></label></p>
+<p><a id="download" download>下载带情绪类别字幕的视频</a> · <a id="clean" download>无字幕版</a> · <a id="raw" download>情绪原值JSON</a> · <a href="../">人脸尺寸对照</a></p><p class="muted" id="audio"></p>
+<div class="box"><b>你的复核意见</b><p>先判断画面是否有明显情绪，再看右侧估计是否吻合。意见仅用于复核。</p><select id="decision"><option value="">未复核</option><option>有明显情绪／表情变化</option><option>表情较弱，变化不明显</option><option>基本中性</option><option>无法判断</option></select><textarea id="note" placeholder="例如：大部分是轻微微笑；第2秒表情变化明显。"></textarea><p id="saved" class="muted"></p><button id="export">导出5段复核意见</button></div></div>
+<div><div class="box"><b>整段候选情绪（映射待确认）</b><h2 id="clipEmotion"></h2><p id="clipMix"></p><p class="muted">整段标签：有效帧原始分数按覆盖时长求均值，再取最高分。当前帧标签随播放变化；不平滑、不用Valence/Arousal硬映射类别。</p></div><div class="metrics"><div>正负倾向 Valence<br><b id="valence"></b></div><div>唤醒强度 Arousal<br><b id="arousal"></b></div></div>
+<p class="legend">Valence：负值偏负向，正值偏正向；接近0不能单独证明“中性”。Arousal：数值越大，模型估计唤醒程度越高；不等同于动作幅度。不会人为设阈值把片段判作“情绪明显”。</p>
+<p id="validity"></p><h3>当前帧：8类候选对应与原始分数</h3><table><thead><tr><th>暂定类别／维度</th><th>原始分数</th><th></th></tr></thead><tbody id="scores"></tbody></table><p class="muted">中文类别按文档列举顺序暂定；最高分是类别比较结果，不是置信度或情绪强度。</p>
+<details><summary>当前帧量化token与源时间</summary><p id="tokens"></p></details>
+<div class="box"><b>整段统计</b><p id="summary"></p><p class="muted">均值按各帧在片段内的有效覆盖时长加权；只排除无效或非有限值帧，不平滑、不新增模型推断。</p></div>
+<h3>时间检查点（每0.5秒，点击跳转）</h3><table><thead><tr><th>片段时间</th><th>正负倾向</th><th>唤醒强度</th><th>有效</th></tr></thead><tbody id="checkpoints"></tbody></table>
+<p class="muted">字段按原始视频30 Hz时间轴对齐，再减去本片段起点。视频切分边界精度为1帧（约33ms）。</p><p><a href="https://github.com/facebookresearch/seamless_interaction#movementimitator-feature-types" target="_blank">官方字段说明</a></p></div></div></main>
+<script>
+const $=id=>document.getElementById(id);let data,sample,records={};const key='v00-emotion-review-20261101';
+try{records=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
+const fmt=v=>v==null?'不可用':Number(v).toFixed(3);
+function frameAt(t){return sample.frames.find(f=>f.start<=t&&t<f.end)||sample.frames[Math.min(sample.frames.length-1,Math.max(0,Math.floor((sample.source_start_s+t)*sample.fps)-sample.frames[0].source_frame))]}
+function update(){if(!sample)return;const t=Math.min($('video').currentTime,sample.duration),f=frameAt(t),ok=f.valid&&f.finite;
+$('time').textContent=`片段 ${t.toFixed(2)} / ${sample.duration.toFixed(2)} 秒`;
+$('label').textContent=ok?`当前帧候选：${f.candidate_emotion_zh}（映射待确认）｜V ${fmt(f.valence)} · A ${fmt(f.arousal)}`:'当前帧无效／值不可用，不做情绪判断';
+$('valence').textContent=ok?fmt(f.valence):'无效';$('arousal').textContent=ok?fmt(f.arousal):'无效';$('validity').textContent=`movement:is_valid：${f.valid?'有效':'无效'}；有限值检查：${f.finite?'通过':'未通过'}`;
+$('scores').innerHTML=f.scores.map((v,i)=>`<tr class="${ok&&i===f.top_dimension?'current':''}"><td>${data.category_mapping.names_zh[i]}／维度 ${i}</td><td>${fmt(v)}</td><td>${ok&&i===f.top_dimension?'最高分':''}</td></tr>`).join('');
+$('tokens').textContent=`源帧 ${f.source_frame}；源时间 ${f.source_time_s.toFixed(4)} 秒；ValenceToken ${f.valence_token}；ArousalToken ${f.arousal_token}`;}
+function select(i){$('video').pause();sample=data.samples[i];$('main').hidden=false;$('sid').textContent=sample.id;$('title').textContent=`样本 ${i+1} · 人脸短边p10 ${sample.face_p10.toFixed(1)} px`;
+$('video').src=sample.video;$('video').poster=`../${sample.number}/crop512.png`;$('video').playbackRate=+$('speed').value;$('download').href=sample.labeled_video;$('clean').href=sample.video;$('raw').href=`${sample.number}.json`;
+$('audio').textContent=sample.audio.full_silence?'这段的净化listener音轨全静音，播放无声是预期结果。':'含净化后的listener音轨，可用播放器开启声音。';
+$('clipEmotion').textContent=sample.class_summary.candidate_emotion_zh||'无有效标签';$('clipMix').textContent='逐帧候选占用时长：'+sample.class_summary.dominant_frame_seconds.map((v,i)=>v>0?`${data.category_mapping.names_zh[i]} ${v.toFixed(2)}秒`:null).filter(Boolean).join('；');const s=sample.summary;$('summary').textContent=`有效帧 ${s.valid_frames}/${s.total_frames}；有效覆盖 ${s.valid_duration_s.toFixed(3)}s；平均正负倾向 ${fmt(s.mean_valence)}；平均唤醒强度 ${fmt(s.mean_arousal)}`;
+$('checkpoints').replaceChildren();for(let t=0;t<sample.duration;t+=.5){const f=frameAt(t),tr=document.createElement('tr'),td=document.createElement('td'),b=document.createElement('button');b.textContent=t.toFixed(1)+'s';b.onclick=()=>{$('video').currentTime=t;update()};td.append(b);tr.append(td);for(const v of [f.valid&&f.finite?fmt(f.valence):'无效',f.valid&&f.finite?fmt(f.arousal):'无效',f.valid&&f.finite?'是':'否']){const cell=document.createElement('td');cell.textContent=v;tr.append(cell)}$('checkpoints').append(tr)}
+const r=records[sample.id]||{};$('decision').value=r.decision||'';$('note').value=r.note||'';$('saved').textContent=r.updated_at?'已加载本地复核意见':'';history.replaceState(null,'','?sample='+encodeURIComponent(sample.id));update()}
+function save(){if(!sample)return;records[sample.id]={sample_id:sample.id,decision:$('decision').value,note:$('note').value,category_mapping_status:data.category_mapping.status,updated_at:new Date().toISOString(),human_ground_truth:false};try{localStorage.setItem(key,JSON.stringify(records));$('saved').textContent='已保存在当前浏览器'}catch(e){$('saved').textContent='本地存储不可用，请导出意见'}}
+$('decision').onchange=save;$('note').oninput=save;$('video').ontimeupdate=update;$('video').onseeked=update;$('video').onloadedmetadata=update;
+$('speed').onchange=()=>{$('video').playbackRate=+$('speed').value};for(const [id,delta] of [['prev',-1],['next',1]])$(id).onclick=()=>{$('video').pause();$('video').currentTime=Math.max(0,Math.min(sample.duration,$('video').currentTime+delta/sample.fps));update()};
+$('export').onclick=()=>{const u=URL.createObjectURL(new Blob([JSON.stringify({schema:'v00-emotion-human-review-v2',category_mapping:data.category_mapping,exported_at:new Date().toISOString(),records:Object.values(records),human_ground_truth:false},null,2)],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='v00-emotion-review.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+function tick(){update();requestAnimationFrame(tick)}
+fetch('data.json').then(r=>{if(!r.ok)throw Error(r.status);return r.json()}).then(d=>{data=d;data.samples.forEach((s,i)=>{const b=document.createElement('button');b.textContent=`${i+1} · ${s.face_p10.toFixed(0)}px`;b.onclick=()=>select(i);$('nav').append(b)});const id=new URLSearchParams(location.search).get('sample');select(Math.max(0,data.samples.findIndex(s=>s.id===id)));tick()}).catch(e=>{$('error').textContent='加载失败：'+e.message});
+</script></html>

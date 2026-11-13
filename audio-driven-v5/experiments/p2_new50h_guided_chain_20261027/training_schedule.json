@@ -1,0 +1,61 @@
+{
+  "policy": "serial_24gpu_all_s1_then_s2",
+  "world": 24,
+  "nodes": 3,
+  "gpus_per_node": 8,
+  "global_batch": 24,
+  "microbatch_per_gpu": 1,
+  "gradient_accumulation": 1,
+  "seed": 20261023,
+  "ordered_experiments": [
+    {
+      "id": "guided_av_s1",
+      "stage": 1,
+      "loss": "av",
+      "parent": null
+    },
+    {
+      "id": "guided_av_event_s1",
+      "stage": 1,
+      "loss": "av_event",
+      "parent": null
+    },
+    {
+      "id": "guided_av_feature_s1",
+      "stage": 1,
+      "loss": "av_feature",
+      "parent": null
+    },
+    {
+      "id": "guided_av_event_feature_s1",
+      "stage": 1,
+      "loss": "av_event_feature",
+      "parent": null
+    },
+    {
+      "id": "guided_av_s2",
+      "stage": 2,
+      "loss": "av",
+      "parent": "guided_av_s1"
+    },
+    {
+      "id": "guided_av_event_s2",
+      "stage": 2,
+      "loss": "av_event",
+      "parent": "guided_av_event_s1"
+    },
+    {
+      "id": "guided_av_feature_s2",
+      "stage": 2,
+      "loss": "av_feature",
+      "parent": "guided_av_feature_s1"
+    },
+    {
+      "id": "guided_av_event_feature_s2",
+      "stage": 2,
+      "loss": "av_event_feature",
+      "parent": "guided_av_event_feature_s1"
+    }
+  ],
+  "reason": "User explicitly requested one pipeline at a time, all frozen-Qwen experiments first"
+}

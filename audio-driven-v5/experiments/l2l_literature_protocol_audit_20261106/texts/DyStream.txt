@@ -1,0 +1,791 @@
+
+=== PDF PAGE 1 ===
+             DyStream: Streaming Dyadic Talking Heads Generation via Flow
+                         Matching-based Autoregressive Model
+
+
+                                   Bohong Chen1  Haiyang Liu2
+                                  1Zhejiang University   2The University of Tokyo
+
+                    https://robinwitch.github.io/DyStream-Page
+
+
+                          Abstract2026
+
+           Generating realistic, dyadic talking head video requires
+            ultra-low latency.  Existing chunk-based methods requireFeb
+              full non-causal context windows, introducing significant de-
+2      lays.  This high latency critically prevents the immediate,
+           non-verbal feedback required for a realistic listener. To ad-
+            dress this, we present DyStream, a flow matching-based au-
+            toregressive model that could generate video in real-time                                                                               Figure 1.  System pipeline.  DyStream generates talking-head
+          from both speaker and listener audio. Our method contains      videos from a single reference image and dyadic stream. First, an
+          two key designs: (1) we adopt a stream-friendly autoregres-     Autoencoder disentangles the reference image into a static appear-[cs.CV]     sive framework with flow-matching heads for probabilistic     ance feature vapp and an initial, identity-agnostic motion feature
+           modeling, and (2) We propose a causal encoder enhanced    m0. Next, the Audio-to-Motion Generator takes the initial motion
+          by a lookahead module to incorporate short future context    m0 and the audio stream as input to generate a new sequence of
+              (e.g., 60 ms) to improve quality while maintaining low la-      audio-aligned motion features m1:N. Finally, the Autoencoder’s
+            tency. Our analysis shows this simple-and-effective method      decoder synthesizes the output video by warping the appearance
+                                                                                      feature vapp according to the generated motion sequence m1:N.             significantly surpass alternative causal strategies, including
+             distillation and generative encoder. Extensive experiments
+         show that DyStream could generate video within 34 ms per
+                                                             good generation quality. However, their design requires the           frame, guaranteeing the entire system latency remains un-
+                                                                                 entire audio chunk’s content before generation begin, intro-           der 100 ms.  Besides,  it achieves state-of-the-art lip-sync
+                                                                    duces a fundamental latency problem.  This accumulated             quality, with offline and online LipSync Confidence scores
+                                                                                latency, often hundreds of milliseconds, is acceptable when            of 8.13 and 7.61 on HDTF, respectively. The model, weights
+                                                                           the agent is speaking but becomes a critical bottleneck when          and codes are available.
+                                                                                                               it needs to act as an active listener. A listener must react
+                                                                          instantaneously to the user’s speech with subtle non-verbalarXiv:2512.24408v2                                                               cues like nods and facial expressions to create a sense of en-
+           1. Introduction
+                                                                   gagement. The inherent delay in chunk-based systems lim-
+          Recent breakthroughs in full-duplex speech generation sys-       its their performance on immediate, naturalistic responses.
+          tems [11, 61] have paved the way for highly interactive,       To address the latency issue, we propose a new flow-
+           streaming AI agents. However, these speech-only agents     matching based autoregressive model, DyStream. It accepts
+           lack a visual presence, limiting their application in areas     a streaming, dual-track audio input—capturing both the
+             like education, sales, and virtual companionship.  Bridg-      user’s speech and the agent’s own generated speech—and
+           ing this gap requires a model that can generate real-time     generates the corresponding talking head video frame-by-
+           talking-head video from a single image and the streaming     frame. This autoregressive (AR) architecture fundamentally
+            dual-track audio source.                                     reduces the latency bottleneck and could generate a listener
+              Current state-of-the-art approaches [78] have primarily     response with one-token latency in theory.
+           focused on exploring offline solutions. These systems, typ-       However, achieving high-fidelity lip synchronization in
+             ically based on two-stage, chunk-by-chunk models, achieve      this causal, frame-by-frame manner is challenging.  As
+=== PDF PAGE 2 ===
+human speech involves anticipatory coarticulation, where     bones (DiT), such as Hallo [65], HunyuanVideo-Avatar [6],
+mouth movements prepare for upcoming phonemes slightly     and MOCHA [64], which largely follow the cross-attention
+before the sound is produced. This makes it difficult for a    mechanism to inject audio features. While all these meth-
+purely causal model, without future information, to gener-     ods demonstrate high-quality results with few artifacts and
+ate accurate lip shapes. To solve this, we design a causal     strong generalization, they suffer from high computational
+audio encoder with a minimal audio lookahead module.      costs and slow inference speeds.
+Specifically, the model generates the current video frame
+by conditioning on an extremely short segment of future
+                                                    Two-Stage  Warp-based  Talking  Heads  Generation
+audio (e.g., 60ms). Crucially, this lookahead duration is de-
+                                                         Two-stage methods aim to first predict disentangled appear-
+signed to be shorter than the typical packet size of stream-
+                                                         ance and motion representations from audio, and then use
+ing audio APIs (e.g.,  100ms from the OpenAI Realtime
+                                                               these representations to warp a source image [4, 12–14, 16,
+API). This ensures that our system can process an entire in-
+                                                              19, 24, 35, 36, 38, 45, 50, 63, 66, 71, 73, 76, 78]. Rep-
+coming audio packet and generate the corresponding video
+                                                                   resentative works such as MegaPortraits [12], VASA [66],
+before the next packet arrives, thus achieving system-level
+                                                      and INFP [78] have explored various designs for a robust,
+real-time performance and operating seamlessly within a
+                                                                  identity-agnostic facial motion space. Recent variants fur-
+streaming infrastructure. In addition, we analyzed alterna-
+                                                                   ther improve flexibility and style controllability, including
+tive causal encoder designs, such as distillation and genera-
+                                                      OmniTalker [63], and ChatAnyone [45]. For the audio-to-
+tive encoders, and found the lookahead module to be simple
+                                                       motion stage, they typically adopt a chunk by chunk diffu-
+yet effective.
+                                                              sion strategy. However, the requirement of the entire audio
+  With the above designs, our system achieves state-of-
+                                                          chunk’s content leads to a latency problem. Different with
+the-art lip-sync quality, with offline and online LipSync
+                                                          them, we introduce a flow-matching based autoregressive
+Confidence scores of 8.13 and 7.61 on HDTF, respectively.
+                                                    model to guarantee one token latency in theory.
+Furthermore, it ensures an immediate and fluid interactive
+experience by processing any incoming audio packet within
+40ms. This level of responsiveness makes our model suit-     Dyadic  Talking  Heads  Generation  The  early  ap-
+able for creating interactive visual agents that can not only     proaches  in dyadic  talking heads  generation  typically
+speak but also listen. Our contributions can be summarized      treated conversations as multi-turn exchanges, where the
+as follows:                                                  agent acted as either a speaker or listener in each turn. Mul-
+• We propose a new flow-matching based autoregressive      tiDialog [44] generated speaker behaviors conditioned on
+  model that generates talking head videos frame-by-frame,      the user’s previous utterance, but failed to produce synchro-
+  theoretically reducing the generation latency compared to     nized listener reactions. To jointly model both roles, ViCo-
+  previous chunk-based methods.                 X [75] proposes a Role Switcher bridging separate genera-
+• We introduce a causal audio encoder with a minimal au-      tors for speaker and listener, but the explicit switching often
+  dio lookahead mechanism (e.g., 60ms) and demonstrate it     caused unnatural transitions. DIM [56] pretrained a unified
+   is simple yet effective for enabling high-quality lip-sync     model to capture dyadic context but still required manual
+  while maintaining system-level real-time responsiveness.      role assignment during adaptation. AgentAvatar [58] syn-
+• Our method achieves state-of-the-art performance in lip-      thesized photo-realistic avatars driven by textual descrip-
+  sync accuracy and guarantees a generation latency under      tions, but its motions lacked precise audio alignment. Re-
+  34ms.                                                       cent person-specific studies [23, 43, 52, 67] achieve high
+                                                              realism but perform limited on unseen identities.  In con-
+2. Related Work                                                   trast to these approaches, which often rely on explicit role-
+                                                            switching rules, multiple expert models, or offline process-
+Video Diffusion-based Talking Heads Generation A                                                             ing of dual audio tracks, our method is designed for online,
+prominent  approach  involves  finetuning  a  pre-trained                                                           streaming applications. We utilize a single, unified model
+image-to-video (I2V) model to align the generated video                                                                   to generate both speaker and listener behaviors concurrently
+content with an audio condition, mainly for achieving ac-                                                     from dual-track audio inputs.
+curate lip synchronization [2, 3, 6, 7, 17, 21, 28, 31–
+34, 41, 46, 53, 55, 60, 64, 65, 68, 70, 74, 77]. Early works     3. Methodology
+in this domain were often based on U-Net architectures
+from Stable Diffusion [48].  For instance, EMO [55] in-     Given a single image and a streaming dyadic audio signal,
+tegrates audio conditions via an additional cross-attention     our method generates streaming talking-head videos.  It is
+layer, while Loopy [28] designs a past-frame compression     based on a two-stage framework. The first stage disentan-
+scheme to better support longer video generation. More re-      gles appearance and motion from the source image using
+cent works have shifted towards Transformer-based back-     an off-the-shelf model based on LIA [62], which we briefly
+=== PDF PAGE 3 ===
+Figure 2. The architecture of our audio-to-motion generator. Our model comprises two core modules: an autoregressive network (blue)
+and a flow matching head (orange). The autoregressive network, built from causal self-attention and MLP blocks, processes the audio,
+anchor, and previous motion inputs to generate a conditioning signal cN. This signal is fed into the flow matching head, a stack of MLPs
+and AdaLN layers. Here, it is injected via AdaLN to guide a multi-step flow matching process to produce the final motion mN. Finally,
+the newly generated motion mN is used to warp the reference image into the output frame, while simultaneously being fed back into the
+autoregressive network as input for the subsequent generation.
+
+review in Section 3.1. The second stage implements audio-    Dvae then synthesizes the final video frames ˆI1:Npred by warp-
+to-motion generation using a flow matching-based autore-     ing the source appearance feature vapp with this flow field.
+gressive model, as detailed in Section 3.2. Furthermore, to
+facilitate real-time responsiveness, we design a causal audio      Fs→d = F(ms, m1:Ndri );   ˆI1:Npred = Dvae(Warp(vapp, Fs→d))  (2)
+encoder with a lookahead module (Section 3.3) to minimize
+its reliance on future audio frames.                       The module is trained with a composite loss function LAE
+                                                       combining reconstruction,  adversarial, perceptual, cycle
+3.1. Motion-aware Autoencoder                            consistency, and gaze direction losses. More details are pro-
+                                                          vided in Appendix A.The first stage contains an Autoencoder (AE) to disentangle
+a source image Is into two distinct representations: a static
+                                                               3.2. Flow matching-based Autoregressive Modelappearance feature vapp that encodes the subject’s identity,
+and a dynamic motion feature m that describes the pose    The second stage employs an Audio-Driven Motion Gen-
+and expression. Conceptually, this AE includes: an appear-      eration Transformer, which we denote as Dθ. This model
+ance encoder (Eapp), a motion encoder (Em), a flow estima-     generates a sequence of motion latents m1:N conditioned
+tor (F), and a final decoder (Dvae). These components are     on a corresponding dyadic audio feature sequence a1:N and
+trained jointly in a self-supervised manner, using a video      the initial motion latent ms extracted from the source im-
+reconstruction task that reconstruct a driving video by com-      age.
+bining the appearance from a source image with the motion
+from the driving video itself.  In our implementation, we
+adopt the architecture and training objective from LivePor-    Model Architecture.  As shown in Figure 2, the core ar-
+trait [18] and LIA [62].                                          chitecture of our network is a combination of a flow match-
+   First, the motion encoder Em extracts a source motion     ing head and an autoregressive (AR) model.  Motivated
+feature ms from the source image Is, and a sequence of     by [30], the AR model regresses the continuous, determin-
+driving motion features m1:Ndri from a driving video Vdri.          istic feature, and a single frame-level flow matching head is
+                                                                   for stochastic modeling. Specifically, the feature from the
+ ms = Em(Is),   vapp = Eapp(Is),  m1:Ndri = Em(Vdri)  (1)   AR model, along with the denoising timestep and noise, are
+                                                             fed as conditions for the flow matching head. The denoised
+Subsequently, a motion flow estimator F predicts a dense     clean motion latent is then fed to the AR model for next-
+flow field Fs→d from the motion features.  The decoder     frame generation.
+=== PDF PAGE 4 ===
+Implementation Details.  For the AR model, we adapt     ranging the standard CFG formulation:
+the 1D Transformer block design from Wan2.1 [57]. A
+key change is our use of block-independent projections for            mcond = (1 −wΣ)ˆmuncond + ws ˆm(S, 0, 0)
+timestamp embeddings instead of the original shared pro-            + wl ˆm(0, L, 0) + wr ˆm(0, 0, R)     (4)
+jections. The flow matching head is composed of stacked                                          + wall ˆm(S, L, R),
+MLPs. For audio conditioning, the dyadic audio feature is
+from the concatenation of encoded speaker and listener au-     where ws, wl, wr, and  wall are the respective guidance
+dio features. We adopt a customized Wav2Vec2 [1] as an      scales, and wΣ = ws + wl + wr + wall.
+audio encoder; the details are in Section 3.3. As shown in                                                                 Besides, we maintain a sliding window of N frames
+Figure 2, we leverage linear interpolation to align with the                                                        matching the training length. Initially, the first N-1 frames
+temporal dimension of the motion features, and fuse the au-                                                                are set to static motion with the corresponding dyadic au-
+dio feature via element-wise addition. We found that this is                                                             dio input to predict the next frame. We then shift the win-
+similar to a cross-attention with a diagonal attention mask,                                              dow by removing the oldest frame and appending the newly
+which shows better performance in our case.                                                            generated frame, repeating this process autoregressively to
+                                                             generate the entire sequence frame by frame.
+
+Anchor Conditioning for Anti-Drifting.  As an inher-     3.3. Make It Realtime with Customized Wav2Vec2
+ently frame-by-frame autoregressive model, our approach
+                                                     While current models could generate video in a causal
+inevitably faces error accumulation during long-sequence
+                                                         frame-by-frame manner in theory,  their lipsync perfor-
+generation.  The subject’s head position gradually drifts
+                                                  mance is limited with a straightforward implementation.
+from its initial location in the reference image, causing se-
+                                    A primary reason is that standard audio encoders, such as
+vere artifacts and a decline in visual quality. Considering
+                                                Wav2Vec2 [1], typically require non-causal context to ex-
+that our inference procedure generates only one new frame
+                                                                         tract current features. This leads to severe feature degrada-
+per forward pass in the sliding window—with previously
+                                                                   tion when causality is enforced during inference. As shown
+generated frames serving as historical context—we intro-
+                                                                   in Table 3, the model’s audio-lip synchronization improves
+duce a corresponding modification to the training strategy.
+                                                              as the current audio frame can access more future audio
+Specifically, during training, we randomly select one frame
+                                                             frames. To solve this, we customize a causal Wav2Vec2
+from the last ten frames of the sequence to serve as the ap-
+                                                          with a minimal lookahead module, restricting its receptive
+pearance anchor during training. During inference, how-
+                                                                         field to a maximum of n future audio frames.
+ever, we consistently use only the initial reference frame as
+                                                     To implement this causal Wav2Vec2, we introduce two
+the anchor.  This randomized anchor training strategy ef-
+                                                       key modifications to eliminate its inherent non-causal op-
+fectively mitigating pose drift during autoregressive gener-
+                                                                    erations.   First, the standard architecture utilizes Group-
+ation.
+                                             Norm in its initial convolutional layer. Since GroupNorm
+                                                      computes statistics across the entire input sequence, it in-
+                                                             troduces a dependency on future frames. We replace  it
+Training and Inference.  For training, we adopt the m0-
+                                                          with LayerNorm, which operates independently at each
+prediction objective, where the model learns to predict the
+                                                                timestep, thus ensuring causality. Second, a more signifi-
+clean motion latent m0 from its noised version mt. The
+                                                              cant source of non-causality lies in its positional encoding,
+loss function is formulated as:
+                                                       implemented as a convolution with a large kernel size of
+                                                           128. This layer inherently accesses up to 64 future frames
+           Lflow = Et,ϵ ∥Dθ(mt, t, c) −m0∥2         (3)                                                                   (a 1.28-second lookahead). We therefore remove this con-
+                                                                volutional positional encoding entirely and instead integrate
+where mt = (1 −σt)m0 + σtϵ with t ∼U[0, 1] and ϵ ∼     Rotary Positional Embeddings (RoPE) [51] into the Trans-
+N(0, I). The conditioning signal c is the output from AR     former attention layers.
+model.                                                         These modifications are important to remove implicit,
+   During inference, we compute the velocity field from     hard-coded lookaheads from the architecture. As a result,
+the predicted ˆm0 and integrate using an Euler-based ODE      the model’s temporal receptive field is governed solely by
+solver.   To enable fine-grained  control, we employ a      the attention mask. This grants us precise and explicit con-
+multi-conditional guidance strategy. Let ˆm(cS, cL, cR) =       trol over the amount of future audio context the model can
+mθ(mt, t, cS, cL, cR) denote the model’s prediction given      access.
+the speaker (S), listener (L), and anchor (R) conditions.     We then decide the number of lookahead frames based
+The unconditional prediction is ˆmuncond = ˆm(0, 0, 0).        on the demands of real-time processing. For instance, sys-
+  The final guided prediction mcond is computed by rear-     tems like the OpenAI Realtime API [26] deliver audio in
+=== PDF PAGE 5 ===
+100ms chunks. Our target video generation rate is 25 fps,     ing the AdamW optimizer with a learning rate of 2e-5 and a
+which corresponds to one video frame per 40ms of audio.     global batch size of 64, and costs 12 hours on a single H200.
+By configuring our modified audio encoder to access an ad-
+ditional 60ms or less of future audio, we can generate a     4.2. Dataset
+video frame immediately upon receiving the first 100ms au-   We use two types of data for our experiments:  public
+dio segment, thereby incurring no additional latency. This      datasets and an additional colloected dataset. Our data pre-
+lookahead is implemented by adjusting the attention mask     processing pipeline is similar to that of LatentSync [29].
+inside our customized Wav2Vec2.                        The core steps include detecting and cropping face regions
+   In contrast, for the listener part, we adopt a different ap-     from raw videos, followed by filtering out clips with low
+proach. The average human reaction time in a conversation     SyncNet [8] scores to ensure data quality. All data are fi-
+is approximately 300 milliseconds [40]. Unlike a speaker,      nally processed into talking-head-only videos at a resolu-
+a listener may not require future audio context to determine      tion of 512×512, matching the input size of our model. We
+precise lip movements. Therefore, for the listener’s audio     use two public datasets, HDTF [72] and Realtalk [15]. After
+encoder, we implement a purely causal attention mask. This     processing, our open-source training set contains approxi-
+ensures that the model’s responses are generated based only     mately 50k video clips, each with a duration of about 8 sec-
+on past and current audio information.                         onds. Our colloected dataset contains approximately 100k
+                                                                     clips of human faces, processed using the same pipeline.
+Training Details.  Our training strategy for the Rope-     This dataset is used exclusively as an additional training
+Wav2Vec2 models differs based on their attention mech-     source to improve model robustness and is not used for eval-
+anism. The Rope-Wav2Vec2 model with a full attention      uation. The AE is trained on both datasets and the Audio-
+mask is trained from scratch, using the same pre-training     to-Motion Transformer is trained on Open-Source Datasets
+task as the original Wav2Vec2.   Subsequently,  for the      only. All videos are resampled to 25FPS.
+variant with restricted attention, we do not train  it from
+                                                               4.3. Evaluation of Speaker
+scratch. Instead, we employ knowledge distillation, using
+the pre-trained full-attention model as the teacher to train   We first compare all methods in offline version in Sec. 4.3,
+the restricted-attention model. These final distilled models     4.4 and 4.5,  i.e., the audio feature are encoded in once
+are then used for our generation task.                           via audio encoder (the encoder could see the future audio).
+                                                   Then discuss the online version in Sec 4.6.
+4. Experiments                              We focus on automated, no-reference metrics for eval-
+                                                              uation in this subsection.  Metrics that require a ground-
+4.1. Implementation Details                                                                     truth video are discussed in our ablation studies. Following
+Architecture.  Our model has three components: an Au-      the evaluation protocol of recent video generation bench-
+toencoder (AE), an Autoregressive model, and a Flow     marks [25], we evaluate our method across four key dimen-
+matching Head, with 110M, 182M, and 80M parameters,      sions: lip-sync quality [8], content similarity [47], image
+respectively.  The Autoregressive model consists of 12      quality [25], motion dynamics [25]. The specific metrics
+blocks, each with a hidden dimension of 768 and 8 attention     used to quantify each dimension are detailed in Appendix.
+heads. The Flowmatching Head is composed of 6 blocks,     We  compare  DyStream  with  several  representa-
+also featuring a hidden dimension of 768.                          tive or  state-of-the-art talking-head generation models:
+                                                          SadTalker [71], Real3DPortrait [69], Hallo3 [9], Sonic [27],
+                                                      and our reproduced INFP [78]. For evaluation, we construct
+Autoencoder  Training.  We  train  the AE  using  the                                                          a unified test set by randomly sampling 100 clips each
+AdamW optimizer [37] with a learning rate of 1e-5 and a                                                     from the HDTF and our internal datasets, these clips were
+batch size of 48. The dimension of the latent motion codes                                                                         filtered out from training. All input faces are cropped and
+is set to 512. The AE is trained for a total of 150,000 itera-                                                                resized to 512 × 512.
+tions on H200.
+                                                     To ensure a fair and comprehensive comparison, we es-
+                                                                    tablish two additional baselines specifically designed for
+Autoregressive Flow Matching Training.  We apply a     frame-by-frame generation.  The  first, which we denote
+dropout of 0.5 to the speaker and listener audio, and 0.1     as INFP-I (INFP-Inpainting), is an adaptation of our re-
+to the reference anchor.  For inference, we employ a 5-     produced INFP baseline. We modify its chunk-by-chunk
+step Euler ODE sampler and utilize Classifier-Free Guid-     framework: for a fixed chunk size k = 32, we decrease
+ance (CFG) [20], as described in Equation 4, with guid-      the number of generated frames to n and use k −n frames
+ance weights set to wall = 1.0, ws = 0.5, wl = 0.5, and     as past context. We tested n ∈{1, 2, 4, 8}, which corre-
+wr = 0.5. The model is trained for 120,000 iterations us-     sponds to latencies of {40, 80, 160, 320} ms, respectively,
+=== PDF PAGE 6 ===
+                                                                  Table 1. Comparison with existing methods. We compare our
+                                                          method with state-of-the-art video diffusion models (slower) and
+                                                                      other warp-based methods (faster) on the HDTF-100 test set. ∗
+                                                                  denotes our reproduced version. Latency means the reaction time
+                                                                          to the most recent incoming audio.
+
+
+                                                                                                       Sync-C↑   CS↑   Quality↑  Dynamic↑
+
+                                                                             GroundTruth                      7.614    0.928    0.642      0.660
+                                                                                 Hallo3 [9]                        6.814    0.915    0.638      0.870
+                                                                                 Sonic [27]                        8.495    0.935    0.626      0.600
+
+                                                                                   SadTalker [71]                    6.704    0.965    0.697      0.080
+                                                                                     Real3DPortrait [69]                6.811    0.943    0.637      0.030
+
+                                                                     INFP* [78]                       6.894    0.909    0.643      0.950
+                                                                          INFP_I* (latency 40 ms)           1.718    0.877    0.630      0.580
+                                                                          INFP_I* (latency 80 ms)           3.112    0.897    0.655      0.270
+                                                                          INFP_I* (latency 160 ms)          5.335    0.939    0.644      0.040
+                                                                          INFP_I* (latency 320 ms)          6.637    0.945    0.638      0.210
+
+                                                                            Ours                             8.136    0.947    0.642      0.580
+Figure 3. Effect of classifier-free guidance (CFG) on lipsync per-        Ours (w/o Flow Matching Head)    7.867    0.940    0.643      0.680
+                                                                            Ours (w/o Frame Wise Addition)    7.660    0.925    0.648      0.470
+formance. We evaluate Sync-C across a grid of CFG All and CFG
+                                                                            Ours (latency 40 ms)               6.896    0.937    0.647      0.570
+Speaker.                                                                            Ours (latency 80 ms)               7.671    0.959    0.645      0.520
+
+
+                                                                  Table 2. Quantitative comparison on FD, MSE, SID and Var for
+in our 25 FPS setting. It is important to note that this strat-      expression (Exp) and pose (Pose). Lower FD/MSE and higher
+egy must be consistently applied during both training and     SID/Var are better.
+inference; applying  it only at inference time to a model
+trained on full chunks results in severe temporal instability                  FD↓     MSE↓      SID↑       Var↑
+                                                             Methodand jitter. The second baseline is a deterministic ablation
+                                                                       Exp  Pose  Exp  Pose  Exp  Pose  Exp  Pose
+of our own proposed method. We achieve this by removing
+the flow matching head from our architecture. This trans-      INFP [78]     0.141 3.158 0.019 1.286 4.263 2.562 0.185 0.200
+forms our probabilistic model into a deterministic one that       Ours         0.074 3.192 0.018 1.636 4.586 3.070 0.275 0.596
+autoregressively predicts the motion frame by frame.             Ours (w/o fm) 0.079 3.236 0.020 1.472 4.570 2.896 0.246 0.556
+  The lip-sync performance is mainly determined by the       Ours (80ms)   0.069 3.489 0.019 1.503 4.602 2.831 0.263 0.338
+guidance weights wall and ws.  As shown in Figure 3,
+we empirically found that optimal performance is typically
+achieved when their sum, wall + ws, is approximately 1.5.     4.5. Ablation Study
+Therefore, we set wall = 1.0 and ws = 0.5 as the chosen     Feature Frame Wise Addition.  We inject dyadic au-
+hyperparameters for our model.                                                             dio and anchor information via direct, frame-wise addition
+                                                          along the temporal dimension, instead of the cross-attention
+4.4. Evaluation of Listener                            mechanism. As shown in Tables 1 and  4, this approach
+                                                                 yields better lip-sync performance. The suggests for this
+To quantitatively evaluate the listener performance, we con-                                                                      task, the audio feature within a local window is enough for
+duct evaluations on the RealTalk test set, which comprises                                                                  lip-syncing. Furthermore, by replacing computationally ex-
+38 videos ranging from 3 to 14 seconds in length. We com-                                                            pensive cross-attention with simple addition, we achieve a
+pare our method against our own reproduced of INFP. The                                                  23.1% increase in inference speed.
+evaluation relies on facial expression coefficients (Exp) and
+head poses (Pose) extracted using MediaPipe [39]. We em-
+ploy four key metrics: Fréchet Distance (FD) and Mean    Anchor Frame Selection.  The anchor frame is crucial for
+Squared Error (MSE) to measure the realism and accuracy     mitigating pose drift in long-sequence autoregressive gener-
+of the generated motions, and two metrics to evaluate di-      ation. We designed an ablation study with three settings: (1)
+versity: Variance (Var) and SI Diversity (SID). For SID, we     our method, where the anchor is randomly sampled from
+follow the methodology of [42], which assesses the diver-      the last 10 frames of the training sequence, (2) an anchor
+sity of facial and head motions by applying k-means clus-     frame randomly sampled from the entire sequence, and (3)
+tering (with k = 40 for expression and k=20 for rotation)     no anchor. As shown in Figure 4, our approach proves most
+on ground truth and then calculating the entropy of the re-      effective at preventing pose drift over long generation peri-
+sulting histogram of cluster IDs within each sequence.          ods.
+=== PDF PAGE 7 ===
+Figure 4. Ablation Study on Anchor Frame Selection Strategy. Visual comparison of long-sequence generation results using the same
+input audio and initial reference image. The rows from top to bottom correspond to three different anchor selection strategies used during
+training: our method (anchor sampled from the last 10 frames), a random anchor, and no anchor.
+
+Flow Matching Head.  By removing the flow matching      Table 3.  Comparison of different Wav encoders. ∞and 0
+head, our model is converted into a deterministic autore-      denotes full-attention and pure-causal architecture, respectively.
+                                                         Top to bottom: (1) different pretrained full-attention wav encodergressive model. As detailed in Tables 1 and 2, the listener
+                                                                performs similar; (2) all pure-causal wav encoder show limited
+mode shows a notable decrease in motion diversity, as the
+                                                                 performance; (3) training with distillation from full-attention ver-
+model loses its ability to generate varied, stochastic reac-                                                                     sion could slightly improve the results; (4) lookahead improves
+tions. In contrast, the speaker mode’s performance degrades                                                                       the performance of Rope-Wav2vec2 (w. distill) (5) training Rope-
+only marginally. We hypothesize this is because the listener     Wav2vec2 with VAE style generation loss have a limited improve-
+mode is a more pronounced one-to-many mapping, where      ment, suggest that lookahead is simple yet effective.
+stochastic modeling provides a clear benefit.
+
+4.6. Wav Encoder for Online Generation              Wav Encoder              Lookahead Time (ms)  Sync-C ↑
+                                                                                                  Train     Inference
+We then discuss the online version, the selection of the au-
+dio encoder will influence the performance on downstream      Wav2vec2 [1]       ∞    ∞         8.114
+tasks. We conducted a comprehensive evaluation of sev-      Wav2vec2 (random init)   ∞    ∞         4.568
+                                                        Wav2vec2 (freeze)     ∞    ∞         6.037eral prominent audio encoders to determine their suitabil-
+                                                          Rope-Wav2vec2      ∞    ∞         8.136
+ity for our task. The candidates included non-causal en-
+                                                               Hubert [22]        ∞    ∞         8.007
+coders: Wav2vec2 [1], Hubert [22], WavLM [5], and causal
+                                                    Wavlm [5]        ∞    ∞         7.719
+encoders: Wav2vec [49], Mimi [11], Encodec [10], and our
+Rope-Wav2vec2.                                         Wav2vec [49]               0         0          1.761
+                                                     Mimi [11]                  0         0          5.628  As shown in the Table 3, group 1. our experiments pro-
+                                                           Encodec(24KHz) [10]         0         0          2.034
+vide several insights into the role of the audio encoder. First,
+we observe that wav2vec2, Hubert, and WavLM yield com-      Rope-Wav2vec2      ∞    ∞         8.136
+parable performance, which we attribute to their similar      Rope-Wav2vec2 (w/o distill)   0         0          2.861
+network architectures and pre-training objectives. To em-      Rope-Wav2vec2 (w. distill)    0         0          3.017
+phasize the importance of pre-training, we also trained a                                0         0          3.017
+model with a randomly initialized wav2vec2, which led to a                                20        20         5.976
+substantial drop in performance. This confirms that a well-      Rope-Wav2vec (lookahead)    40        40         6.896
+pre-trained audio encoder is critical for this task. Further-                                60        60         7.387
+more, unlike INFP, which freezes the audio encoder during                                80        80         7.671
+training, our method finetunes its parameters throughout the      Rope-Wav2vec2-VAE         0         0          3.495
+process. An ablation study where we froze the wav2vec2
+encoder resulted in a significant performance degradation.
+This finding likely explains why our method outperforms
+INFP, even without resorting to more complex operations     ous fintuning of the encoder during training is the key factor
+on the audio features, such as memory bank. The continu-      in our model’s better performance.
+=== PDF PAGE 8 ===
+   Ref. image                               Generated videos
+
+view
+Frontal
+
+
+
+view
+Side
+
+
+
+cases
+Failure
+
+
+
+
+Figure 5. Qualitative results and limitations. Top: Given reference images from different views, our approach can generate realistic
+videos that maintain consistent head pose over time. Bottom: Our method have the limitation when hands are overlapped with face.
+
+Table 4. Inference performance. Inference speeds measured on       Encodec(24KHz) [10] and Wav2vec [49].
+an H200 GPU, where APD (Audio Packet Delay) denotes the la-      2. Train a causal encoder with distillation. We modi-
+tency between the arrival of a new audio packet and the genera-                                                                         fied our Wav2Vec2 encoder to make it causal, noted as
+tion of the corresponding facial motion, and Step denotes the flow
+                                                        Rope-Wav2vec2, and first train a the full-attention ver-
+matching denoising step. Result of our model is with lookahead
+                                                                       sion, then distill a causal version.60 ms version.
+                                                                      3. Train a causal encoder with lookahead. We operate on
+                                                                   the attention mask to allow Rope-Wav2vec2 could use a
+    Method          Step   FPS   APD(s)   Sync-C↑
+                                                        few future audio features.
+    INFP            5    21.27   1.0070     6.104             4. Train a generative causal encoder. We apply genera-
+    INFP            10    11.37   1.0479     6.381                 tive model style training for the Rope-Wav2vec2, e.g.,
+    Ours             1    38.46   0.0262     7.165              during the distillation phase, apply a VAE style loss.
+    Ours             5    29.24   0.0342     7.371           As shown in Table 3, group 2 −4, The empirical evi-
+    Ours            10    21.88   0.0457     7.387                                                        dence strongly suggests that for high-fidelity audio-driven
+    Ours (w/o Add)    5    22.47   0.0445     7.119            talking head generation, a small window of future audio is
+                                                             not just beneficial but essential for correctly modeling the
+                                                                   co-articulation and anticipatory dynamics of human speech.
+   Then, we discuss the different design choices to make
+the audio encoder causal.                                   5. Limitations and Future Works
+
+1. Apply pretrained causal encoders directly.  Instread    Our method inherits some structural limitations from its
+   of using Wav2Vec2 [1], we test wav encoder origianlly     warp-based foundation.  First, inaccuracies in the warping
+   designed with causal architectures, such as Mimi [11],     process can occasionally lead to rigid deformations on ac-
+=== PDF PAGE 9 ===
+cessories like jewelry or glasses. Second, it is challenging           of the Computer Vision and Pattern Recognition Conference,
+for our method to deal with hand occlusion. As shown in          pages 21086–21095, 2025. 5, 6
+Figure 5, the generated videos exhibit static hand motion.      [10] Alexandre Défossez, Jade Copet, Gabriel Synnaeve, and
+Additionally, our inference pipeline requires the input face           Yossi Adi. High fidelity neural audio compression.  arXiv
+to be cropped and aligned to a fixed position and scale, sim-            preprint arXiv:2210.13438, 2022. 7, 8
+ilar to the training data.  Finally, while our autoregressive      [11] Alexandre Défossez, Laurent Mazaré, Manu Orsini, Amélie
+model can access historical context, it lacks a dedicated de-           Royer, Patrick Pérez, Hervé Jégou, Edouard Grave, and Neil
+                                                                        Zeghidour. Moshi: a speech-text foundation model for real-sign to ensure long-term diversity. This is largely due to the
+                                                                      time dialogue. arXiv preprint arXiv:2410.00037, 2024. 1, 7,
+scarcity of continuous, long-form training data, presenting
+                                                              8
+a key challenge we will explore in the future.
+                                                                     [12] Nikita Drobyshev, Jenya Chelishev, Taras Khakhulin, Alek-
+                                                                                    sei Ivakhnenko,  Victor Lempitsky, and Egor Zakharov.
+References                                                           Megaportraits: One-shot megapixel neural head avatars. In
+                                                                      Proceedings of the 30th ACM International Conference on [1] Alexei Baevski, Yuhao Zhou, Abdelrahman Mohamed, and
+                                                                      Multimedia, pages 2663–2671, 2022. 2, 1     Michael Auli. wav2vec 2.0: A framework for self-supervised
+     learning of speech representations.  Advances in neural      [13] Nikita Drobyshev, Antoni Bigata Casademunt, Konstantinos
+     information processing systems, 33:12449–12460, 2020. 4,           Vougioukas, Zoe Landgraf, Stavros Petridis, and Maja Pan-
+      7, 8                                                                                        tic. Emoportraits: Emotion-enhanced multimodal one-shot
+                                                                  head avatars. In Proceedings of the IEEE/CVF Conference [2] Antoni Bigata, Rodrigo Mira, Stella Bounareli, Michał Sty-
+                                                              on Computer Vision and Pattern Recognition, pages 8498–     pułkowski, Konstantinos Vougioukas, Stavros Petridis, and
+                                                                     8507, 2024.    Maja Pantic.  Keysync: A robust approach for leakage-
+      free lip synchronization in high resolution.  arXiv preprint      [14] Ao Fu, Ziqi Ni, and Yi Zhou.  Dual audio-centric modal-
+     arXiv:2505.00497, 2025. 2                                                   ity coupling for talking head generation.  arXiv preprint
+                                                                      arXiv:2503.22728, 2025. 2 [3] Antoni Bigata, Michał Stypułkowski, Rodrigo Mira, Stella
+     Bounareli, Konstantinos Vougioukas, Zoe Landgraf, Nikita      [15] Scott Geng, Revant Teotia, Purva Tendulkar, Sachit Menon,
+     Drobyshev, Maciej Zieba, Stavros Petridis, and Maja Pantic.          and Carl Vondrick.  Affective faces for goal-driven dyadic
+     Keyface: Expressive audio-driven facial animation for long          communication. arXiv preprint arXiv:2301.10939, 2023. 5
+     sequences via keyframe interpolation. In Proceedings of the      [16] Shengjie Gong, Haojie Li, Jiapeng Tang, Dongming Hu,
+    Computer Vision and Pattern Recognition Conference, pages          Shuangping Huang, Hao Chen, Tianshui Chen, and Zhuo-
+     5477–5488, 2025. 2                                    man Liu.  Monocular and generalizable gaussian talking
+ [4] Jiahui Chen, Yang Huan, Runhua Shi, Chanfan Ding, Xi-          head animation. In Proceedings of the Computer Vision and
+     aoqi Mo, Siyu Xiong, and Yinong He. Audio-driven gesture            Pattern Recognition Conference, pages 5523–5534, 2025. 2
+     generation via deviation feature in the latent space.  arXiv      [17] Jiazhi Guan, Kaisiyuan Wang, Zhiliang Xu, Quanwei Yang,
+      preprint arXiv:2503.21616, 2025. 2                              Yasheng Sun, Shengyi He, Borong Liang, Yukang Cao,
+ [5] Sanyuan Chen, Chengyi Wang, Zhengyang Chen, Yu Wu,          Yingying Li, Haocheng Feng, et al. Audcast: Audio-driven
+     Shujie Liu, Zhuo Chen, Jinyu Li, Naoyuki Kanda, Takuya         human video generation by cascaded diffusion transform-
+     Yoshioka, Xiong Xiao, et al.  Wavlm:  Large-scale self-             ers.  In Proceedings of the Computer Vision and Pattern
+     supervised pre-training for  full stack speech processing.           Recognition Conference, pages 10678–10689, 2025. 2
+    IEEE Journal of Selected Topics in Signal Processing, 16(6):      [18] Jianzhu Guo, Dingyun Zhang, Xiaoqiang Liu, Zhizhou
+     1505–1518, 2022. 7                                            Zhong, Yuan Zhang, Pengfei Wan, and Di Zhang. Livepor-
+ [6] Yi Chen, Sen Liang, Zixiang Zhou, Ziyao Huang, Yifeng               trait: Efficient portrait animation with stitching and retarget-
+    Ma,  Junshu Tang, Qin  Lin, Yuan Zhou,  and Qinglin           ing control. arXiv preprint arXiv:2407.03168, 2024. 3, 1
+     Lu.  Hunyuanvideo-avatar:  High-fidelity audio-driven hu-      [19] Ying Guo, Xi Liu, Cheng Zhen, Pengfei Yan, and Xiaoming
+    man animation for multiple characters.   arXiv preprint          Wei.  Arig: Autoregressive interactive head generation for
+     arXiv:2505.20156, 2025. 2                                             real-time conversations.  arXiv preprint arXiv:2507.00472,
+ [7] Zhiyuan Chen, Jiajiong Cao, Zhiquan Chen, Yuming Li,           2025. 2
+     and Chenguang Ma.  Echomimic:  Lifelike audio-driven      [20] Jonathan Ho and Tim Salimans.   Classifier-free diffusion
+      portrait animations through editable landmark conditions.           guidance. arXiv preprint arXiv:2207.12598, 2022. 5
+     In Proceedings  of  the AAAI Conference on  Artificial      [21] Fa-Ting Hong, Zunnan Xu, Zixiang Zhou, Jun Zhou, Xiu
+      Intelligence, pages 2403–2410, 2025. 2                                  Li, Qin Lin, Qinglin Lu, and Dan Xu.  Audio-visual con-
+ [8] Joon Son Chung and Andrew Zisserman. Out of time: auto-             trolled video diffusion with masked selective state spaces
+     mated lip sync in the wild. In Asian conference on computer          modeling for natural talking head generation. arXiv preprint
+      vision, pages 251–263. Springer, 2016. 5, 2                          arXiv:2504.02542, 2025. 2
+ [9] Jiahao Cui, Hui Li, Yun Zhan, Hanlin Shang, Kaihui Cheng,      [22] Wei-Ning Hsu, Benjamin Bolte, Yao-Hung Hubert Tsai,
+     Yuqi Ma, Shan Mu, Hang Zhou, Jingdong Wang, and Siyu          Kushal Lakhotia, Ruslan Salakhutdinov, and Abdelrahman
+     Zhu.  Hallo3: Highly dynamic and realistic portrait image         Mohamed.  Hubert: Self-supervised speech representation
+     animation with video diffusion transformer. In Proceedings            learning by masked prediction of hidden units. IEEE/ACM
+=== PDF PAGE 10 ===
+      transactions on audio, speech, and language processing, 29:      [35] Kangwei Liu, Junwu Liu, Yun Cao, Jinlin Guo, and Xi-
+     3451–3460, 2021. 7                                            aowei Yi. Disenttalk: Cross-lingual talking face generation
+[23] Yinghao Huang, Leo Ho, Dafei Qin, Mingyi Shi, and Taku            via semantic disentangled diffusion model.  arXiv preprint
+    Komura.  Interact: Capture and modelling of realistic, ex-           arXiv:2503.19001, 2025. 2
+     pressive and interactive activities between two persons in      [36] Yujian Liu, Shidang Xu, Jing Guo, Dingbin Wang, Zairan
+      daily scenarios. arXiv preprint arXiv:2405.11690, 2024. 2           Wang, Xianfeng Tan, and Xiaoli Liu. Syncanimation: A real-
+[24] Yihuan Huang, Jiajun Liu, Yanzhen Ren, Wuyang Liu, and           time end-to-end framework for audio-driven human pose and
+     Juhua Tang. Se4lip: Speech-lip encoder for talking head syn-            talking head animation.  arXiv preprint arXiv:2501.14646,
+      thesis to solve phoneme-viseme alignment ambiguity. arXiv           2025. 2
+      preprint arXiv:2504.05803, 2025. 2                              [37] Ilya Loshchilov and Frank Hutter. Decoupled weight decay
+[25] Ziqi Huang, Yinan He, Jiashuo Yu, Fan Zhang, Chenyang Si,            regularization. arXiv preprint arXiv:1711.05101, 2017. 5
+    Yuming Jiang, Yuanhan Zhang, Tianxing Wu, Qingyang Jin,      [38] Yuanxun Lu, Jinxiang Chai, and Xun Cao. Live speech por-
+     Nattapol Chanpaisit, et al. Vbench: Comprehensive bench-               traits: real-time photorealistic talking-head animation. ACM
+    mark suite for video generative models.  In Proceedings of           Transactions on Graphics (ToG), 40(6):1–17, 2021. 2
+     the IEEE/CVF Conference on Computer Vision and Pattern      [39] Camillo Lugaresi, Jiuqiang Tang, Hadon Nash, Chris Mc-
+     Recognition, pages 21807–21818, 2024. 5                          Clanahan, Esha Uboweja, Michael Hays, Fan Zhang, Chuo-
+[26] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perel-          Ling Chang, Ming Guang Yong, Juhyun Lee, et al. Medi-
+     man, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Weli-            apipe: A framework for building perception pipelines. arXiv
+     hinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card.            preprint arXiv:1906.08172, 2019. 6
+     arXiv preprint arXiv:2410.21276, 2024. 4                        [40] Antje S. Meyer.   Timing in conversation.   Journal of
+[27] Xiaozhong Ji, Xiaobin Hu, Zhihong Xu, Junwei Zhu, Chum-           Cognition, 6(1), 2023. 5
+     ing Lin, Qingdong He, Jiangning Zhang, Donghao Luo, Yi      [41] Lingzhou Mu, Baiji Liu, Ruonan Zhang, Guiming Mo, Ji-
+     Chen, Qin Lin, et al.  Sonic: Shifting focus to global au-          awei Jin, Kai Zhang, and Haozhi Huang.   Flap:  Fully-
+     dio perception in portrait animation. In Proceedings of the            controllable audio-driven portrait video generation through
+    Computer Vision and Pattern Recognition Conference, pages         3d head conditioned diffusion model. In Proceedings of the
+     193–203, 2025. 5, 6                                             33rd ACM International Conference on Multimedia, pages
+[28] Jianwen Jiang, Chao Liang, Jiaqi Yang, Gaojie Lin, Tianyun          10437–10446, 2025. 2
+     Zhong, and Yanbo Zheng.  Loopy: Taming audio-driven      [42] Evonne Ng, Hanbyul Joo, Liwen Hu, Hao Li, Trevor Dar-
+      portrait avatar with long-term motion dependency.  arXiv               rell, Angjoo Kanazawa, and Shiry Ginosar.  Learning to
+      preprint arXiv:2409.02634, 2024. 2                                          listen:  Modeling non-deterministic dyadic facial motion.
+[29] Chunyu Li, Chao Zhang, Weikai Xu, Jingyu Lin, Jinghui           In Proceedings of the IEEE/CVF Conference on Computer
+     Xie, Weiguo Feng, Bingyue Peng, Cunjian Chen, and Wei-           Vision and Pattern Recognition, pages 20395–20405, 2022.
+     wei Xing. Latentsync: Taming audio-conditioned latent dif-             6, 2
+     fusion models for lip sync with syncnet supervision. arXiv      [43] Evonne Ng, Javier Romero, Timur Bagautdinov, Shaojie Bai,
+      preprint arXiv:2412.09262, 2024. 5                                 Trevor Darrell, Angjoo Kanazawa, and Alexander Richard.
+[30] Tianhong Li, Yonglong Tian, He Li, Mingyang Deng, and         From audio to photoreal embodiment:  Synthesizing hu-
+    Kaiming He. Autoregressive image generation without vec-         mans in conversations.  In Proceedings of the IEEE/CVF
+      tor quantization. Advances in Neural Information Processing          Conference on Computer Vision and Pattern Recognition,
+     Systems, 37:56424–56445, 2024. 3                                pages 1001–1010, 2024. 2
+[31] Tianqi Li, Ruobing Zheng, Minghui Yang, Jingdong Chen,      [44] Se Jin Park, Chae Won Kim, Hyeongseop Rha, Minsu Kim,
+     and Ming Yang. Ditto: Motion-space diffusion for control-          Joanna Hong, Jeong Hun Yeo, and Yong Man Ro. Let’s go
+      lable realtime talking head synthesis. In Proceedings of the             real talk: Spoken dialogue model for face-to-face conversa-
+     33rd ACM International Conference on Multimedia, pages             tion. arXiv preprint arXiv:2406.07867, 2024. 2
+     9704–9713, 2025. 2                                            [45] Jinwei Qi, Chaonan Ji, Sheng Xu, Peng Zhang, Bang Zhang,
+[32] Gaojie Lin, Jianwen Jiang,  Jiaqi Yang, Zerong Zheng,          and Liefeng Bo.  Chatanyone:  Stylized real-time portrait
+    Chao Liang, Yuan Zhang, and Jingtuo Liu.  Omnihuman-           video generation with hierarchical motion diffusion model.
+      1: Rethinking the scaling-up of one-stage conditioned hu-           arXiv preprint arXiv:2503.21144, 2025. 2
+    man animation models.  In Proceedings of the IEEE/CVF      [46] Zheng Qin, Ruobing Zheng, Yabing Wang, Tianqi Li, Zixin
+      International Conference on Computer Vision, pages 13847–          Zhu, Sanping Zhou, Ming Yang, and Le Wang.  Versatile
+     13858, 2025.                                                   multimodal controls for expressive talking human animation.
+[33] Haiyang Liu, Xingchao Yang, Tomoya Akiyama, Yuantian           In Proceedings of the 33rd ACM International Conference on
+     Huang, Qiaoge Li, Shigeru Kuriyama, and Takafumi Take-           Multimedia, pages 8253–8262, 2025. 2
+     tomi. Tango: Co-speech gesture video reenactment with hi-      [47] Alec Radford, Jong Wook Kim,  Chris Hallacy, Aditya
+      erarchical audio motion embedding and diffusion interpola-          Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry,
+      tion. arXiv preprint arXiv:2410.04221, 2024.                   Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning
+[34] Haiyang Liu, Zhan Xu, Fa-Ting Hong, Hsin-Ping Huang, Yi            transferable visual models from natural language supervi-
+     Zhou, and Yang Zhou. Video motion graphs. arXiv preprint            sion. In International conference on machine learning, pages
+     arXiv:2503.20218, 2025. 2                                      8748–8763. PMLR, 2021. 5
+=== PDF PAGE 11 ===
+[48] Robin Rombach, Andreas Blattmann, Dominik Lorenz,            diffusion. In Proceedings of the Computer Vision and Pattern
+      Patrick Esser, and Björn Ommer.  High-resolution image           Recognition Conference, pages 26212–26221, 2025. 2
+     synthesis with latent diffusion models.  In Proceedings of      [61] Peng Wang, Songshuo Lu, Yaohua Tang, Sijie Yan, Wei
+     the IEEE/CVF conference on computer vision and pattern           Xia, and Yuanjun Xiong. A full-duplex speech dialogue
+      recognition, pages 10684–10695, 2022. 2                        scheme based on large language model. Advances in Neural
+[49] Steffen Schneider, Alexei Baevski, Ronan Collobert, and           Information Processing Systems, 37:13372–13403, 2024. 1
+     Michael Auli.   wav2vec:  Unsupervised pre-training for      [62] Yaohui Wang, Di Yang, Francois Bremond, and Antitza
+     speech recognition. arXiv preprint arXiv:1904.05862, 2019.           Dantcheva. Lia: Latent image animator. IEEE Transactions
+      7, 8                                                       on Pattern Analysis and Machine Intelligence, 2024. 2, 3, 1
+[50] Shuai Shen, Wanhua Li, Yunpeng Zhang, Weipeng Hu, and      [63] Zhongjian Wang, Peng Zhang, Jinwei Qi, Guangyuan Wang,
+     Yap-Peng Tan. Audio-plane: Audio factorization plane gaus-         Chaonan Ji, Sheng Xu, Bang Zhang, and Liefeng Bo. Om-
+      sian splatting for real-time talking head synthesis.  arXiv             nitalker: One-shot real-time text-driven talking audio-video
+      preprint arXiv:2503.22605, 2025. 2                                  generation with multimodal style mimicking. arXiv preprint
+[51] Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen           arXiv:2504.02433, 2025. 2
+     Bo, and Yunfeng Liu. Roformer: Enhanced transformer with      [64] Cong Wei, Bo Sun, Haoyu Ma, Ji Hou, Felix Juefei-Xu,
+      rotary position embedding. Neurocomputing, 568:127063,          Zecheng He, Xiaoliang Dai, Luxin Zhang, Kunpeng Li,
+     2024. 4                                                      Tingbo Hou, et al.  Mocha: Towards movie-grade talking
+[52] Mingze Sun, Chao Xu, Xinyu Jiang, Yang Liu, Baigui Sun,            character synthesis. arXiv preprint arXiv:2503.23307, 2025.
+     and Ruqi Huang. Beyond talking–generating holistic 3d hu-         2
+    man dyadic motion for communication. International Journal      [65] Mingwang Xu, Hui Li, Qingkun Su, Hanlin Shang, Liwei
+     of Computer Vision, 133(5):2910–2926, 2025. 2                    Zhang, Ce Liu, Jingdong Wang, Yao Yao, and Siyu Zhu.
+[53] Wenzhang Sun, Xiang Li, Donglin Di, Zhuding Liang,           Hallo: Hierarchical audio-driven visual synthesis for portrait
+     Qiyuan Zhang, Hao Li, Wei Chen, and Jianxun Cui. Uni-          image animation. arXiv preprint arXiv:2406.08801, 2024. 2
+      avatar: Taming lifelike audio-driven talking head genera-      [66] Sicheng Xu, Guojun Chen, Yu-Xiao Guo, Jiaolong Yang,
+      tion with comprehensive motion and lighting control. arXiv         Chong Li, Zhenyu Zang, Yizhong Zhang, Xin Tong, and
+      preprint arXiv:2412.19860, 2024. 2                                Baining Guo.  Vasa-1: Lifelike audio-driven talking faces
+[54] Zachary Teed and Jia Deng. Raft: Recurrent all-pairs field           generated in real time.  Advances in Neural Information
+     transforms for optical flow.   In European conference on           Processing Systems, 37:660–684, 2024. 2
+     computer vision, pages 402–419. Springer, 2020. 2               [67] Yichao Yan, Zanwei Zhou, Zi Wang, Jingnan Gao, and Xi-
+[55] Linrui Tian, Qi Wang, Bang Zhang, and Liefeng Bo. Emo:          aokang Yang. Dialoguenerf: Towards realistic avatar face-
+    Emote portrait alive generating expressive portrait videos            to-face conversation video generation. Visual Intelligence, 2
+     with audio2video diffusion model under weak conditions. In            (1):24, 2024. 2
+     European Conference on Computer Vision, pages 244–260.      [68] Shurong Yang, Huadong Li, Juhao Wu, Minhao Jing, Linze
+     Springer, 2024. 2                                                          Li, Renhe Ji, Jiajun Liang, Haoqiang Fan, and Jin Wang.
+[56] Minh Tran, Di Chang, Maksim Siniukov, and Mohammad          Megactor-sigma: Unlocking flexible mixed-modal control in
+     Soleymani.  Dim: Dyadic interaction modeling for social             portrait animation with diffusion transformer. In Proceedings
+     behavior generation. In European Conference on Computer           of the AAAI Conference on Artificial Intelligence, pages
+     Vision, pages 484–503. Springer, 2024. 2                          9256–9264, 2025. 2
+[57] Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao,      [69] Zhenhui Ye, Tianyun Zhong, Yi Ren, Jiaqi Yang, Weichuang
+    Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianx-            Li, Jiawei Huang, Ziyue Jiang, Jinzheng He, Rongjie Huang,
+     iao Yang, et al. Wan: Open and advanced large-scale video            Jinglin Liu, et al.  Real3d-portrait: One-shot realistic 3d
+     generative models. arXiv preprint arXiv:2503.20314, 2025.            talking portrait synthesis. arXiv preprint arXiv:2401.08503,
+    4                                                               2024. 5, 6
+[58] Duomin Wang, Bin Dai, Yu Deng, and Baoyuan Wang.      [70] Hongwei Yi, Tian Ye, Shitong Shao, Xuancheng Yang,
+     Agentavatar:   Disentangling  planning,  driving and  ren-           Jiantong Zhao, Hanzhong Guo, Terrance Wang, Qingyu Yin,
+     dering  for photorealistic avatar agents.   arXiv preprint          Zeke Xie, Lei Zhu, et al. Magicinfinite: Generating infinite
+     arXiv:2311.17465, 2023. 2                                             talking videos with your words and voice.  arXiv preprint
+[59] Duomin Wang, Yu Deng, Zixin Yin, Heung-Yeung Shum,           arXiv:2503.05978, 2025. 2
+     and Baoyuan Wang. Progressive disentangled representation      [71] Wenxuan Zhang, Xiaodong Cun, Xuan Wang, Yong Zhang,
+     learning for fine-grained controllable talking head synthesis.         Xi Shen, Yu Guo, Ying Shan, and Fei Wang.  Sadtalker:
+     In Proceedings of the IEEE/CVF Conference on Computer          Learning realistic 3d motion coefficients for stylized audio-
+     Vision and Pattern Recognition, pages 17979–17989, 2023.           driven single image talking face animation. In Proceedings
+    1                                                                    of the IEEE/CVF conference on computer vision and pattern
+[60] Haotian Wang, Yuzhe Weng, Yueyan Li, Zilu Guo, Jun Du,            recognition, pages 8652–8661, 2023. 2, 5, 6
+     Shutong Niu, Jiefeng Ma, Shan He, Xiaoyan Wu, Qiming      [72] Zhimeng Zhang, Lincheng  Li, Yu Ding, and Changjie
+     Hu, et al. Emotivetalk: Expressive talking head generation           Fan.  Flow-guided one-shot talking face generation with
+     through audio information decoupling and emotional video           a high-resolution audio-visual dataset.  In Proceedings of
+=== PDF PAGE 12 ===
+     the IEEE/CVF conference on computer vision and pattern
+      recognition, pages 3661–3670, 2021. 5
+[73] Dingcheng Zhen, Shunshun Yin, Shiyang Qin, Hou Yi, Zi-
+     wei Zhang, Siyuan Liu, Gan Qi, and Ming Tao. Teller: Real-
+     time streaming audio-driven portrait animation with autore-
+     gressive motion generation. In Proceedings of the Computer
+     Vision and Pattern Recognition Conference, pages 21075–
+     21085, 2025. 2
+[74] Tianyun Zhong, Chao Liang, Jianwen Jiang, Gaojie Lin,
+      Jiaqi Yang, and Zhou Zhao.  Fada:  Fast diffusion avatar
+     synthesis with mixed-supervised multi-cfg distillation.  In
+     Proceedings of the Computer Vision and Pattern Recognition
+     Conference, pages 3101–3110, 2025. 2
+[75] Mohan Zhou, Yalong Bai, Wei Zhang, Ting Yao, and Tiejun
+     Zhao.   Interactive conversational head generation.  IEEE
+     Transactions on Pattern Analysis and Machine Intelligence,
+     2025. 2
+[76] Yang Zhou, Xintong Han, Eli Shechtman, Jose Echevar-
+       ria, Evangelos Kalogerakis, and Dingzeyu Li.  Makelttalk:
+     speaker-aware talking-head animation. ACM Transactions
+    On Graphics (TOG), 39(6):1–15, 2020. 2
+[77] Ziqi Zhou, Weize Quan, Hailin Shi, Wei Li, Lili Wang, and
+    Dong-Ming Yan.  Gohd: Gaze-oriented and highly disen-
+     tangled portrait animation with rhythmic poses and realis-
+       tic expressions. In Proceedings of the AAAI Conference on
+      Artificial Intelligence, pages 10914–10922, 2025. 2
+[78] Yongming Zhu, Longhao Zhang, Zhengkun Rong, Tianshu
+     Hu, Shuang Liang, and Zhipeng Ge.  Infp: Audio-driven
+      interactive head generation in dyadic conversations.   In
+     Proceedings of the Computer Vision and Pattern Recognition
+     Conference, pages 10667–10677, 2025. 1, 2, 5, 6
+=== PDF PAGE 13 ===
+      DyStream: Streaming Dyadic Talking Heads Generation via Flow
+                  Matching-based Autoregressive Model
+
+                           Supplementary Material
+
+
+This supplemental document contains four sections:           Readers are referred to [62] for more details of this archi-
+• Video and Codes (Section A).                                   tecture.
+• Disentangled AE for Motion Representation (Section B).
+• Inference Performance (Section C).                                                        Training Objective.  The VAE is trained with a compos-
+• Metric Definitions (Section E).
+                                                                              ite loss function. We adopt the base losses from LIA [62],
+                                                     which include reconstruction (Lrec), perceptual (Lfeat),
+A. Video and Codes
+                                                      and adversarial (Ladv) losses. We adopt two additional
+This supplemental provides a comprehensive HTML that      losses following [12]: a cycle consistency loss (Lcyc) to
+contains separate videos, including:                            prevent appearance leakage and enhance the disentangle-
+                                                    ment between motion and appearance features; and a gaze• Results for dyadic talking heads generation.
+                                                                  direction loss (Lgaze) to encourage diversity in eye move-• Comparison between our method and INFP baseline.
+                                                          ment. To further enhance the disentanglement between mo-• Ablation study for the lookahead module and anchor.
+                                                                   tion and appearance features, we follow MegaPortrait [12]• More results for in-the-wild image and audios.
+                                                      and incorporate severl additional losses:  a cross-identity
+B. Disentangled AE for Motion Representation     consistency loss (Lcyc), an identity consistency loss (Lid)
+                                                          a gaze direction loss (Lgaze). We additionally incorporate
+Architecture.  The VAE is an image-level autoencoder     a gaze direction loss (Lgaze) to encourage diversity in eye
+that disentangles a source image Is into an appearance fea-     movement. The final objective is a weighted sum of these
+ture vapp and a motion feature m in the latent space. To     terms:
+enhance the robustness of facial representations, we lever-
+age a 3D-aided appearance encoder (Eapp) and a face de-       LV AE = λrecLrec + λadvLadv + λfeatLfeat + λcycLcyc + λgazeLgaze  (5)
+coder (Dvae) with the same network architecture as Live-
+Portrait [18]. The 3D appearance feature volume provides    The weights λ for each term are determined empirically
+a more accurate characterization of facial appearance in 3D      (λrec = 1, λfeat = 2, λadv = 0.2, λgaze = 5, λcyc = 1).
+compared to traditional 2D feature maps. We also employ
+a 2D-based motion encoder (Em) to extract motion codes    C. Inference Performance
+and compress them into low-dimensional 1D representa-
+                                                              In Table 4, we report that our method achieves a FPS oftions. This design effectively captures the core semantics
+                                                          29.24 and an APD (Audio Packet Delay) of 0.0342 withof facial motion while avoiding entanglement with appear-
+                                                          a flow matching step of 5. By reducing the data offloadance information [59, 62].
+                                                       between the CPU and GPU, we could archive an FPS of   Following LIA, we build a motion flow-based genera-
+                                                          38.61 and an APD of 0.0259 on the same server.tion pipeline. Concretely, Em first extracts the source mo-
+                                                              Furthermore, we conduct tests on a consumer-grade hosttion code ms from the input portrait image Is, and driving
+motion codes m1:Ndri from the driving video Vdri. A motion     equipped with a consumer-grade GPU (4090) and an i9-
+flow estimation model F then takes these motion codes as    13900KF CPU. On this setup, our method achieves a FPS of
+input to predict the self→driving flow Flow s→d. We utilize     58.48 and an APD of 0.0171. The entire process consumed
+                                                          only 2.37G of VRAM.the Eapp to extract a 3D appearance feature volume (vapp)
+from the portrait image Is. vapp is then warped using the es-
+timated motion flow and passed to the decoder Dvae to syn-    D. Head Pose Stability (Anchor)
+thesize the final predicted video I1:Npred. The overall pipeline                                                  To quantitatively evaluate the anti-drifting  efficacy, we
+is formulated as follows:
+                                                       measure the 6-DoF head pose drift relative to the initial
+                                                        frame using MediaPipe. We report Mean/Max Drift (av-       ms = Em(Is); m1:Ndri = Em(Vdri)
+                                                    erage/maximum deviation) and Std Drift (fluctuation sta-
+                  vapp = Eapp(Is)                                bility). As shown in Table 5, we tested on 10 audio clips
+                                                              (3 minutes each) driven by 10 different reference images.
+            Flows→d = F(ms, m1:Ndri )                                                  Our method demonstrates exceptional stability across all
+         I1:Npred = Dvae(Warp(vapp, Flows→d))               durations (10s, 60s, 180s).  Specifically, our rotation drift
+=== PDF PAGE 14 ===
+Table 5. Head Pose Drift Evaluation. We evaluate head pose sta-    Dynamic Degree (Dynamic):  To quantify the presence
+bility across three different anchor strategies. The metrics reported     of motion in generated videos, we utilize the Dynamic De-
+for Rotation are in degrees, and for Position are in relative units                                                            gree metric based on optical flow analysis. We employ the
+from MediaPipe. Lower values indicate better stability.
+                                         RAFT model [54] to estimate inter-frame optical flow, sam-
+                                          Rotation (degrees)                                  Position              pling frames at intervals of fps/8.  For each consecutive
+  Duration  Method
+                        Mean Drift ↓  Max Drift ↓   Std Drift ↓    Mean Drift ↓  Max Drift ↓   Std Drift ↓      frame pair, we compute the flow magnitude and take the
+
+                              6.61        12.48                                                      2.25                                                                    1.04                                                                                 2.45                                                                                            0.53            Ours
+    10s                                              20.76                                                             3.83                                                                             1.62                                                                                           3.32                                                                                                        0.74      mean of the top 5% largest magnitudes as the motion score.          Random Anchor      11.65
+         No Anchor           30.12         41.08        8.47            2.19          4.17         0.84     A video is classified as dynamic if the number of frames
+                              7.73        17.61                                                      2.45                                                                    1.16                                                                                 3.26                                                                                            0.57            Ours
+    60s                                              24.27                                                             3.49                                                                             1.62                                                                                           3.87                                                                                                        0.76       exceeding an adaptive threshold (scaled by resolution and          Random Anchor      12.69
+         No Anchor           33.96         43.25        4.59            2.38          4.56         0.73       video length) surpasses a minimum count threshold. The
+            Ours               7.62        19.31       2.72          1.20        3.69       0.59
+    180s    Random Anchor      12.86         26.90        4.62            1.62          4.09         0.75         final metric represents the proportion of videos exhibiting
+         No Anchor           34.52         44.45        3.31            2.42          4.68         0.71         significant motion.
+
+
+remains under 8◦even after 3 minutes, significantly outper-     Fréchet Distance (FD):  Motion realism is quantified by
+forming the “Random Anchor” and “No Anchor” baselines,     measuring the distributional discrepancy between the gen-
+which suffer from severe cumulative error (drifting > 34◦).      erated motion sequences and the ground-truth motions.
+                                                                     Specifically, we calculate the Fréchet Distance (FD) across
+                                                                the feature domains of facial expressions and head posesE. Metric Definitions
+                                                           over the entire sequence.
+Lip-sync Consistency (Sync-C):  We employ the confi-
+dence score derived from SyncNet [8], referred to as Sync-
+                                           Mean Squared Error (MSE):  We calculate the Mean
+Score, to evaluate the temporal synchronization quality be-
+                                                       Squared Error (MSE) between the generated motion param-
+tween the generated lip movements and the corresponding
+                                                                     eters and the ground-truth motion sequences to evaluate the
+audio signals. Specifically, we extract audio features and vi-
+                                                                 deterministic reconstruction accuracy.
+sual features from consecutive video frames, and compute
+the cross-correlation between audio and visual embeddings
+across multiple temporal shifts. The confidence score repre-    Shannon  Index   for   Diversity   (SID):  Following
+sents the maximum correlation value, indicating the degree    L2L  [42],  this  metric  quantifies  the  magnitude  and
+of audio-visual synchronization. The final metric is com-    dynamism of generated facial motions by calculating the
+puted as a weighted average across all frames, where higher     variance along the temporal dimension. We extract facial
+values indicate better lip-sync quality.                       motion representations using MediaPipe Face Landmarker,
+                                                              obtaining  6-dimensional  head  motion  parameters (3D
+                                                                    translation and 3D rotation in Rodrigues form) and 52-
+Content Similarity (CS):  To evaluate the temporal con-     dimensional expression blendshapes for each frame. The
+sistency of the generated content, we employ Content Sim-     variance is computed separately for head motion (Varhead)
+ilarity metric. Specifically, we extract deep visual features     and facial expressions (Varexp) as Var = PDd=1 Var(x(d)),
+from all video frames using a pre-trained encoder, resizing     where x(d) denotes the motion sequence along dimension
+each frame to 160×160 pixels. The first frame serves as the      d. Higher variance indicates more dynamic and expressive
+reference, and we compute the cosine similarity between its     motions.
+feature embedding and those of all subsequent frames. The
+final score is the mean cosine similarity across all frame
+pairs, with values closer to 1 indicating higher temporal     Variance (Var):  Following L2L [42], this metric quanti-
+consistency.                                                             fies the magnitude and dynamism of generated facial mo-
+                                                                   tions by calculating the variance along the temporal dimen-
+                                                                    sion. We extract facial motion representations using Me-
+Imaging Quality (Quality):  We assess the visual quality     diaPipe Face Landmarker, obtaining 6-dimensional head
+of generated videos using a pre-trained image quality as-     motion parameters (3D translation and 3D rotation in Ro-
+sessment model. Each frame in the video is independently     drigues form) and 52-dimensional expression blendshapes
+evaluated by the model, producing a quality score.  The      for each frame. The variance is computed separately for
+Imaging Quality metric is computed as the average score     head motion (Varhead) and facial expressions (Varexp) as
+across all frames, normalized to the range [0, 1], where     Var = PDd=1 Var(x(d)), where x(d) denotes the motion se-
+higher values indicate superior visual fidelity and percep-     quence along dimension d. Higher variance indicates more
+tual quality.                                           dynamic and expressive motions.
+=== PDF PAGE 15 ===
+Audio Packet Delay (APD):  This metric evaluates sys-
+tem latency in real-time streaming generation scenarios, de-
+fined as the time interval between the reception of an audio
+packet and the output of the corresponding motion.  It is
+important to note that chunk-based methods, such as INFP,
+inherently require the accumulation of a full audio chunk
+before motion synthesis can commence. Consequently, the
+calculation of APD must encompass not only the model’s
+computational inference time but also the buffering latency
+equivalent to the duration of the audio chunk. In our imple-
+mentation of INFP, this chunk duration is set to 0.96 sec-
+onds.

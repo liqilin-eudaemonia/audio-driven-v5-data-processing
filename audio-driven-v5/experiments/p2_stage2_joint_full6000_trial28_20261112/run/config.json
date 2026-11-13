@@ -1,0 +1,236 @@
+{
+  "schema": "p2-stage2-joint-v2",
+  "generator": {
+    "schema": "p2-matrix16-v1",
+    "id": "guided_av_event_feature_s1",
+    "text_condition": "guided",
+    "loss": "av_event_feature",
+    "stage": 1,
+    "data_config": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_train500h_cache_20261101/manifest.json",
+    "plan_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_train_dev500h_qwen_hidden_20261105",
+    "teacher_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_train_dev500h_teacher_cache_20261105",
+    "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_stage2_joint_full6000_trial28_20261112/run",
+    "parent_experiment": null,
+    "loss_weights": {
+      "av": 1.0,
+      "event": 0.05,
+      "video_feature": 0.025,
+      "audio_feature": 0.025
+    },
+    "qwen_lora": {
+      "enabled": false,
+      "rank": 8,
+      "alpha": 8,
+      "learning_rate": 1e-05,
+      "targets": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj"
+      ],
+      "gradient_checkpointing": true
+    },
+    "text_lora": {
+      "enabled": true,
+      "rank": 8,
+      "alpha": 8,
+      "learning_rate": 1e-05
+    },
+    "training": {
+      "seed": 20261023,
+      "global_batch": 31,
+      "steps": 9169,
+      "save_every": 500,
+      "warmup_steps": 50,
+      "connector_lr": 3e-05,
+      "feature_lr": 3e-05,
+      "event_lr": 0.0001,
+      "clip_norm": 1.0,
+      "weight_decay": 0.0,
+      "gradient_checkpointing": "all",
+      "tensorboard": true
+    },
+    "j_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_train_dev500h_qwen_hidden_20261105",
+    "clip_labels": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_clip_guarded_current500h_20261106",
+    "event_supervision": {
+      "mode": "clip_multilabel",
+      "classes": {
+        "video": [
+          "visual:blinking",
+          "visual:eye closing",
+          "visual:eye opening",
+          "visual:eyebrow raising",
+          "visual:frowning",
+          "visual:gaze shifting",
+          "visual:hand lowering",
+          "visual:hand raising",
+          "visual:head nodding",
+          "visual:head tilting",
+          "visual:head turning",
+          "visual:lip pursing",
+          "visual:mouth closing",
+          "visual:mouth movement",
+          "visual:mouth opening",
+          "visual:smiling"
+        ],
+        "audio": [
+          "audio:audible laughter",
+          "audio:speech",
+          "audio:vocalization"
+        ]
+      },
+      "min_positive": 5000
+    },
+    "connector": {
+      "fusion_width": 1024,
+      "fusion_depth": 4,
+      "fusion_heads": 16
+    },
+    "duration_sampling": {
+      "policy": "duration",
+      "window": 496,
+      "start_step": 0,
+      "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_current500h_av_whisper31_20261107/duration.schedule.json",
+      "sha256": "32b6593ce7e586a4b3ce08eb692b4f773c840923ef403718ade44505c7b58ce1",
+      "sample_list_sha256": "198f166ed643b3fe3d0ea74896b97197cf93823474c02f4ae55cc897051d4135"
+    },
+    "event_head_training": true,
+    "current_av_whisper_experiment": "p2-current500h-qwen-av-whisper-v1",
+    "current_cache_index": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_j_upright_av500h_train_dev_v3_20261105/TRAINING_CACHE_INDEX.json",
+    "sample_list": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_event_current_sources_v2_20261106/sample_list.csv",
+    "baseline_config": "/private/liqi_workspace/project_code/audio-driven-v5/configs/p2_j_av_only_20261101.json",
+    "baseline_config_sha256": "369dafc9e76116e5a411013f5033aad8aaaf96f62ee58bfccf198dfc8ababc97",
+    "qwen_hidden_source": "base_pre_sft",
+    "initialization": "pretrained_only",
+    "execution": {
+      "prefetch_batches": 2,
+      "gradient_reduction": "streaming_fp64",
+      "gradient_bucket_mb": 512,
+      "optimizer_state_cpu_offload": false,
+      "longest_sample_check": true
+    },
+    "whisper": {
+      "model_path": "/private/codes/exp/boxian_workspace/models/benchmark/huggingface/hub/models--openai--whisper-large-v3/snapshots/06f233fe06e710322aca913c1bc4249a0d71fce1",
+      "input_dim": 1280,
+      "context_dim": 1280,
+      "temporal_rope": true,
+      "enable_video": true,
+      "enable_audio": true,
+      "learning_rate": 3e-05,
+      "encoder_dtype": "float32"
+    },
+    "whisper_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_train_dev500h_whisper_cache_20261105",
+    "whisper_reference": "/private/liqi_workspace/project_code/audio-driven-v5/configs/p2_j_qwen_whisper_av_20261104.json",
+    "whisper_reference_sha256": "3960559efc448740c6dace3a00fdc4622f1d7d93aea07010df09b6da336d4abd",
+    "baseline_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_guided_av_only_s1_32gpu_20261101",
+    "ltx_lora_scope": {
+      "attention": [
+        "attn1",
+        "attn2",
+        "audio_attn1",
+        "audio_attn2",
+        "audio_to_video_attn",
+        "video_to_audio_attn"
+      ],
+      "ffn": [
+        "ff",
+        "audio_ff"
+      ],
+      "optional_attention_gate": true,
+      "whisper_full": [
+        "qwen_attn2",
+        "audio_qwen_attn2"
+      ],
+      "frozen_norms_and_nonblock_projections": true
+    },
+    "components": {
+      "whisper": true,
+      "feature": true,
+      "event": true
+    },
+    "hidden_event_supervision": {
+      "readout": "last_block_before_output",
+      "clip_weight": 1.0,
+      "temporal_weight": 0.0
+    },
+    "clip_numeric_labels": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_clip_numeric_guarded_current500h_20261106",
+    "current_source": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_event_current_sources_v2_20261106"
+  },
+  "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_stage2_joint_full6000_trial28_20261112/run",
+  "steps": 300,
+  "milestones": [
+    0,
+    100,
+    300
+  ],
+  "global_batch": 28,
+  "evaluation": {
+    "seed": 137,
+    "sampling": {
+      "steps": 30,
+      "video_cfg": 3.0,
+      "audio_cfg": 7.0
+    },
+    "max_new_tokens": 512,
+    "planner_max_pixels": 50176,
+    "metric_python": "/private/software/conda/envs/AnyTalker/bin/python",
+    "metric_assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+    "event_config": "/private/liqi_workspace/project_code/audio-driven-v5/configs/p2_event_presence_v1.json"
+  },
+  "warmup_steps": 20,
+  "qwen_lr": 1e-06,
+  "generation_lr_scale": 0.3333333333333333,
+  "planning_weight": 0.0001,
+  "validation_size": 64,
+  "calibration": {
+    "samples": 16,
+    "seed": 20261112,
+    "target_ratio": 0.2,
+    "reference_band": [
+      0.1,
+      0.3
+    ],
+    "max_global_ratio": 1.0,
+    "chunk_elements": 2097152
+  },
+  "parent_config": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_attention_ffn_lora31_20261108/config.json",
+  "parent_config_sha256": "03c08eabb09dba7e6786e620fbaa99c66af2fe988760cb35a2efc7325999fd27",
+  "assets": {
+    "stage1_checkpoint": {
+      "path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_attention_ffn_lora31_20261108/step_006000.pt",
+      "sha256": "3c2c78e8b1c81e3cf84efdc565b16a28565c0e923cacf8e902c3adcd6232eea6",
+      "bytes": 37833890430,
+      "mtime_ns": 1794203107629670875
+    },
+    "adapter_config": {
+      "path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_upright_3b_32gpu_resume_20261106/training/final_adapter/adapter_config.json",
+      "sha256": "2ae072ce3ec4380d4fc035ecdc828ffaa67772bc3ad83b376c470b8b1522fa90",
+      "bytes": 1069,
+      "mtime_ns": 1793934403802021477
+    },
+    "adapter_weights": {
+      "path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_upright_3b_32gpu_resume_20261106/training/final_adapter/adapter_model.safetensors",
+      "sha256": "db9f4e753c75f538d12b8fdf2bd50b996a6d1b7c2c088f51abe480a872073943",
+      "bytes": 239536272,
+      "mtime_ns": 1793934403766419477
+    },
+    "planning_complete": {
+      "path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_upright_3b_32gpu_resume_20261106/training/COMPLETE.json",
+      "sha256": "23656f1899579d2d654168eb941e8928e2da71c1e1eebbf588d16a42db1a86eb",
+      "bytes": 332,
+      "mtime_ns": 1793934403820237412
+    }
+  },
+  "planning_training_ids": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_stage2_joint_codecheck_20261108/validation/planning_training_ids.json",
+  "planning_training_ids_sha256": "e8d3e3721e7f99a173c1f954e635f045c5edb92251807682897013b5a1cf613d",
+  "planning_caption_hashes": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_stage2_joint_codecheck_20261108/validation/planning_caption_hashes.json",
+  "planning_caption_hashes_sha256": "0647fb24cf735b8df5fc5a0911da2aadd6a0f6d19e4c5571387702e9b65d9ac2",
+  "validation_manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_stage2_joint_codecheck_20261108/validation/validation.json",
+  "validation_manifest_sha256": "3dcdad273ca9a82203957c659c842c8d68477fb3f042b1694a6688e0ea94fbcc",
+  "calibration_manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_stage2_joint_balance_v2_20261112/candidate_full6000/calibration_manifest.json",
+  "calibration_manifest_sha256": "0089cbb440910b42b594144988d6e3cf8f0f2e4ebe4bd563af48923b37e8e394",
+  "policy": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_stage2_joint_full6000_trial28_20261112/run/policy.json",
+  "policy_sha256": "a0c91340333259603b35ae184614ffb8557c7eb455917b3b8c7248caa23eda32",
+  "validation_receipt": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_stage2_joint_codecheck_20261108/validation/VALIDATION_SELECTED.json",
+  "validation_receipt_sha256": "455d4c304246e67362fd7717403e7ff5a466c0b789501e5f16391b4ea999ea77"
+}

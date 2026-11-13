@@ -1,0 +1,99 @@
+\section{Evaluation Protocol Details}
+\label{app:evaluation_protocol}
+
+\subsection{Event Extraction and Time Representation}
+\label{app:event_extraction}
+
+For each generated listener video, we apply the fixed reaction detector used in dataset construction to obtain predicted reaction events $\widehat{\mathcal{A}}=\{(\widehat{y}_i,\widehat{t}_{s,i},\widehat{t}_{e,i})\}_{i=1}^{\widehat{N}}$. The ground-truth event set $\mathcal{A}=\{(y_j,t_{s,j},t_{e,j})\}_{j=1}^{N}$ is obtained from the manually verified reaction annotations in our curated dataset. All methods are evaluated with the same detector, class thresholds, temporal post-processing rules, and matching protocol. We represent reaction intervals as half-open temporal intervals $[t_s,t_e)$, using frame indices at 25 FPS for implementation. Equivalent timestamps in seconds produce the same temporal IoU because all timing errors are normalized by interval lengths.
+
+\subsection{One-to-One Class-Aware Matching}
+\label{app:one_to_one_matching}
+
+Matching is performed independently for each reaction class to ensure that predicted events are only compared with ground-truth events of the same semantic category. For class $k$, let $\widehat{\mathcal{A}}_k=\{\widehat{a}_i\in\widehat{\mathcal{A}}:\widehat{y}_i=k\}$ and $\mathcal{A}_k=\{a_j\in\mathcal{A}:y_j=k\}$. We first construct a candidate pair set
+\begin{equation}
+    \mathcal{C}_k=\{(\widehat{a}_i,a_j):\widehat{a}_i\in\widehat{\mathcal{A}}_k,\ a_j\in\mathcal{A}_k,\ \mathrm{tIoU}(\widehat{a}_i,a_j)\geq\tau\}.
+\end{equation}
+The candidate pairs are sorted by temporal IoU in descending order. We then greedily accept a candidate pair if neither its predicted event nor its ground-truth event has been matched before. This gives a one-to-one matched set $\mathcal{M}_k$ for class $k$. The final matched set is the union over all reaction classes:
+\begin{equation}
+    \mathcal{M}=\bigcup_{k=1}^{6}\mathcal{M}_k.
+\end{equation}
+This matching strategy prevents one predicted reaction from explaining multiple ground-truth reactions, and also prevents multiple predicted reactions from being matched to the same ground-truth event.
+
+\subsection{Event-Level Aggregation}
+\label{app:event_level_aggregation}
+
+We aggregate true positives (TP), false positives (FP), and false negatives (FN) over the dataset evaluation set for computing P (precision) and R (recall) before computing R-F1. Specifically, we compute TP, FP, and FN for class $k$ as
+\begin{equation}
+    \text{TP}_k=|\mathcal{M}_k|, \quad
+    \text{FP}_k=|\widehat{\mathcal{A}_k}|-|\mathcal{M}_k|, \quad
+    \text{FN}_k=|\mathcal{A}_k|-|\mathcal{M}_k|.
+\end{equation}
+Precision, recall and R-F1 are then computed as
+\begin{equation}
+    \text{P}_k=\frac{\text{TP}_k}{\text{TP}_k+\text{FP}_k}, \quad
+    \text{R}_k=\frac{\text{TP}_k}{\text{TP}_k+\text{FN}_k}, \quad
+    \text{R-F1}_k=\frac{2\text{P}_k\text{R}_k}{\text{P}_k+\text{R}_k}
+\end{equation}
+Note that the final R-F1 for class $k$ is averaged by $N_k$ paired samples, and the overall R-F1 across all reaction classes is calculated by averaging the sum of R-F1 for each class. If a clip contains neither predicted nor ground-truth reactions, it contributes no TP, FP, or FN. If the denominator of precision or recall is zero after evalset-level aggregation, the corresponding value is set to zero. R-tIoU and R-ATD are computed over matched pairs after aggregation. If no matched pair exists for an evaluated set, R-tIoU is set to zero and R-ATD is not reported for that set; this case does not occur in our reported experiments.
+
+\subsection{R-ATD Penalization}
+\label{app:ratd_computation}
+
+For each matched pair $(\widehat{a},a)\in\mathcal{M}$, where $\widehat{a}=(\widehat{y},\widehat{t}_s,\widehat{t}_e)$ and $a=(y,t_s,t_e)$, we compute the ground-truth duration $\Delta t=t_e-t_s$ and the predicted duration $\widehat{\Delta t}=\widehat{t}_e-\widehat{t}_s$. The normalized deviations are
+\begin{equation}
+    \delta_s=\frac{\widehat{s}-s}{\Delta t}, \qquad
+    \delta_e=\frac{\widehat{e}-e}{\Delta t}, \qquad
+    \delta_{\Delta t}=\frac{\widehat{\Delta t}-\Delta t}{\Delta t}.
+\end{equation}
+The penalty function is asymmetric:
+\begin{equation}
+    \phi(\delta;\alpha,\beta)=
+    \begin{cases}
+        \alpha|\delta|, & \delta<0, \\
+        \beta|\delta|, & \delta\geq0.
+    \end{cases}
+\end{equation}
+We set $\alpha=2$ and $\beta=0.5$ in all experiments. We argue that in real-world conversational scenarios, it is unnatural if a listener reaction should not occur prior to speaker finishing its contexts. Therfore, negative start-time deviation corresponds to a reaction that starts earlier than the ground-truth reaction, which is penalized more strongly because premature listener feedback is often perceived as unnatural. 
+
+The same asymmetric form is applied to end-time and duration deviations for consistency: similarly, we expect the listener to have sufficient time for its reaction, so we penalize more if the reaction ends earlier than it should be. We also suggest that a reaction is considered better if it has sufficient time for expression, so we apply more penalty on reactions shorter than they should be.
+
+% \yumin{Different params, separate $\delta_s$, $\delta_e$, $\delta_d$}
+
+\begin{table}[t]
+    \centering
+    \small
+    \caption{R-ATD using different pairs of $\alpha$ and $\beta$.}
+    \label{tab:r-atd}
+    \begin{tabular}{cc|cccc}
+        \Xhline{1.2pt}
+        $\alpha$ & $\beta$ & $\phi(\delta_s)$ & $\phi(\delta_e)$ & $\phi(\delta_{\Delta t})$ & R-ATD \\
+        \hline
+        2.0 & 0.5 & 22.864 & 17.312 & 17.212 & 57.388 \\
+        1.0 & 1.0 & 18.120 & 14.615 & 14.315 & 47.050 \\
+        0.5 & 2.0 & 22.436 & 19.238 & 18.563 & 60.237 \\
+        \Xhline{1.2pt}
+    \end{tabular}
+    \vspace{-1em}
+\end{table}
+
+% We conduct a simple ablation study on $\alpha$ and $\beta$ to explore the impact of different pairs of these two parameters, and the results are reported in Table \ref{tab:r-atd}. The numbers are reported on the RealTalk dataset.
+We conduct a sensitivity analysis on $\alpha$ and $\beta$ in Table \ref{tab:r-atd} to examine how different temporal preferences affect the reported R-ATD values. The numbers are reported on the RealTalk dataset. The symmetric setting $(\alpha=1,\beta=1)$ yields a lower numerical R-ATD because it does not impose additional penalty on premature or truncated reactions. In contrast, our default setting $(\alpha=2,\beta=0.5)$ intentionally assigns larger costs to negative deviations, which better reflects our evaluation preference that reactions starting too early, ending too early, or being too short are more disruptive in dyadic interaction.
+
+\subsection{R-FID Computation}
+\label{app:rfid_computation}
+
+R-FID \cite{Seitzer2020FID} is computed at the evaluation-dataset level. For generated videos, we collect frames inside the union of predicted reaction intervals:
+\begin{equation}
+    \Omega_{\mathrm{gen}}=\bigcup_{\widehat{a}_i\in\widehat{\mathcal{A}}}[\widehat{s}_i,\widehat{e}_i).
+\end{equation}
+For ground-truth videos, we collect frames inside the union of annotated reaction intervals:
+\begin{equation}
+    \Omega_{\mathrm{real}}=\bigcup_{a_j\in\mathcal{A}}[s_j,e_j).
+\end{equation}
+If multiple reaction intervals overlap, the corresponding frame is counted once. We then extract visual features from generated frames in $\Omega_{\mathrm{gen}}$ and real frames in $\Omega_{\mathrm{real}}$ using the same feature extractor as standard FID. Let $(\mu_{\mathrm{gen}},\Sigma_{\mathrm{gen}})$ and $(\mu_{\mathrm{real}},\Sigma_{\mathrm{real}})$ denote the mean and covariance of generated and real reaction-frame features, respectively. R-FID is computed as
+\begin{equation}
+    \mathrm{R\text{-}FID}=
+    \|\mu_{\mathrm{gen}}-\mu_{\mathrm{real}}\|_2^2+
+    \mathrm{Tr}\left(\Sigma_{\mathrm{gen}}+\Sigma_{\mathrm{real}}-2(\Sigma_{\mathrm{gen}}\Sigma_{\mathrm{real}})^{1/2}\right).
+\end{equation}
+For per-class R-FID, we apply the same procedure after filtering both predicted and ground-truth events by reaction class. Pooling reaction frames at the dataset level avoids unstable estimates, especially because listener reactions are sparse.

@@ -1,0 +1,35 @@
+import unittest,sys
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
+from listen_benchmark.existing_result_fusion import select_path,transcript_units,fuse,group_candidates
+from listen_benchmark.response_review import alignment_track
+
+def track(pid,text,words,window=None):
+ return alignment_track(dict(sample_id=pid,text=text,words=[dict(text=t,start_time=a,end_time=b) for t,a,b in words],input_evidence={} if window is None else {'window':window}),10)
+def c(text,start,end,score=2):return dict(text=text,start=start,end=end,score=score)
+class ExistingTests(unittest.TestCase):
+ def test_repetitions_keep_order_and_use_only_existing_intervals(self):
+  units=[dict(text='yeah',tokens=[]) for _ in range(3)];options=[c('yeah',1,1.2),c('yeah',1.2,1.4),c('yeah',1.4,1.6),c('yeah',1,1.6,10)]
+  path=select_path(units,options);self.assertEqual([(x['start'],x['end']) for x in path],[(1,1.2),(1.2,1.4),(1.4,1.6)])
+ def test_missing_boundaries_not_evenly_split(self):
+  path=select_path([dict(text='yeah',tokens=[]) for _ in range(3)],[c('yeah',1,2)])
+  self.assertEqual(sum(x is not None for x in path),1)
+ def test_multiword_response_unit_is_not_two_responses(self):
+  t=track('sample','Uh huh. Yeah.',[('Uh',3.5,3.8),('huh',3.8,3.8),('Yeah',8.2,8.4)])
+  self.assertEqual([u['text'] for u in transcript_units(t)],['Uh huh','Yeah'])
+ def test_chinese_repeated_tokens_not_collapsed(self):
+  t=track('sample','嗯嗯。',[('嗯',.3,1.4),('嗯',1.4,1.5)])
+  self.assertEqual(len(transcript_units(t)),2)
+ def test_zero_only_alignment_becomes_explicit_failure(self):
+  t=track('sample','嗯。',[('嗯',.3,.3)])
+  result=fuse(dict(sample_id='sample',duration_s=10,events=[]),[],[t])
+  self.assertEqual(result['events'],[]);self.assertEqual(len(result['automatic_fusion']['alignment_failures']),1)
+ def test_sample_name_does_not_change_generation(self):
+  t=track('pass','Okay. Okay.',[('Okay',1,1.4),('Okay',4,4.4)])
+  a=fuse(dict(sample_id='first',duration_s=10,events=[]),[],[t]);b=fuse(dict(sample_id='renamed',duration_s=10,events=[]),[],[t]);self.assertEqual(a['events'],b['events'])
+ def test_builder_and_algorithm_do_not_contain_regression_sample_ids(self):
+  root=Path(__file__).resolve().parents[1]
+  for p in [root/'src/listen_benchmark/existing_result_fusion.py',root/'scripts/build_listen_existing_fusion.py']:
+   s=p.read_text()
+   for forbidden in ['S0805','S0835','S2043','S3358','S5193','torch','qwen_asr','soundfile']:self.assertNotIn(forbidden,s)
+if __name__=='__main__':unittest.main()

@@ -1,0 +1,32 @@
+--- before/evaluation/event_presence/README.md
++++ evaluation/event_presence/README.md
+@@ -3,6 +3,8 @@
+ 协议于2026-11-08由用户确认。本模块对应[事件级评测框架](../../writing/事件级评测框架_当前确认版.md)和[完整设计](../../docs/superpowers/specs/2026-11-08-event-presence-evaluation-design.md)，复用当前标注pipeline检测最终GT／生成媒体。它是现有视频、GLARE时间匹配、声音活动与音质评分之外的独立阶段。
+ 
+ **当前实现用于pilot，尚不能宣称正式benchmark检测器已经校准。** 代码、CPU边界检查、原始模型响应与真实执行证据分别记录，不把自对照或程序成功当成人工可靠性结果。正式执行状态与验证证据见本页末尾。
++
++**2026-11-12 线索传递修复（检测提示 v2）：** 补齐微笑 blendshape 到 Qwen 提示的传递，以窗口内每0.5秒的均值／峰值提供线索，保留短峰而不新增微笑阈值；缺失测量保持未知。ASR提示只传标注流程规范化后的内容，原始文本保留在审计文件。长片段的人脸覆盖率与辅助线索按当前窗口计算。七类定义、计分方式和原有检测门槛保持不变。22项CPU测试、8个真实缓存媒体的14份提示回放通过；没有重新运行GPU检测或声称语义准确率提高。[修复与验证记录](../../experiments/event_presence_cue_fix_20261112/README.md)。新检测必须用新的工作目录绑定；原pilot结果及其协议保持封存。
+ 
+ ## 固定类别
+ 
+@@ -47,9 +49,9 @@
+ 
+ 原链路见[项目README](../../README.md)、[全量打标说明](../../related/P2_四机32卡检测打标重叠运行_20261103.md)、[v4自然语言标注](../../experiments/listen_native_caption_nod_vocal24_20261103/README.md)。本模块复用：
+ 
+-1. MediaPipe25fps姿态和blendshape，原点头recall规则、摇头方向门控、皱眉expression_gate_v3／FER候选；保留独立类别线索，不使用六类互斥argmax结果当多标签真值。微笑由实际视频判别，blendshape曲线仅作证据，不新造语义阈值。
++1. MediaPipe25fps姿态和blendshape，原点头recall规则、摇头方向门控、皱眉expression_gate_v3／FER候选；保留独立类别线索，不使用六类互斥argmax结果当多标签真值。微笑由实际视频判别，左右mouthSmile均值曲线按当前窗口汇总成每0.5秒的均值／峰值和有效帧数后传入提示；这是连续辅助测量，不是类别概率或二值标签。缺失blendshape用null保留，不用零代替。
+ 2. 冻结Qwen3-Omni-Instruct（本地30B MoE权重）和原8fps媒体接口、可观察事实原则、ASR提示规范化规则。
+-3. 同一冻结Qwen3-Omni先在每侧实际波形上产生ASR候选，复用原规范化函数，再用独立一次音频判别请求重新听辨；这里没有引入独立ASR模型。候选不等于检测真值。视图分为无声视频和纯音频，避免从笑脸猜笑声、从声音猜动作。
++3. 同一冻结Qwen3-Omni先在每侧实际波形上产生ASR候选，复用原规范化函数，再用独立一次音频判别请求重新听辨；这里没有引入独立ASR模型。规范化后的候选文本、发声说明和uncertain状态进入提示，原始转写只保存在原始响应文件中。候选不等于检测真值。视图分为无声视频和纯音频，避免从笑脸猜笑声、从声音猜动作。
+ 
+ 评测适配使用新版本提示及严格七类状态JSON，并非逐字复用原自然段prompt。GT与生成均重新检测，不读旧caption、SFT规划输出或训练Event head。生成使用自己的**完整音轨**，不套用GT时间窗／转写；GT使用既有封存listener波形配方。两侧音频保持增益，不归一化、不按GT事件剪生成声音。
+ 
+@@ -110,7 +112,7 @@
+ 
+ ## 验证状态
+ 
+-CPU不变性和边界检查：`python -m unittest discover -s tests -p test_event_presence.py -v`。包含全集计数、重复／时间平移不变、双空、无参考正例误报、未知／失败、逐类共同集合、多draw、模态N/A、参考冲突、漏记录及人工分歧。
++CPU不变性和边界检查：`python -m unittest discover -s tests -p 'test_event_presence*.py' -v`。包含全集计数、重复／时间平移不变、双空、无参考正例误报、未知／失败、逐类共同集合、多draw、模态N/A、参考冲突、漏记录及人工分歧，以及微笑提示传递、窗口定位和ASR规范化。
+ 
+ 实际小规模执行已完成：[选择、结果与验收说明](../../experiments/p2_event_presence_pilot_20261108/README.md)。ResponseNet／Seamless各两对真实GT／生成，加四对GT自对照，去重后八个媒体；候选和模型检测技术失败0，56个媒体类别单元中1个unknown。Seamless完整音频主表因此为N/A，保留可评子集与具体缺项。28张逐类计数表独立重算通过；缺生成文件时GT仍可读的真实控制也通过。本次模型GPU进程已退出。
+ 

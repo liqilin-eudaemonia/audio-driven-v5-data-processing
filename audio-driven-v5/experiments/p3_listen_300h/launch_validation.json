@@ -1,0 +1,124 @@
+{
+  "checks": {
+    "cluster_checks/nccl/completed.json": {
+      "world_size": 24,
+      "hosts": [
+        "dedicated-developjob-lq-dev-machine-1nkpf",
+        "dedicated-developjob-lq-dev-machine-2-taaft",
+        "dedicated-developjob-zhizhou-avgen-1-zzdsg"
+      ],
+      "all_reduce": 300.0
+    },
+    "cluster_checks/model_ddp/completed.json": {
+      "world_size": 24,
+      "stage": "A",
+      "finite_loss": true,
+      "parameters_identical": true,
+      "frozen_unchanged": true,
+      "engineering_only": true
+    },
+    "cluster_checks/production_P/status.json": {
+      "step": 2,
+      "target_steps": 2,
+      "stopped": false,
+      "checkpoint": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p3_listen_300h/cluster_checks/production_P/step_000002.pt",
+      "world_size": 24,
+      "frozen_unchanged": true,
+      "s0": true
+    },
+    "cluster_checks/production_C0/status.json": {
+      "step": 2,
+      "target_steps": 2,
+      "stopped": false,
+      "checkpoint": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p3_listen_300h/cluster_checks/production_C0/step_000002.pt",
+      "world_size": 24,
+      "frozen_unchanged": true,
+      "s0": true
+    },
+    "cluster_checks/new_data_cache/completed.json": {
+      "world_size": 24,
+      "successful_shards": 24,
+      "windows": 24,
+      "full_media_native_vae_checks": true,
+      "engineering_only": true
+    },
+    "cluster_checks/audio_alignment.json": {
+      "tracks": [
+        {
+          "node": 0,
+          "pair": "naturalistic_V03_S1046_I00000280",
+          "lag_samples": 0,
+          "correlation": 0.9997474620512095,
+          "frames": 14688000
+        },
+        {
+          "node": 1,
+          "pair": "naturalistic_V02_S3649_I00000740",
+          "lag_samples": 0,
+          "correlation": 0.9909171875279345,
+          "frames": 7968000
+        },
+        {
+          "node": 2,
+          "pair": "naturalistic_V02_S3223_I00000128",
+          "lag_samples": 0,
+          "correlation": 0.9878594430868375,
+          "frames": 8832000
+        }
+      ],
+      "sample_count_unchanged": true,
+      "all_zero_lag": true
+    },
+    "cluster_checks/shared_lock_check.json": [
+      {
+        "node": "avgen-2",
+        "shared_lock_enforced": true
+      },
+      {
+        "node": "js-public",
+        "shared_lock_enforced": true
+      },
+      {
+        "node": "avgen-1",
+        "shared_lock_enforced": true
+      }
+    ],
+    "cluster_checks/geometry_audit.json": {
+      "before_hours": {
+        "train": 320.02767777777854,
+        "dev": 3.3393444444444436
+      },
+      "qualified_geometry_hours": {
+        "train": 251.40008888888832,
+        "dev": 2.6052777777777787
+      },
+      "policy": "exclude wide listener crops"
+    }
+  },
+  "unit_tests_passed": 13,
+  "formal_training_started": false,
+  "coordinator": {
+    "pid": 1638185,
+    "phase": "normalizing_audio",
+    "updated_utc": "2026-10-21T15:38:35Z",
+    "training_started": false,
+    "config": "/private/liqi_workspace/project_code/audio-driven-v5/configs/p3_listen_300h.json",
+    "attempt": 1
+  },
+  "script_sha256": {
+    "audio-driven-v5/scripts/audit_listen_subturns.py": "3c7733bdc8180924bf10c0cab943c7938e334ea01d3084434a79bb81d521cb59",
+    "audio-driven-v5/scripts/build_seamless_listening_preview.py": "a3fbe676dc89e41ba9d31772cd6dd74bd8cf9598751b51aefddc5c10c4757afd",
+    "audio-driven-v5/scripts/cache_listen_corpus.py": "fbd3dcd1f0fe52a66e46ab032fcf09ee2be1a3dd5f94d5865b2dd7545a02e68a",
+    "audio-driven-v5/scripts/check_listen_8gpu_generation.py": "5be03288dfb538d67bfabc34d0321004285495f4941b56be70d56895908778ec",
+    "audio-driven-v5/scripts/check_listen_ddp.py": "00629a0ec52ce17bb06cd6fcfb879bf00c67941930d21318fb8414330668a119",
+    "audio-driven-v5/scripts/listen_cluster.py": "635081645d294349456644b836add08b53301d5e6ac75f6dca116091e0697432",
+    "audio-driven-v5/scripts/p3_listen.py": "2751883ce9163f8fb8aef1b37047eda440c0afb85e91273bb36a91d104f16f0e",
+    "audio-driven-v5/scripts/prepare_listen_300h.py": "d2f0da5e73de1b3bdfbf4425a4936c60c0ee81425c7dd92cd462a9be0fb71b07",
+    "audio-driven-v5/scripts/prepare_listen_subturns.py": "a113b4d7ba09ed78500e8515ddba1fb5629b5b5258b84c9522df752ba7316b79",
+    "audio-driven-v5/scripts/publish_listen_subturns.py": "e69fdb00ead152909283407a8655ea4ab7a7a22534e61efaff5dcb9ace5e2f2a",
+    "audio-driven-v5/scripts/repair_listen_preview_audio.py": "5bc92b4e4bab39d8fe3dac813c6581e24605b54b4e282c0f975ccac216623500",
+    "audio-driven-v5/scripts/run_listen_300h.py": "f76f25b74b22c1941fe24080b2b94bf3b516b807576023f71a307abcecd378df",
+    "audio-driven-v5/scripts/train_listen_distributed.py": "eace1b0c5e3ee940120c602076bab6119a14805439396ac82363b19251b76e3b"
+  },
+  "updated_utc": "2026-10-21T15:45:04Z"
+}

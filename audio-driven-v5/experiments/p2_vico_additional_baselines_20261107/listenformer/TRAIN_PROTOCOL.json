@@ -1,0 +1,32 @@
+{
+  "method": "listenformer",
+  "seed": 137,
+  "max_epochs": 200,
+  "global_batch": 128,
+  "time_size": 90,
+  "window_stride": 1,
+  "train_windows": 111158,
+  "batches_per_epoch": 869,
+  "total_steps": 173800,
+  "optimizer": "AdamW .002 betas .9,.999 wd .05",
+  "schedule": "StepLR gamma .5 every30; step before each epoch as upstream",
+  "phase_change": 100,
+  "precision": "FP32; no AMP/TF32",
+  "torch_version": "2.5.1+cu124",
+  "cudnn_version": 90100,
+  "distributed_adaptation": "single GPU, same effective global batch; final partial batch has no DistributedSampler duplicate padding",
+  "teacher_forcing": "epoch_index<=100 (zero-based), exactly the upstream predicate",
+  "dataset": "train351 / validation46; one original train row quarantined; test43 held out",
+  "checkpoint_selection": "minimum native free-generation normalized L1 over validation46; every10epochs plus1/final",
+  "source": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_vico_additional_baselines_20261107/vendor/listenformer",
+  "source_protocol_sha256": "ba8abddff7204480e318d87f4889276419ebbc36c32dc8870de3dea0e10f95f4",
+  "features_complete_sha256": "6386e4fccc2afde881a8e550b2a34756b7455b961a3672d9a683a99d2bb1ca5d",
+  "benchmark": false,
+  "compiled_loss": false,
+  "implementation_sha256": "577e0d4bbb155ba8146ec39a1da07c0f2b62685f66e8401b523b993b40c13c7d",
+  "compatibility": [
+    "train-only stats; exact-zero std becomes1",
+    "Numerically audited log-sync removal and padding-mask vectorization",
+    "ListenFormer missing inference global change_epoch set100"
+  ]
+}

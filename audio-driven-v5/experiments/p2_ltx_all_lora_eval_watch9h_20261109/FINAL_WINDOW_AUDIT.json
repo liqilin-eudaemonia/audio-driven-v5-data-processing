@@ -1,0 +1,185 @@
+{
+  "success": true,
+  "scope": "nine-hour monitoring window; not completion of all queued evaluations",
+  "at": 1794268603.2336085,
+  "start_at": 1794236098,
+  "end_at": 1794268498,
+  "hourly_reports": 10,
+  "missing_hours": [],
+  "health_records": 529,
+  "largest_health_record_gap_seconds": 219.23043417930603,
+  "current_controller": {
+    "pid": 2132914,
+    "live": true,
+    "cmd": "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python -u /private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_all_lora_followup_queue_20261109.py ",
+    "state": "S"
+  },
+  "current_resource": {
+    "at": 1794268603.217408,
+    "gpu": {
+      "index": 7,
+      "uuid": "GPU-4d5ee808-e829-c824-c506-cad80ff133f5",
+      "used_mib": 126790.0,
+      "total_mib": 143771.0,
+      "util": 100.0,
+      "sm_mhz": 1965.0,
+      "watts": 668.99
+    },
+    "apps": [
+      {
+        "pid": 2261775,
+        "owned": false,
+        "work": null,
+        "cuda": null,
+        "start_ticks": "1697024160",
+        "state": "S",
+        "cmd": "VLLM::EngineCore                                                                                                                                                           ",
+        "used_mib": "72608"
+      },
+      {
+        "pid": 2855643,
+        "owned": true,
+        "work": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_lora7500_seamless200_sft2752_gpu7_20261109",
+        "cuda": "7",
+        "start_ticks": "1699147526",
+        "state": "R",
+        "cmd": "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python -u /private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_all_lora_followups_gpu7_overlay_20261109.py worker --work /private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_lora7500_seamless200_sft2752_gpu7_20261109 --stage render --rank 3 --slot 0 --step 7500 ",
+        "used_mib": "54164"
+      }
+    ]
+  },
+  "runs": [
+    {
+      "step": 5000,
+      "work": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_lora5000_seamless200_sft2752_eval4_20261109",
+      "complete": true,
+      "status": {
+        "stage": "complete",
+        "at": 1794240860.3976846,
+        "outputs": 200
+      },
+      "latent_receipts": 200,
+      "media_receipts": 200
+    },
+    {
+      "step": 5500,
+      "work": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_lora5500_seamless200_sft2752_gpu7_20261109",
+      "complete": true,
+      "status": {
+        "stage": "complete",
+        "at": 1794253137.9560122,
+        "outputs": 200
+      },
+      "latent_receipts": 200,
+      "media_receipts": 200
+    },
+    {
+      "step": 7000,
+      "work": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_lora7000_seamless200_sft2752_gpu7_20261109",
+      "complete": true,
+      "status": {
+        "stage": "complete",
+        "at": 1794267759.2033174,
+        "outputs": 200
+      },
+      "latent_receipts": 200,
+      "media_receipts": 200
+    },
+    {
+      "step": 7500,
+      "work": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_lora7500_seamless200_sft2752_gpu7_20261109",
+      "complete": false,
+      "status": {
+        "stage": "progressive_evaluation",
+        "at": 1794268594.6311178,
+        "total": 200,
+        "latents": 8,
+        "decoded": 0,
+        "scored_shards": 0,
+        "total_shards": 4,
+        "active": 1,
+        "render_gpus_finished": 0
+      },
+      "latent_receipts": 8,
+      "media_receipts": 0
+    }
+  ],
+  "frozen_code_signatures_checked": 19,
+  "changed_frozen_sources": [],
+  "same_conditions_checked": [
+    "datasets",
+    "seed",
+    "generation",
+    "planner_adapter_identity",
+    "whisper_encoder",
+    "feature_code",
+    "sampling",
+    "shared_items_sha256"
+  ],
+  "only_authorized_gpu7": true,
+  "external_service_untouched": true,
+  "evaluation_queue_left_running": true,
+  "monitor_window_receipt": {
+    "success": true,
+    "at": 1794268500.7039158,
+    "start_at": 1794236098,
+    "end_at": 1794268498,
+    "hourly_reports": 10,
+    "missing": [],
+    "evaluation_tasks_left_running": true
+  },
+  "hourly_resource_util": [
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    44.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0
+  ],
+  "first_comprehensive_sample_delay_seconds": 593.9292933940887,
+  "known_incidents": [
+    {
+      "hour": 1,
+      "issue": "unnecessary own-controller reset caused by invalid phase/speed comparison",
+      "resolution": "phase guard plus exact-sample comparison; completed latent outputs preserved; original report and correction retained",
+      "evidence": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_lora_eval_watch9h_20261109/hour_01_CORRECTION.json"
+    },
+    {
+      "issue": "foreign vLLM GPU7 memory and compute contention",
+      "resolution": "own-runtime phase-boundary overlay; bounded render memory and two capped decoder processes; original sampling unchanged",
+      "evidence": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_lora_eval_watch9h_20261109/resource_overlay_r3/ACTIVATED.json",
+      "limitation": "external compute contention may still change throughput"
+    }
+  ],
+  "not_claimed": [
+    "continuous 100% utilization",
+    "zero interruptions",
+    "all checkpoints already evaluated"
+  ],
+  "requirements": [
+    {
+      "requirement": "complete nine-hour monitoring window",
+      "met": true,
+      "evidence": "CONFIG.json; hour_00..09; health.jsonl; WINDOW_COMPLETE.json"
+    },
+    {
+      "requirement": "hourly real liveness, phase, output and GPU checks",
+      "met": true,
+      "evidence": "hourly process/resource/progress records; current GPU7 process identity"
+    },
+    {
+      "requirement": "scoped repair without losing completed work or changing sampling",
+      "met": true,
+      "evidence": "hour_01_CORRECTION; phase_fix_r2; resource_overlay_r3 acceptance; frozen source signatures; handoff receipts"
+    },
+    {
+      "requirement": "keep authorized eval queue running beyond monitor deadline",
+      "met": true,
+      "evidence": "live controller2132914; real GPU7 step7500 process with completed outputs"
+    }
+  ]
+}

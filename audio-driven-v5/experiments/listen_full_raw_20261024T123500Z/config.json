@@ -1,0 +1,239 @@
+{
+  "version": "listen-full-raw-v1",
+  "created_at": "2026-10-24T12:37:03.432402+00:00",
+  "models": {
+    "visual": "/private/ckpts/Qwen3-VL-8B-Instruct",
+    "audio": "/private/ckpts/Qwen3-Omni/Instruct",
+    "asr": "/private/ckpts/Qwen3-ASR-1.7B",
+    "aligner": "/private/ckpts/Qwen3-ForcedAligner-0.6B"
+  },
+  "nodes": {
+    "node17": {
+      "host": "172.29.15.91",
+      "jobs": [
+        {
+          "gpu": 0,
+          "branch": "visual",
+          "rank": 0,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 1,
+          "branch": "visual",
+          "rank": 43,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 2,
+          "branch": "visual",
+          "rank": 86,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 3,
+          "branch": "visual",
+          "rank": 129,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 4,
+          "branch": "visual",
+          "rank": 172,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 5,
+          "branch": "audio",
+          "rank": 215,
+          "batch": 64,
+          "prepare_workers": 8
+        },
+        {
+          "gpu": 6,
+          "branch": "audio",
+          "rank": 258,
+          "batch": 64,
+          "prepare_workers": 8
+        },
+        {
+          "gpu": 7,
+          "branch": "asr",
+          "rank": 301,
+          "batch": 32,
+          "prepare_workers": 8
+        }
+      ]
+    },
+    "node12": {
+      "host": "172.29.252.11",
+      "jobs": [
+        {
+          "gpu": 0,
+          "branch": "visual",
+          "rank": 347,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 1,
+          "branch": "visual",
+          "rank": 390,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 2,
+          "branch": "visual",
+          "rank": 433,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 3,
+          "branch": "visual",
+          "rank": 476,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 4,
+          "branch": "visual",
+          "rank": 519,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 5,
+          "branch": "audio",
+          "rank": 562,
+          "batch": 64,
+          "prepare_workers": 8
+        },
+        {
+          "gpu": 6,
+          "branch": "audio",
+          "rank": 605,
+          "batch": 64,
+          "prepare_workers": 8
+        },
+        {
+          "gpu": 7,
+          "branch": "asr",
+          "rank": 648,
+          "batch": 32,
+          "prepare_workers": 8
+        }
+      ]
+    },
+    "node4": {
+      "host": "172.29.225.51",
+      "jobs": [
+        {
+          "gpu": 0,
+          "branch": "visual",
+          "rank": 694,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 1,
+          "branch": "visual",
+          "rank": 737,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 2,
+          "branch": "visual",
+          "rank": 780,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 3,
+          "branch": "visual",
+          "rank": 823,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 4,
+          "branch": "visual",
+          "rank": 866,
+          "batch": 32,
+          "prepare_workers": 16
+        },
+        {
+          "gpu": 5,
+          "branch": "audio",
+          "rank": 909,
+          "batch": 64,
+          "prepare_workers": 8
+        },
+        {
+          "gpu": 6,
+          "branch": "audio",
+          "rank": 952,
+          "batch": 64,
+          "prepare_workers": 8
+        },
+        {
+          "gpu": 7,
+          "branch": "asr",
+          "rank": 995,
+          "batch": 32,
+          "prepare_workers": 8
+        }
+      ]
+    }
+  },
+  "python": {
+    "vllm": "/private/software/conda/envs/vllm/bin/python",
+    "asr": "/private/software/conda/envs/ovi/bin/python"
+  },
+  "asr_dependency_path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_benchmark_deps/py310",
+  "media": {
+    "fps": 8,
+    "output_size": [
+      512,
+      512
+    ],
+    "crop_field": "crop_proposals.listener",
+    "crop_quantization": "round-half-up x/y/size",
+    "resample": "bicubic",
+    "audio_source": "normalized_audio.listener",
+    "max_audio_seconds": 16
+  },
+  "windows": {
+    "size_s": 3,
+    "stride_s": 1,
+    "whole_clip": true,
+    "identical_full_and_window_inputs_computed_once": true
+  },
+  "output": {
+    "raw_responses": true,
+    "event_merge": false,
+    "category_mapping": false,
+    "training_admitted": false
+  },
+  "authorization": {
+    "crop_confirmed": true,
+    "preserve_segmentation_audio_policy_onset_flags": true,
+    "three_nodes_24_gpus": true
+  },
+  "generation": {
+    "temperature": 0,
+    "max_new_tokens": 4096,
+    "guided_json": true,
+    "prompt_variants": [
+      "backchannel_visual_simple_v2",
+      "backchannel_audio_simple_v2"
+    ]
+  },
+  "ssh_key": "/private/ssh_keys/root_dedicated-developjob-lq-dev-machine-1nkpf_ed25519"
+}

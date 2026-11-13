@@ -1,0 +1,57 @@
+{
+  "target": "Quote DIM published ViCo baselines and score our existing outputs under verified comparable protocol",
+  "existing": {
+    "our_vico_outputs": 43,
+    "full_gt_frames": 16288,
+    "our_frame_grid": "native512/25, saved scoring256/30",
+    "scorer_source_available": true,
+    "emoca_feature_extraction": "not implemented in existing ViCo evaluation pipeline"
+  },
+  "confirmed_source_findings": [
+    {
+      "file": "compare/Dyadic-Interaction-Modeling/code/dataset/data_loader.py",
+      "finding": "ViCo dataset accepts equal three-stream lengths only, between5 and1024; speaker features overwritten with ones"
+    },
+    {
+      "file": "compare/Dyadic-Interaction-Modeling/code/vico_preprocessing.py",
+      "finding": "EMOCA_v2_lr_mse_20; [pose6,exp50]; truncate all streams to minimum length"
+    },
+    {
+      "file": "compare/Dyadic-Interaction-Modeling/code/x_engine_pt.py",
+      "finding": "test evaluation skips listener GT first frame; runs10 predictions and retains lowest GT Frechet distance"
+    },
+    {
+      "file": "compare/Dyadic-Interaction-Modeling/code/mymetrics.py",
+      "finding": "FD/PFD/MSE clip means; Var and rPCC flatten across clips and coordinates"
+    },
+    {
+      "file": "compare/Dyadic-Interaction-Modeling/code/metrics/eval_utils.py",
+      "finding": "SID KMeans fitted on concatenated GT, k40 exp/k20 pose, random_state0, global histogram entropy"
+    }
+  ],
+  "incompatible_GT_lengths": [
+    {
+      "id": "yTInFHb_o1Q_000516_000551.1",
+      "frames": 1049
+    },
+    {
+      "id": "yTInFHb_o1Q_000516_000551.0",
+      "frames": 1049
+    }
+  ],
+  "unresolved": [
+    "Which released branch/config corresponds to published main table, including sampling and speaker modality",
+    "Exact retained eval IDs after author feature extraction and minimum-length alignment",
+    "EMOCA checkpoint/preprocessing/detection/failed-frame policy consistent with author assets",
+    "Which model outputs were scored directly in parameter space versus RGB re-extraction; disclose differences"
+  ],
+  "next_work": [
+    "Audit and freeze main-table protocol and eval manifest",
+    "Deploy matched EMOCA extractor",
+    "Extract speaker/GT/our-prediction motion on frozen grid",
+    "Reuse author metrics and validate GT statistics/self comparison",
+    "Retain single sample result; add samples only if verified comparison requires them",
+    "Publish table with reported baseline labels and disclosed training/input differences"
+  ],
+  "scope": "read-only protocol audit; no new generation, extraction, training, or scoring launched"
+}

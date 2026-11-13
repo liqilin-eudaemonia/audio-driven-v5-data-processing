@@ -1,0 +1,106 @@
+{
+  "revision": "seamless-four-node-asymmetric-1",
+  "ssh_key": "/private/ssh_keys/root_dedicated-developjob-zhizhou-avgen-1-zzdsg_ed25519",
+  "python": "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python",
+  "nodes": [
+    {
+      "name": "node17",
+      "host": "172.29.15.91",
+      "port": 22,
+      "external_port_note": 20342,
+      "index": 0,
+      "initial_setting": [
+        4,
+        2
+      ],
+      "maximum_models_per_gpu": 4
+    },
+    {
+      "name": "node12",
+      "host": "172.29.252.11",
+      "port": 22,
+      "external_port_note": 20382,
+      "index": 1,
+      "initial_setting": [
+        4,
+        2
+      ],
+      "maximum_models_per_gpu": 4
+    },
+    {
+      "name": "node4",
+      "host": "172.29.225.51",
+      "port": 22,
+      "external_port_note": 20359,
+      "index": 2,
+      "initial_setting": [
+        4,
+        2
+      ],
+      "maximum_models_per_gpu": 4
+    },
+    {
+      "name": "node8",
+      "alias": "zz-dev",
+      "host": "172.29.104.220",
+      "port": 22,
+      "external_port_note": 20346,
+      "index": 3,
+      "initial_setting": [
+        8,
+        1
+      ],
+      "maximum_models_per_gpu": 16,
+      "gpu_model_limits": [
+        16,
+        16,
+        8,
+        16,
+        16,
+        16,
+        16,
+        16
+      ],
+      "previous_address": "172.29.104.194"
+    }
+  ],
+  "maximum_preparation_slots_per_node": 256,
+  "maximum_model_workers_per_node": 128,
+  "cpu_busy_backoff_percent": 92,
+  "minimum_available_memory_fraction": 0.1,
+  "minimum_free_gpu_memory_mib": 12288,
+  "benchmark_seconds": 120,
+  "warmup_seconds": 30,
+  "stages": [
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      1,
+      8
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      4,
+      2
+    ]
+  ],
+  "minimum_throughput_gain": 0.05,
+  "policy": "Seamless without scene scan. Existing nodes 4 models/GPU. node8 up to 16, GPU2 capped at 8. Sustained resource guard retained.",
+  "fixed_setting": [
+    4,
+    2
+  ]
+}

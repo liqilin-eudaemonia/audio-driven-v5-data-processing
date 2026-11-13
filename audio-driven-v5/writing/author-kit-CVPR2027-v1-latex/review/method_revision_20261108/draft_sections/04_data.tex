@@ -1,0 +1,46 @@
+\section{Task and Data Construction}
+\label{sec:data}
+% Section role: define the target, then explain how paired data supports it.
+\input{draft_sections/03_task}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{F2_data.pdf}
+\caption{\figdraft{F2: Data construction and cue-assisted annotation} Seamless conversations are segmented and paired before listener media processing. Listener audiovisual media and timestamped reaction cues guide Qwen3-Omni to produce an ordered description without numerical timestamps. Each sample links the input conditions, listener targets, and description. Text-based behavior extraction and conflict masking produce clip-level training labels. Example media, cue intervals, and descriptions are schematic; the reported resource counts differ from the AV training selection.}
+\label{fig:data}
+\end{figure*}
+\subsection{Paired Clip Construction}
+\label{sec:pairing}
+\paragraph{Source and conversational roles.}
+% Paragraph role P01: 数据来源及目标
+We construct paired listening data from Seamless conversations~\cite{seamless}. The source recordings contain alternating speaking turns, whereas our task requires identifying the current speaker, the corresponding listener, and their feedback during the same interval. We associate speaker audio, a listener reference frame, and aligned listener audiovisual targets, and add natural-language descriptions of visual and vocal reactions. \Cref{fig:data} summarizes the process.
+
+% Paragraph role P02: 切分与角色规则
+We use transcripts, word timings, speech activity, and acoustic pauses to determine local roles and candidate boundaries. When the listener takes over the conversational floor, we switch the roles and continue forming pairs, allowing both participants' speaking turns to contribute samples. Brief listener feedback may overlap with speaker speech and does not automatically indicate a turn change. Segmentation favors complete sentence endings and avoids including a fragment of the next sentence. Longer content is split at valid boundaries. The fixed rules limit clips to 2--11.95 seconds and treat an inter-word pause longer than 5 seconds as a long-pause boundary. Candidate formation precedes audio-quality filtering and, where needed, local recovery; cases whose recovered subsegments cannot be confirmed as complete are retained for review.
+\cnnote{范围与细则}{此处的语义线索指转写与句末完整性规则，不表示调用大模型进行语义切分，也不表示每个片段覆盖一个完整长话轮。角色判定阈值、来源构成和原始资源许可待补。原始会话采集不归为本文贡献。}
+
+\paragraph{Aligned listener media.}
+% Paragraph role P03: 媒体处理
+We screen and crop listener video and correct orientation in affected source clips. Reaction detection and audiovisual annotation use the same person, crop, and temporal interval. For audio, we extract the corresponding interval from the listener's independent long audio track. The union of official word, utterance, and voice-activity intervals defines the retained regions. We extend these regions by 100\,ms on each side and apply 10\,ms fades to reduce boundary discontinuities and interference from other sounds. Audio outside the retained regions is zeroed rather than removed, preserving duration and audiovisual alignment. Source media, crop, and processing metadata are retained for subsequent inspection.
+\cnnote{质量证据待补}{100毫秒和10毫秒是音频保留区间的处理参数，不是所有视频切口的统一余量。处理输入为512×512不表示原始素材具有同等有效分辨率；净化、裁剪和角色配对的质量需独立抽检。}
+
+\subsection{Cue-Assisted Reaction Annotation}
+\label{sec:annotation}
+\paragraph{Ordered reaction descriptions.}
+% Paragraph role P04: 线索辅助描述
+Direct audiovisual descriptions were observed to omit some movements and brief vocal reactions. We therefore extract candidates such as nods, head shakes, brow lowering, and brow raising from listener video. Within officially supported vocal intervals, ASR, official transcripts, and audio events provide vocal cues. Cue categories, start and end times, and available vocal content are supplied to Qwen3-Omni~\cite{qwen3omni}, together with the listener video sampled at 8\,fps using the final crop and the processed audio. The prompt directs attention to transient reactions and requests an ordered account of visual and vocal behavior. The output is an English natural-language description that preserves reaction order without numerical timestamps. The pipeline checks cue coverage and consistency with silence, retries suspected omissions, and retains unresolved review flags.
+
+% Paragraph role P05: 表情线索与时间证据限制
+These cues describe observable behavior: brow movements do not directly establish an internal emotional state. Their intervals are annotation prompts, not manually verified event boundaries.
+\cnnote{待补证据}{需通过独立核验比较有／无辅助线索的描述，分别检查遗漏、无依据添加及顺序错误。流程设计不能直接支持“完整性和顺序准确性已提升”的效果结论。}
+
+\paragraph{Clip-level training labels.}
+% Paragraph role P06: 描述派生整段标签
+A separate, fixed behavior-extraction procedure uses Qwen3-30B-A3B-Instruct-2507~\cite{qwen3} to extract visual and audio behavior names with supporting text from the descriptions. Accepted items provide positive evidence for clip-level category presence. Uncertain, contradictory, or insufficiently supported items remain unknown. A category is treated as a low-weight negative only when the description passes a completeness check and genuinely does not mention it. Conflicts involving mentioned baseline states, supplementary reaction cues, and weak negatives are masked. If vocal activity is supported but its subtype is uncertain, all audio categories are not labeled absent. This step adds no temporal supervision, and the automatic labels are not treated as human ground truth.
+
+\subsection{Dataset Statistics}
+\label{sec:data-statistics}
+% Paragraph role P07: 样本与规模
+Each sample links the current speaker audio, the listener's first frame, aligned listener video and audio, and a reaction description, together with source and temporal metadata. The retained resource contains 704,368 training samples and 7,087 test samples. The AV generation model uses a separately selected training set, specified in \cref{sec:setup}; these counts do not denote the same training manifest. Data and annotation quality checks are organized in \cref{sec:validation}.
+\input{tables/T1_data}
+\cnnote{资源关系待核对}{704,368／7,087沿用中文D5的全量筛选口径；生成模型使用284,218段AV选集，不能自行假定它是704,368条中的严格子集。正式测试及校准清单、人物隔离、行为分布和人工质量抽检待补。}

@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ViCo test43 · 联合8000步生成对照</title><style>
+  :root { color-scheme: light; }
+  body { margin: 0; font: 15px/1.45 system-ui, sans-serif; color: #1c1c1c; background: #f6f5f3; }
+  header { padding: 16px 20px 8px; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  p { margin: 0; color: #555; }
+  main { display: grid; grid-template-columns: 280px 1fr; gap: 16px; padding: 12px 20px 24px; }
+  ol { list-style: none; margin: 0; padding: 0; max-height: calc(100vh - 120px); overflow: auto; border: 1px solid #ddd; background: #fff; }
+  button.row { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid #eee; background: #fff; padding: 8px 10px; cursor: pointer; font: inherit; }
+  button.row[aria-current="true"] { background: #e7f0e4; }
+  .meta { color: #666; font-size: 13px; }
+  .stage { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  figure { margin: 0; background: #fff; border: 1px solid #ddd; padding: 8px; }
+  figcaption { font-weight: 600; margin-bottom: 6px; }
+  video { width: 100%; background: #111; display: block; }
+  .bar { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
+  audio { width: min(480px, 100%); }
+  @media (max-width: 800px) {
+    main { grid-template-columns: 1fr; }
+    ol { max-height: 220px; }
+    .stage { grid-template-columns: 1fr; }
+  }
+</style>
+<style>
+*{box-sizing:border-box}a{color:#235f8c}header{max-width:1800px;margin:auto}main{max-width:1800px;margin:auto;grid-template-columns:260px minmax(0,1fr)}section,aside,figure{min-width:0}button,select,input{font:inherit}button,select{padding:6px 10px;cursor:pointer}button:disabled{opacity:.5;cursor:wait}button.row{font-size:12px;overflow-wrap:anywhere}.stage{grid-template-columns:repeat(3,minmax(0,1fr))}video{aspect-ratio:1;object-fit:contain}.bar{flex-wrap:wrap}.toolbar{padding:10px;background:#fff;border:1px solid #ddd;position:sticky;top:0;z-index:2}#seek{flex:1;min-width:120px}#filter{width:100%;padding:8px;margin-bottom:6px;border:1px solid #ddd}#now{overflow-wrap:anywhere;margin:10px 0;font-size:13px}.links{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin-top:8px}.hint{font-size:12px;color:#666;margin:7px 0}.notice{padding:9px 12px;background:#edf3eb;border-left:3px solid #7a9672;margin:10px 0}details{border:1px solid #ddd;background:#fff;padding:10px;margin:10px 0}summary{cursor:pointer;font-weight:600}.tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}td,th{padding:6px 9px;border-bottom:1px solid #eee;text-align:right}td:first-child,th:first-child{text-align:left}th{background:#f5f5f3}.na{color:#936423}.text{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f7f5;padding:10px;max-height:320px;overflow:auto;font-size:13px}.thumb{width:64px;height:64px;float:right;margin:0 0 8px 12px}#error{color:#a03328;white-space:pre-wrap}.pill{display:inline-block;background:#edf1e9;padding:1px 6px;border-radius:3px;margin-right:4px}figcaption{display:flex;justify-content:space-between;gap:5px}figcaption small{font-size:11px;color:#666;font-weight:400}#quality{overflow-wrap:anywhere}.download{font-size:12px;margin-top:7px}.nav{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}.active{background:#235f8c;color:#fff;border-color:#235f8c}#overview{margin:10px 0}#loading{font-size:12px;color:#666}footer{max-width:1800px;margin:auto;padding:0 20px 25px;font-size:12px;color:#666}
+@media(max-width:1000px){main{grid-template-columns:200px minmax(0,1fr)}.stage{gap:6px}figure{padding:5px}figcaption{font-size:12px;flex-wrap:wrap}}
+@media(max-width:800px){main{grid-template-columns:1fr}.stage{grid-template-columns:repeat(3,minmax(0,1fr))}ol{max-height:180px}.toolbar{position:static}}
+@media(max-width:580px){header,main{padding:12px}.stage{grid-template-columns:1fr}figure{padding:8px}h1{font-size:19px}.bar{gap:6px}#seek{flex-basis:100%}}
+</style></head><body>
+<header><nav class="nav"><a href="/vico_paper_test/">ViCo 原画幅审核页</a><a href="/listen_benchmark_review/p2_seamless200_20261105/">Seamless 生成对照</a><a href="RESULTS.md">完整结果</a><a href="summary.csv" download>指标CSV</a><a href="data.json" download>本页JSON</a></nav>
+<h1>ViCo test43 · AV＋Event＋Feature＋Whisper · 8000步</h1>
+<p id="summary">正在读取全部43条结果…</p>
+<p class="notice">输入为 speaker 音频＋listener 首帧。三路同步对照，默认展示原生 512×512／25fps 生成；可切换实际 256×256／30fps 评分副本。</p>
+<details id="overview"><summary>总体指标与评测口径</summary><div class="tablewrap" id="aggregate"></div><p id="imageSummary" class="hint"></p><p class="hint">公开定义复现，采用已确认的原始系数、±2秒延迟、4秒窗口／1秒步长、逐片段等权。RTLCC覆盖42条，RWTLCC覆盖41条，短片段标N/A；不能直接宣称与CustomListener原表严格同口径。FD和FIDΔfm展示乘100，SND使用原始尺度。</p></details>
+</header>
+<main><aside><input id="filter" type="search" placeholder="搜索片段ID／态度" aria-label="搜索片段"><ol id="list"></ol></aside><section>
+<div class="toolbar"><div class="bar"><button id="prev">上一条</button><button id="play" disabled>▶ 同步播放</button><button id="pause">暂停</button><button id="reset">归零</button><button id="next">下一条</button><span id="count"></span></div>
+<div class="bar"><input id="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="同步时间"><span id="time">0.00s</span><label>速度 <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option></select></label></div>
+<div class="bar"><label>生成画面 <select id="resolution"><option value="native">原生512 · 25fps</option><option value="scoring">评分256 · 30fps</option></select></label><label>试听 <select id="audioMode"><option value="both">speaker＋生成（各50%）</option><option value="speaker">仅speaker</option><option value="generated">仅生成声音</option><option value="silent">静音</option></select></label></div>
+</div>
+<p id="now"></p><div id="error" role="alert"></div><div class="stage">
+<figure><figcaption>Speaker <small>256×256 · 30fps</small></figcaption><video id="speaker" muted playsinline preload="metadata"></video><div class="download"><a id="speakerDownload" download>speaker预览</a> · <a id="speakerWav" download>输入音频</a> · <a id="speakerOriginal" target="_blank" rel="noopener">原画幅</a></div></figure>
+<figure><figcaption>Listener GT <small>256×256 · 30fps</small></figcaption><video id="gt" muted playsinline preload="metadata"></video><div class="download"><a id="gtDownload" download>GT预览</a> · <a id="gtOriginal" target="_blank" rel="noopener">原画幅</a></div></figure>
+<figure><figcaption>联合模型 · 8000步 <small id="generationLabel">512×512 · 25fps</small></figcaption><video id="prediction" muted playsinline preload="metadata"></video><div class="download"><a id="generatedDownload" download>当前生成视频</a> · <a id="generatedWav" download>原始生成WAV</a></div></figure>
+</div>
+<p id="loading" aria-live="polite">正在加载媒体…</p><p class="hint">GT未提供独立listener音轨；试听为实际speaker输入音频与原始生成声音。三路视频自身静音，避免重复播放音轨。</p>
+<details open><summary>本条运动指标</summary><div id="caseMetrics" class="tablewrap"></div><p id="quality" class="hint"></p></details>
+<details open><summary>本条推理规划与条件</summary><img id="firstFrame" class="thumb" alt="实际推理使用的listener首帧"><p class="hint">规划器：原始Qwen2.5-Omni-3B，无规划LoRA；以下为生成规划，不是真值标注。</p><div id="description" class="text"></div><details><summary>完整规划prompt</summary><div id="prompt" class="text"></div></details></details>
+</section></main>
+<footer>展示全部正式test43条，不按模型得分选例。原生512/25和评分256/30生成视频直接链接正式产物；speaker与GT仅做浏览器H264预览转码，不参与评分。<a href="protocol.json">提取协议</a> · <a href="SCORING_PROTOCOL.json">评分参数</a> · <a href="FINAL_AUDIT.json">指标最终验收</a></footer>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), videos={speaker:$('speaker'),gt:$('gt'),prediction:$('prediction')};
+let D=null,C=null,index=0,ctx=null,playing=false,changing=true,version=0,sources=[],buffers={};
+const cache=new Map(),attitudes={positive:'积极',neutral:'中性',negative:'消极'};
+const fmt=(v,n=4)=>v==null?'N/A':Number(v).toFixed(n);
+function fail(e){pause();$('error').textContent=String(e.message||e);$('loading').textContent='加载失败，可重选片段重试。';console.error(e);}
+function stopAudio(){for(const s of sources){try{s.stop();s.disconnect()}catch(e){}}sources=[];}
+function pause(){playing=false;for(const v of Object.values(videos))v.pause();stopAudio();$('play').textContent='▶ 同步播放';}
+async function wav(url,expected){
+ if(cache.has(url))return cache.get(url);
+ if(!ctx)ctx=new AudioContext();
+ const r=await fetch(url);if(!r.ok)throw Error('音频HTTP '+r.status);
+ const bytes=await r.arrayBuffer();
+ if(crypto.subtle){const h=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('');if(h!==expected)throw Error('音频来源校验失败');}
+ const buffer=await ctx.decodeAudioData(bytes);cache.set(url,buffer);
+ if(cache.size>6)cache.delete(cache.keys().next().value);
+ return buffer;
+}
+function audioNow(){
+ stopAudio();if(!playing||!ctx)return;
+ const mode=$('audioMode').value,at=videos.gt.currentTime;
+ const selected=mode==='both'?[buffers.speaker,buffers.generated]:mode==='speaker'?[buffers.speaker]:mode==='generated'?[buffers.generated]:[];
+ for(const buffer of selected){if(!buffer||at>=buffer.duration)continue;const s=ctx.createBufferSource(),gain=ctx.createGain();s.buffer=buffer;s.playbackRate.value=Number($('speed').value);gain.gain.value=mode==='both'?.5:1;s.connect(gain);gain.connect(ctx.destination);s.start(0,at);sources.push(s);}
+}
+function seek(t){if(!C)return;t=Math.max(0,Math.min(C.duration-.001,t));for(const v of Object.values(videos))v.currentTime=t;$('seek').value=t;$('time').textContent=t.toFixed(2)+' / '+C.duration.toFixed(2)+'s';if(playing)audioNow();}
+async function play(){if(changing)return;await ctx.resume();if(videos.gt.currentTime>=C.duration-.06)seek(0);const at=videos.gt.currentTime;for(const v of Object.values(videos)){v.currentTime=at;v.playbackRate=Number($('speed').value);}playing=true;try{await Promise.all(Object.values(videos).map(v=>v.play()));audioNow();$('play').textContent='播放中';}catch(e){pause();throw e;}}
+function metadata(v){return new Promise((resolve,reject)=>{const events=['loadeddata','seeked','canplay'];const done=()=>{clearTimeout(timer);for(const e of events)v.removeEventListener(e,ready);v.removeEventListener('error',error)};const ready=()=>{if(v.readyState<2||v.seeking)return;done();resolve()};const error=()=>{done();reject(Error('无法播放 '+v.currentSrc))};const timer=setTimeout(()=>{done();reject(Error('视频读取超时'))},30000);for(const e of events)v.addEventListener(e,ready);v.addEventListener('error',error);ready();});}
+function table(metrics,aggregate=false){
+ const scales=aggregate?{}:{FD:100,FID_delta_fm:100};
+ const rows=[['FD','FD ↓ ×100'],['RTLCC','RTLCC ↓'],['RWTLCC','RWTLCC ↓'],['FID_delta_fm','FIDΔfm ↓ ×100'],['SND','SND ↓'],['V_D','V-D ↑'],['V_D_GT','GT方差参考']];
+ return '<table><thead><tr><th>指标</th><th>exp</th><th>angle</th><th>trans</th><th>pose</th><th>覆盖／状态</th></tr></thead><tbody>'+rows.map(([key,label])=>{const m=metrics[key],scale=scales[key]||1;return '<tr><td>'+label+'</td>'+['exp','angle','trans','pose'].map(g=>'<td class="'+(m[g]===null?'na':'')+'">'+(g in m?fmt(m[g]===null?null:m[g]*scale):'—')+'</td>').join('')+'<td>'+(aggregate?Object.values(D.coverage[key])[0]+'/43':Object.values(m).some(x=>x===null)?'长度不足 · N/A':'有效')+'</td></tr>'}).join('')+'</tbody></table>';
+}
+async function loadMedia(){
+ const mine=++version;pause();changing=true;$('play').disabled=true;$('error').textContent='';$('loading').textContent='正在加载视频并校验原始音频…';
+ const resolution=$('resolution').value,urls={speaker:C.speaker_video,gt:C.gt_video,prediction:resolution==='native'?C.native_video:C.scoring_video};
+ const ready=Object.entries(urls).map(([role,url])=>{const v=videos[role];v.src=url;v.muted=true;v.load();return metadata(v)});
+ let audio;try{audio=await Promise.all([wav(C.speaker_wav,C.audio.speaker_wav_sha256),wav(C.generated_wav,C.audio.generated_wav_sha256),...ready]);}catch(e){if(mine!==version)return;throw e}
+ if(mine!==version)return;buffers={speaker:audio[0],generated:audio[1]};
+ $('generationLabel').textContent=resolution==='native'?'512×512 · 25fps':'256×256 · 30fps';
+ $('generatedDownload').href=urls.prediction;$('speakerDownload').href=C.speaker_video;$('gtDownload').href=C.gt_video;$('speakerWav').href=C.speaker_wav;$('generatedWav').href=C.generated_wav;$('speakerOriginal').href=C.original_speaker;$('gtOriginal').href=C.original_listener;
+ seek(0);await Promise.all(Object.values(videos).map(metadata));if(mine!==version)return;
+ changing=false;$('play').disabled=false;$('loading').textContent='已加载 · 视频可同步播放 · 音频来源SHA校验通过。';
+ const u=new URL(location);u.searchParams.set('sample',C.id);u.searchParams.set('view',resolution);history.replaceState(null,'',u);
+}
+async function show(i){
+ pause();index=(i+D.cases.length)%D.cases.length;C=D.cases[index];
+ $('count').textContent=(index+1)+' / 43';$('seek').max=C.duration;
+ $('now').textContent=C.id+' · '+C.duration.toFixed(2)+'秒 · speaker '+C.speaker_id+' → listener '+C.listener_id+' · 原标签 '+(attitudes[C.attitude]||C.attitude);
+ for(const [n,b] of [...$('list').querySelectorAll('button')].entries())b.setAttribute('aria-current',String(n===index));
+ $('caseMetrics').innerHTML=table(C.metrics);$('description').textContent=C.plan.description;$('prompt').textContent='生成prompt\n'+C.plan.prompt+'\n\n规划system\n'+C.plan.system+'\n\n规划user\n'+C.plan.user;$('firstFrame').src=C.first_frame;
+ $('quality').textContent='人脸漏检：speaker '+C.quality.speaker.missing_faces+'，GT '+C.quality.gt.missing_faces+'，生成 '+C.quality.prediction.missing_faces+'；生成漏检按正式协议前向填充。RWTLCC有效窗口 '+C.timing.window_count+' 个。';
+ await loadMedia();
+}
+$('play').onclick=()=>play().catch(fail);$('pause').onclick=pause;$('reset').onclick=()=>{pause();seek(0)};
+$('prev').onclick=()=>show(index-1).catch(fail);$('next').onclick=()=>show(index+1).catch(fail);
+$('resolution').onchange=()=>loadMedia().catch(fail);$('seek').oninput=()=>seek(Number($('seek').value));
+$('speed').onchange=()=>{for(const v of Object.values(videos))v.playbackRate=Number($('speed').value);if(playing)audioNow()};$('audioMode').onchange=()=>{if(playing)audioNow()};
+$('filter').oninput=()=>{const q=$('filter').value.toLowerCase();for(const li of $('list').children)li.hidden=!li.textContent.toLowerCase().includes(q)};
+setInterval(()=>{if(!C||changing)return;const t=videos.gt.currentTime;$('seek').value=t;$('time').textContent=t.toFixed(2)+' / '+C.duration.toFixed(2)+'s';if(playing){if(t>=C.duration-.04){pause();return}for(const key of ['speaker','prediction'])if(Math.abs(videos[key].currentTime-t)>.1)videos[key].currentTime=t}},100);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
+window.reviewDebug=()=>({sample:C?.id,loaded:!changing,playing,sources:sources.length,audioMode:$('audioMode').value,view:$('resolution').value,context:ctx?.state,times:Object.fromEntries(Object.entries(videos).map(([k,v])=>[k,v.currentTime])),sizes:Object.fromEntries(Object.entries(videos).map(([k,v])=>[k,[v.videoWidth,v.videoHeight]]))});
+async function init(){const r=await fetch('data.json');if(!r.ok)throw Error('结果数据HTTP '+r.status);D=await r.json();window.reviewData=D;
+ $('summary').textContent='全部43条正式test · '+D.cases.reduce((s,c)=>s+c.duration,0).toFixed(2)+'秒 · 无未来listener输入 · 未微调Qwen规划器';$('aggregate').innerHTML=table(D.summary,true);
+ const im=D.image_summary;$('imageSummary').textContent='画质／身份总体：PSNR '+fmt(im.psnr)+' · SSIM '+fmt(im.ssim)+' · 图像FID '+fmt(im.fid)+' · CSIM '+fmt(im.csim)+' · CPBD '+fmt(im.cpbd);
+ for(const [n,c] of D.cases.entries()){const li=document.createElement('li'),b=document.createElement('button');b.className='row';b.type='button';const name=document.createElement('div'),meta=document.createElement('div');name.textContent=(n+1)+'. '+c.id;meta.className='meta';meta.textContent=(attitudes[c.attitude]||c.attitude)+' · '+c.duration.toFixed(2)+'秒';b.append(name,meta);b.onclick=()=>show(n).catch(fail);li.append(b);$('list').append(li)}
+ const params=new URL(location).searchParams;if(params.get('view')==='scoring')$('resolution').value='scoring';if(params.get('metrics')==='1')$('overview').open=true;
+ await show(Math.max(0,D.cases.findIndex(c=>c.id===params.get('sample'))));
+}
+init().catch(fail);
+</script></body></html>

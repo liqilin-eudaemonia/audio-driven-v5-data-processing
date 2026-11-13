@@ -1,0 +1,33 @@
+{
+  "status": "stretch_not_scheduled",
+  "formal_result": false,
+  "paper_path": "/private/liqi_workspace/project_code/audio-driven-v5/writing/PCH.pdf",
+  "paper_sha256": "926b738dfdc8a5bc8f338abb0fe1cd42b39fde67680b4f02579fa255e9812a6b",
+  "source": {
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_vico_additional_baselines_20261107/vendor/pch/README.md": "16a4b7f2f8118c65e20e463c200214be47f950e513c7f38b71a5ef2524594d9f",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_vico_additional_baselines_20261107/vendor/pch/speaker_generator.py": "57829ccb30a878403dfee08875ef4dbaf79e3af1a78df5fa75abd4d176a4b2b7",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_vico_additional_baselines_20261107/vendor/pch/audio_to_face.py": "14357b09e61396243e6e135f3989f5636433852f6469fb9f501cf5d230ed35ae",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_vico_additional_baselines_20261107/vendor/pch/inference.py": "789b061caf077dbc37adafab34e2e85414f3983c4e3148174625d570fd3e8d81"
+  },
+  "findings": [
+    {
+      "source": "paper Section3.1",
+      "fact": "Listening task additionally conditions on listener attitude."
+    },
+    {
+      "source": "paper Section4.1-4.2 and released driver",
+      "fact": "Four-layer bidirectional LSTM, initial-state residual, BN/dropout, distinct losses; batch128, cosine LR5e-3 to1e-4. It is not the unchanged RLHG listener."
+    },
+    {
+      "source": "paper Section5.2",
+      "fact": "Final challenge ensemble chooses five of ten validated models."
+    },
+    {
+      "source": "released README and speaker_generator.py",
+      "fact": "Drop-in driver files replace speaker_generator/audio_to_face; an attitude-aware listener training/inference route and full listener checkpoint have not been validated."
+    }
+  ],
+  "reason": "A full listener reimplementation, training-budget definition and validation would be required; background/border-only changes to RLHG or a renamed speaker branch are not a complete PCH result.",
+  "renderer_only_patch_is_not_full_pch": true,
+  "priority": "GPU7 first completes DualTalk+ListenFormer; RLHG full500epoch conditional"
+}

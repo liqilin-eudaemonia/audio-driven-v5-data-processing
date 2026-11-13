@@ -1,0 +1,53 @@
+\vspace{-0.5em}
+\section{Conclusion}
+\vspace{-0.5em}
+
+In this paper, we present a reaction-centric framework for listening head generation that addresses the limitations of existing methods in modeling conversationally appropriate listener behaviors. Built upon dyadic conversational videos from the RealTalk and Seamless datasets, we curate a new dataset consisting of aligned speaker-listener pairs and corresponding fine-grained event-level reaction annotations. We then propose an audio-driven baseline with prosody conditioning and a temporal reaction loss to explicitly guide reaction-aware motion generation. We further introduce reaction-oriented evaluation metrics specifically designed to assess reaction occurrence, temporal alignment, and visual quality, complementing conventional generation metrics. Experiments on both RealTalk and Seamless show that our method improves visual fidelity, motion naturalness, and, more importantly, reaction accuracy and temporal alignment over existing approaches. These results suggest that explicit reaction supervision and reaction-specific evaluation are important steps toward more natural and context-aware listening head generation.
+
+\vspace{0.5em}
+\begin{table}[t]
+    \centering
+    \fontsize{8pt}{6.5pt}\selectfont
+    \setcellgapes{2pt}
+    \makegapedcells
+    \setlength{\tabcolsep}{2pt}
+    \caption{Effect of prosody conditioning on different reaction categories.}
+    \label{tab:prosody_conditioning}
+    \begin{tabular}{c|c|c|c|c|c}
+        \Xhline{1.2pt}
+        
+        \textbf{Reactions} & \textbf{Prosody Cond.} & \textbf{R-F1} $\uparrow$ & \textbf{R-tIoU} $\uparrow$ & \textbf{R-ATD} $\downarrow$ & \textbf{R-FID} $\downarrow$ \\
+        \hline
+        
+        \multirow{2}{*}{\textit{nodding}} & $\times$ & 0.422 & 0.626 & 84.732 & 23.284 \\
+         & $\checkmark$ & 0.474 \textbf{(+12.32\%)} & 0.583 & 97.428 \textbf{(+14.98\%)} & 21.032 \\
+
+        \hline
+        
+        \multirow{2}{*}{\textit{head shaking}} & $\times$ & 0.398 & 0.584 & 91.645 & 24.226 \\
+         & $\checkmark$ & 0.441 \textbf{(+10.08\%)} & 0.539 & 103.763 \textbf{(+13.22\%)} & 21.445 \\
+        
+        \hline
+        
+        \multirow{2}{*}{\textit{smiling}} & $\times$ & 0.421 & 0.640 & 82.519 & 22.571 \\
+         & $\checkmark$ & 0.517 \textbf{(+22.80\%)} & 0.595 & 93.314 \textbf{(+13.08\%)} & 19.164 \\
+        
+        \hline
+        
+        \multirow{2}{*}{\textit{laughing}} & $\times$ & 0.447 & 0.649 & 79.884 & 22.063 \\
+         & $\checkmark$ & 0.578 \textbf{(+29.31\%)} & 0.671 \textbf{(+3.39\%)} & 89.726 \textbf{(+12.32\%)} & 18.437 \\
+        
+        \hline
+        
+        \multirow{2}{*}{\textit{frowning}} & $\times$ & 0.362 & 0.560 & 96.438 & 25.482 \\
+         & $\checkmark$ & 0.426 \textbf{(+17.68\%)} & 0.511 & 108.582 \textbf{(+12.59\%)} & 21.683 \\
+
+        \hline
+        
+        \multirow{2}{*}{\textit{surprised}} & $\times$ & 0.381 & 0.535 & 104.686 & 24.610 \\
+         & $\checkmark$ & 0.448 \textbf{(+17.59\%)} & 0.549 \textbf{(+2.62\%)} & 109.219 \textbf{(+4.33\%)} & 21.857 \\
+        
+        \Xhline{1.2pt}
+    \end{tabular}
+    \vspace{-1.5em}
+\end{table}

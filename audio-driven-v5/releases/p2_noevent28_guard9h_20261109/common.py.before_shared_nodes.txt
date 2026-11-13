@@ -1,0 +1,75 @@
+"""Versioned observation and owned recovery for current noEvent28 only."""
+from pathlib import Path
+import sys,os,time,json,importlib.util,concurrent.futures,subprocess,math,statistics
+ROOT=Path('/private/liqi_workspace/project_code/audio-driven-v5');WORK=Path(__file__).resolve().parent
+ENTRY=ROOT/'experiments/p2_noevent28_after_full7500_20261109'
+sys.path[:0]=[str(ENTRY),str(ROOT/'src'),str(ROOT/'scripts')]
+import manager as X
+spec=importlib.util.spec_from_file_location('noevent_guard_observer',ENTRY/'watch_hourly.py');M=importlib.util.module_from_spec(spec);spec.loader.exec_module(M)
+C=X.C;OUT=X.OUT
+from p2_listen.contracts import read,sha,atomic_json
+from listen_cluster import transport
+alive=C.alive
+
+def tail():
+ return [json.loads(x)for x in(OUT/'metrics.jsonl').read_text().splitlines()if x][-1000:]
+def event(kind,**kw):
+ v=dict(at=time.time(),kind=kind,**kw)
+ with(WORK/'events.jsonl').open('a')as f:f.write(json.dumps(v)+'\n')
+ print(json.dumps(v),flush=True)
+def probe():
+ raw=C.probe('full');cl=read(OUT/'cluster.json');selected={n['name']:n['gpus']for n in cl['nodes']};nodes=[]
+ for n in raw['nodes']:
+  masks=selected[n['node']];cards=[g for g in n['gpus']if g['gpu']in masks];uuids={g['uuid']for g in cards};foreign=[]
+  for p in n['foreign']:
+   if p['uuid']in uuids:foreign.append(dict(p,allowed_background=p.get('allowed_vllm',False)))
+  workers=[dict(p,gpu=p['physical_gpu'])for p in n['workers']]
+  nodes.append(dict(node=n['node'],cards=cards,workers=workers,foreign=foreign,errors=[e for e in n['errors']if 'rank'in e]))
+ healthy=len(nodes)==4 and sum(len(n['workers'])for n in nodes)==28 and all(not n['errors']for n in nodes)
+ return dict(at=time.time(),nodes=nodes,healthy28=healthy,reserved_gpu='node11:4-7')
+def observed(snap):
+ cl=read(OUT/'cluster.json');names={n['name']:n['gpus']for n in cl['nodes']}
+ return len(snap['nodes'])==4 and{n['node']for n in snap['nodes']}==set(names)and all(not n.get('error')and sorted(g['gpu']for g in n.get('cards',[]))==names[n['node']]for n in snap['nodes'])
+def ready(snap):
+ if not observed(snap):return False
+ for n in snap['nodes']:
+  if n['workers']or any(not f.get('allowed_background')for f in n.get('foreign',[])):return False
+  for g in n['cards']:
+   if n['node']=='node11':
+    if g['used_mib']>=34000:return False
+    if g['used_mib']>=2048 and not n.get('foreign'):return False
+   elif g['used_mib']>=2048 or g['util']>=10:return False
+ return True
+
+def contract(check_data=False):
+ p=read(WORK/'protocol.json');c=read(OUT/'config.json');run=read(OUT/'run.json')
+ assert sha(OUT/'config.json')==p['config_sha256']and sha(OUT/'cluster.json')==p['cluster_sha256']and run['experiment']==c and run['world']==28
+ assert all(sha(f)==h for f,h in run['source'].items())
+ assert c['training']['global_batch']==28 and c['training']['save_every']==500 and c['training']['gradient_checkpointing']=='all'
+ X.R.validate(c)
+ if check_data:
+  C.activate()
+  from p2_ltx_all_lora_noevent.data import data_identity
+  assert data_identity(X.R.normalized(c))==run['data_identity']
+ return dict(success=True,source_files=len(run['source']),config_sha256=p['config_sha256'],cluster_sha256=p['cluster_sha256'],data_checked=check_data)
+def health(now=None):
+ now=now or time.time();rows=[r for r in tail()if r['step']>660];status=read(OUT/'status.json');step=status['step'];flags=[]
+ age=now-(OUT/'metrics.jsonl').stat().st_mtime;saving=step%500==0 and not(OUT/f'step_{step:06d}.complete.json').exists();limit=1800 if saving else 180
+ if age>limit:flags.append('stalled')
+ for row in rows[-30:]:
+  if not all(math.isfinite(row[k])for k in ['av','av_video','av_audio','event','feature_video','feature_audio','weighted_total']):flags.append('nonfinite');break
+  if row['event']!=0 or row['per_event']or abs(row['weighted_total']-(row['av']+.025*(row['feature_video']+row['feature_audio'])))>1e-8:flags.append('wrong_loss');break
+  if any(not math.isfinite(row['grad_norm'].get(k,float('nan')))for k in ['connector','ltx_lora','whisper','features']):flags.append('nonfinite_gradient');break
+ return dict(at=now,step=step,complete=status.get('complete',False),metrics_age_seconds=age,stall_limit=limit,saving=saving,mean_last50_seconds=statistics.mean(r['seconds']for r in rows[-50:])if rows else None,flags=sorted(set(flags)))
+def stop_intent():return(OUT/'STOP').exists()
+def spawn_record(p,**kw):
+ st=Path('/proc',str(p.pid),'stat').read_text().rsplit(')',1)[1].split();return dict(pid=p.pid,start_ticks=st[19],at=time.time(),**kw)
+KILL=(WORK/'kill_owned.py.txt').read_text()
+def terminate(snap):
+ if not observed(snap):raise RuntimeError('Incomplete observation cannot authorize termination')
+ cluster=read(OUT/'cluster.json')
+ def one(n):
+  obs=next(v for v in snap['nodes']if v['node']==n['name']);data=dict(workers=obs['workers'],script=cluster['training_script'],config=str(OUT/'config.json'),mask=','.join(map(str,n['gpus'])))
+  code=KILL.replace('PAYLOAD',repr(json.dumps(data)));p=subprocess.run(transport(cluster,n,[cluster['python'],'-c',code]),capture_output=True,text=True,timeout=35,check=True)
+  return dict(node=n['name'],results=json.loads(p.stdout))
+ with concurrent.futures.ThreadPoolExecutor(4)as pool:return list(pool.map(one,cluster['nodes']))

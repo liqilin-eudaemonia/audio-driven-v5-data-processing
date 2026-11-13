@@ -1,0 +1,2072 @@
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,6 @@
+ # audio-driven-v5 总索引
+ 
+-**修改旧二类Backchannel代码先读：** [打标规则、原文整合与七类代码迁移说明](related/P2_多类Backchannel打标整合与代码迁移说明.md)。汇总当前512裁框/独立listener音频、视觉与音频简洁prompt、原文去重和时间规则，以及六类视觉＋一类音频的标签、事件头、loss、缓存与评测修改清单。已核对当前P2实现实际为“点头＋listener发声”两路；本文是迁移要求，不代表训练代码已升级。
++**P2七类代码迁移已完成（2026-10-25，CPU验证）：** [实现与验证记录](related/P2_七类事件监督迁移实现与验证.md)。视觉六输出＋音频一输出、逐类 coverage/unknown/K_train、候选导出、缓存/恢复和冻结类别评测已接通，68项P2测试、47项相关回归和两进程CPU分布式检查通过；新配置：[p2_listen_event_v2.json](configs/p2_listen_event_v2.json)。50段适配保留175条候选和682条原始观测，准入仍为0；真实GPU S0及正式训练尚未启动。原[打标与迁移要求](related/P2_多类Backchannel打标整合与代码迁移说明.md)保留迁移前快照。
+ 
+ **已有结果CPU原文整合（2026-10-25，当前入口）：** [打开50段原文结果](http://127.0.0.1:8876/listen_benchmark_review/existing_fusion_verbatim/)、[规则与代码](experiments/listen_existing_fusion_verbatim_20261025/README.md)。175个候选（134视觉＋41音频），保留模型原文、ASR原词及来源差异；已去掉“嘿”转笑声、Ed换Yeah和Says模板等内容改写。只整理已有时间、跨窗重复与证据关系，不用人工反馈填标签、不用GPU。682条输入观测原样保留；2个无法定位的词单列。尚未应用全量。
+ 
+@@ -109,7 +109,7 @@
+ 
+ **增量复核与裁剪小样（2026-10-23）：** [打开 36 段检查页](http://127.0.0.1:8875/listen_v8_recovery/)，包含 6 段头肩裁剪、6 段 ASR 误拦修复新增切分、6 段边界软疑点、12 段身份/串音等对照，以及 6 段仍被筛掉的内容、音质、边界样本。每段可单听双人音轨并查看前后约 8 秒上下文；拒绝原因可见，可标注误杀。裁剪仅作构图预览，3 段有显式记录的视觉校正，不代表自动头部检测已经完成。生产筛查已完成 64,025 对，另有 62 对错误待处理；冻结生产规则未替换。训练主池原自动候选 50.27h；全量边界软疑点候选 60.67h，ASR 修复在 2,007 对训练样本净新增 5.64 分钟、粗略外推约 2.93h，身份不确定池 112.06h 仍需复核，均不能直接算作新增可用时长。详情见 [增量复核记录](related/P3_V8_QC4_第二批音质验收.md#增量复核与裁剪小样2026-10-23)。以下日期较早的状态为历史记录。
+ 
+-**P2 listen-only 事件监督代码已准备，等待用户提供真实数据。** 新增独立数据/缓存/训练/推理/评测入口，E0/E1 共享最终 U，事件梯度分别关闭/开启；CPU 梯度、恢复、时间轴、CFG 和两进程分布式检查已通过。详见 [实现与运行说明](related/P2_倾听事件监督实现与运行.md)、[数据格式示例](examples/p2_listen/README.md)、[详细实验计划](related/P2_倾听事件监督实验计划.md) 与 [代码修改要求](related/P2_倾听事件监督代码修改要求.md)。当前只使用合成张量/临时媒体验证，未加载预训练权重，未开展真实 GPU S0 或正式训练；QC4 数据任务与本实验独立。
++**P2 listen-only 七类事件监督代码已迁移，真实S0待媒体与标签准入。** 新增独立数据/缓存/训练/推理/评测入口，E0/E1 共享最终 U，事件梯度分别关闭/开启；CPU 梯度、恢复、时间轴、CFG 和两进程分布式检查已通过。详见 [实现与运行说明](related/P2_倾听事件监督实现与运行.md)、[数据格式示例](examples/p2_listen/README.md)、[详细实验计划](related/P2_倾听事件监督实验计划.md) 与 [代码修改要求](related/P2_倾听事件监督代码修改要求.md)。训练链路使用合成张量/临时媒体验证，另完成50段已有候选的CPU导出；未加载训练基座权重，未开展真实 GPU S0 或正式训练；QC4 数据任务与本实验独立。
+ 
+ **产量审计更新（2026-10-23 03:07 UTC）：** QC4 已统计 44,020 对，训练主池自动候选 33.69h；按当前比例外推约 49h，不能把音质储备等池合并称作“约 300h 可用”。2,048 对随机来源审计发现，裁框门槛、整句冲突、边界疑点及人声身份不确定共同造成大量转出；回查原始转写证实存在整段 ASR 包络覆盖无词空档、从而误拦候选的机制。尚未量化修复可回收时长，未修改生产规则。证据与限制见 [产量审计](related/P3_V8_QC4_第二批音质验收.md#产量审计2026-10-23-0307-utc)。三机固定每卡 4 进程继续处理。
+ 
+@@ -175,7 +175,9 @@
+ 
+ ## 当前实验计划
+ 
+-### P2 固定文本倾听与事件监督（代码已准备，待真实数据 S0）
++### P2 固定文本倾听与事件监督（七类代码已迁移，待真实数据 S0）
++
++- **七类迁移与当前接口（2026-10-25）**：[实现与验证记录](related/P2_七类事件监督迁移实现与验证.md)。候选仍需显式接受和逐类已知覆盖，CPU验证不替代真实S0。
+ 
+ - **事件打标交接检查入口（2026-10-24）**：[代码、模型、测试数据与复验说明](related/P2_事件打标交接检查说明.md)。集中列出四模型权重和实际端口、prompt/裁剪/校验代码、Seamless 与 RealTalk 小样本位置、逐请求原始响应、对照结果、离线检查和小样本复验命令，以及已知质量与续跑问题。
+ - **完整对照测试代码（2026-10-24）**：[测试矩阵、原生视听输入与运行说明](related/P2_事件打标完整对照测试.md)。独立入口覆盖九个主配置、三个辅助配置和四个输入控制配置；支持原始回答留存、断点恢复、盲审模板及人工 GT 事件评测。node17/node12/node4 共 24 张 H200 已完成 50 条×16 配置对照：[完整结果与分路组合对比](experiments/listen_benchmark_cluster_20261024T014809Z/最终对照结果.md)。最终纳入 1450 次请求，代码回归 57 项通过，显卡已释放。没有人工 GT，本轮结果仍是待审草稿，未续跑原全量生产打标。
+@@ -186,12 +188,12 @@
+ - Seamless 随机 50 条已接入完整视听输入：50/50 离线核验通过，2,661 张原画裁剪后送模图均为 512×512，使用独立 listener WAV；3 条真实媒体的 12 个模拟 HTTP 请求通过。早期 node8 的 Joy、Qwen3-Omni 和 MiniCPM-o-4.5 联调发现格式、有效覆盖及联合输入/推理耗时问题；不视为标签质量验收通过。Joy 权重已下载；后续全量打标进展见上条，尚未训练。早期实测及复现见 [真实数据与模型小样验证](related/P2_事件打标_真实数据与模型小样验证.md)。见 [核验及联调说明](related/P2_倾听事件自动标注实现与运行.md#10-seamless-随机-50-条完整双路输入与实模型联调)、[双路清单](experiments/listen_labeling_seamless_sample50_512/av_manifest.json)。
+ - RealTalk 随机 50 条已做打标输入兼容性检查：原画按固定 crop 在线裁剪后 resize 为 512×512；25 条有框通过，622 张采样图均为 512×512，25 条缺框单列。包内是混合音轨，当前只准备视觉模式；未调用模型、未准入训练。见 [处理说明与命令](related/P2_倾听事件自动标注实现与运行.md#9-realtalk-随机-50-条原画坐标裁剪与-512-输入核验)、[核验报告](experiments/listen_labeling_realtalk_random50_512/preparation.json)、[裁剪对照图](experiments/listen_labeling_realtalk_random50_512/previews/020_comparison.jpg)。
+ - 事件自动标注（v2 开放发现）：[实现与运行说明](related/P2_倾听事件自动标注实现与运行.md)；[入口](scripts/label_listen_events.py)、[通用配置模板](configs/listen_labeling.json)、[清单与自由描述示例](examples/listen_labeling/README.md)。Joy 静音视觉 + 音频模型完整波形先自由发现行为、保留证据，再独立查看原媒体检查点头/发声；支持 Omni 两阶段对照、分阶段续跑、人工修订和 P2 导入。含批量源读取与恢复用例共 37 项合成媒体/模拟 HTTP 测试通过，node8 实模型结果已单独记录，标注质量待验收；[验证记录](experiments/listen_labeling_code_validation/result.json)。
+-- 实验计划：[P2_倾听事件监督实验计划.md](related/P2_倾听事件监督实验计划.md)。覆盖路线选择、V8/QC4 小规模数据准入、发声/点头标注、共享 U 监督、成对训练预算、生成事件评测、继续条件和失败分流。
++- 实验计划：[P2_倾听事件监督实验计划.md](related/P2_倾听事件监督实验计划.md)。覆盖路线选择、V8/QC4 小规模数据准入、六类视觉＋一类音频标注、共享 U 监督、成对训练预算、生成事件评测、继续条件和失败分流。
+ - 代码要求：[P2_倾听事件监督代码修改要求.md](related/P2_倾听事件监督代码修改要求.md)。覆盖旧 P2 复用边界、新模块职责、输入/目标隔离、schema、时间轴与缓存、梯度/DDP/恢复、拟定 CLI 和验收测试。
+ - 来源明确为 [audio-driven-v4 中的 Pipeline 2](../audio-driven-v4/docs/PIPELINE2_PLAN.md)：冻结 Omni/DiT，融合 Thinker 8/18/28/35 层，最终 U 共享特征 FM 与 AV 监督。不是 P2.1，也不继承旧 GT 文字计划作为当前任务输入。
+ - 首轮主比较：E0 的事件头读取停止梯度的 U，仅作 probe；E1 的事件 loss 反馈到同一份生成条件 U。两组保留相同的特征/AV 损失、初始化、数据、预算和采样协议。
+ - 默认 pilot 建议 train/dev/test 为 2048/128/128 段、每组 1000 步，先做一个训练 seed 的成对实验，有信号后复验第二个 seed；这些是待实施的起始预算，不是已完成的数据或训练数量。
+-- 实现与运行：[P2_倾听事件监督实现与运行.md](related/P2_倾听事件监督实现与运行.md)；入口：[scripts/p2_listen.py](scripts/p2_listen.py)；代码：[src/p2_listen/](src/p2_listen/)；配置：[基础配置](configs/p2_listen_event_base.json)、[配对协议](configs/p2_listen_event_pair.json)。
++- 实现与运行：[P2_倾听事件监督实现与运行.md](related/P2_倾听事件监督实现与运行.md)；入口：[scripts/p2_listen.py](scripts/p2_listen.py)；代码：[src/p2_listen/](src/p2_listen/)；配置：[七类基础配置](configs/p2_listen_event_v2.json)、[七类配对协议](configs/p2_listen_event_pair_v2.json)。
+ - 数据接口：[示例与说明](examples/p2_listen/README.md)。用户提供数据后先形成独立小集清单和事件标注，再做真实 S0；不自动使用旧数据或启动训练。
+ - 验证：[CPU 测试结果](experiments/p2_listen_code_validation/unit_tests.json)、[梯度与恢复](experiments/p2_listen_code_validation/cpu_audit.json)、[两进程 CPU DDP](experiments/p2_listen_code_validation/cpu_ddp.json)。这些是代码验证，不是预训练 Omni/LTX 的真实 S0 或生成质量结论。P3 原有实现和 QC4 处理保留。
+ 
+--- /dev/null
++++ b/configs/p2_listen_event_pair_v2.json
+@@ -0,0 +1,18 @@
++{
++  "version": "p2-listen-pair-v2-visual6-audio1",
++  "base_config": "configs/p2_listen_event_v2.json",
++  "arms": {
++    "E0": "probe_only",
++    "E1": "joint_event"
++  },
++  "train_seeds": [
++    20261023,
++    20261024
++  ],
++  "primary_step": 1000,
++  "generation_seeds": [
++    137,
++    251
++  ],
++  "automatic_launch": false
++}
+--- /dev/null
++++ b/configs/p2_listen_event_v2.json
+@@ -0,0 +1,76 @@
++{
++  "version": "p2-listen-event-v2-visual6-audio1",
++  "reuse_root": "../audio-driven-v4",
++  "output": "experiments/p2_listen_event_v2",
++  "extractor": {
++    "hidden_layers": [
++      8,
++      18,
++      28,
++      35
++    ],
++    "layer_fusion": "attention",
++    "fusion_width": 512,
++    "fusion_depth": 2,
++    "fusion_heads": 8,
++    "vision_fps": 8,
++    "audio_hz": 8,
++    "vision_max_pixels": 50176,
++    "feature_video_weight": 1,
++    "feature_audio_weight": 1,
++    "av_weight": 1
++  },
++  "data": {
++    "fps": 25,
++    "size": 512,
++    "max_frames": 201,
++    "min_seconds": 2
++  },
++  "events": {
++    "types": [
++      "head_nod",
++      "head_shake",
++      "smile",
++      "laugh",
++      "frown",
++      "surprise",
++      "listener_vocalization"
++    ],
++    "weight": 0.05,
++    "head_width": 128,
++    "pos_weight_cap": 10,
++    "schema": "listen-events-v2-visual6-audio1",
++    "K_train": [
++      "head_nod",
++      "head_shake",
++      "smile",
++      "laugh",
++      "frown",
++      "surprise",
++      "listener_vocalization"
++    ],
++    "mapping_version": "listen-candidate-training-v2",
++    "admission_policy": "explicit-review-v1"
++  },
++  "training": {
++    "global_batch": 8,
++    "steps": 1000,
++    "connector_lr": 3e-05,
++    "feature_lr": 3e-05,
++    "event_lr": 0.0001,
++    "warmup_steps": 50,
++    "save_every": 100,
++    "clip_norm": 1,
++    "weight_decay": 0
++  },
++  "generation": {
++    "steps": 30,
++    "video_cfg": 3,
++    "audio_cfg": 7,
++    "seeds": [
++      137,
++      251
++    ],
++    "u_in_cfg": "both_branches"
++  }
++}
+--- a/examples/p2_listen/README.md
++++ b/examples/p2_listen/README.md
+@@ -1,12 +1,19 @@
+ # P2 数据接口示例
++
++当前训练协议为 `p2-listen-event-v2-visual6-audio1`，固定顺序：head_nod、head_shake、smile、laugh、frown、surprise、listener_vocalization。新配置为 `configs/p2_listen_event_v2.json`；旧二类标签示例保存在 `legacy_v1/`，新导入器拒绝直接使用。
+ 
+ 这些 JSON 是格式示例，不是真实样本；占位文件与哈希不能用于训练。用户可以先提供现有数据路径/清单，后续再适配到此格式，不要求用户手工整理这些文件。
+ 
+ - `observations.example.json`：只含推理可用信息。路径相对于导入 JSON 所在目录解析；`grouping_ids` 同时记录双方参与者和 session，跨 split 重复会被拒绝。
+ - `targets.example.json`：独立目标视频/音轨。先完成质量与角色验收，再把 `admitted` 从示例中的 `false` 改为 `true`；代码不会代替人工决定数据是否合格。
+ - `labels.example.json`：片段内秒数、逐类已审阅 coverage/unknown、事件区间及媒体哈希。未知不是负例；dev/test 需人工核验。
++- `decisions.example.json`：已有候选的独立接受/排除记录模板，默认未核验，不能直接导出为已准入标签。完整填写规则见[七类迁移实现记录](../../related/P2_七类事件监督迁移实现与验证.md)。
+ - `evaluation_protocol.example.json`：固定的配对生成矩阵。只有一个样本的示例不支持科学结论。
+ 
+ 基础素材为切好的等时长双路音轨、512×512 listener 视频和同裁框首帧。prepare 负责验证和导入，不会从长视频自动切分，也不会修改正在运行的 QC4 队列。
+ 
+ 完整使用方式见 [实现与运行说明](../../related/P2_倾听事件监督实现与运行.md)。
++
++`labels.example.json` 的 coverage 全空且 `training_admitted=false`，用于展示未知状态。不能仅修改布尔值：每类已知覆盖需要 `coverage_sources`，准入需要 `admission_record.reference`；事件需要唯一 `event_id`、原文 `description`、来源 `source`、`verification` 和 `boundary_status`。弱标签政策与 mapping 版本必须和实验配置一致。
++
++优先使用 `p2_listen.py export-labels` 从当前原文候选和独立 decisions 导出；不传 decisions 时仅输出全 unknown 的未准入草稿。它不会重跑模型、合并回应或改写候选内容。`import-labels` 只接收已经准入的七类 canonical 标签，并核对真实目标媒体哈希及 dev/test 人工核验状态。
+--- /dev/null
++++ b/examples/p2_listen/decisions.example.json
+@@ -0,0 +1,48 @@
++[
++  {
++    "schema": "listen-candidate-decisions-v2",
++    "sample_id": "example_0001",
++    "candidate_sha256": "REPLACE_WITH_DIGEST_OF_EXACT_CANDIDATE_ROW",
++    "coverage": {
++      "head_nod": [],
++      "head_shake": [],
++      "smile": [],
++      "laugh": [],
++      "frown": [],
++      "surprise": [],
++      "listener_vocalization": []
++    },
++    "unknown": {
++      "head_nod": [],
++      "head_shake": [],
++      "smile": [],
++      "laugh": [],
++      "frown": [],
++      "surprise": [],
++      "listener_vocalization": []
++    },
++    "coverage_sources": {
++      "head_nod": {},
++      "head_shake": {},
++      "smile": {},
++      "laugh": {},
++      "frown": {},
++      "surprise": {},
++      "listener_vocalization": {}
++    },
++    "events": [
++      {
++        "candidate_event_id": "REPLACE_WITH_CANDIDATE_EVENT_ID",
++        "decision": "unresolved",
++        "reason": "Review pending"
++      }
++    ],
++    "media_hashes": {
++      "target_video": "REPLACE_WITH_SHA256",
++      "target_audio": "REPLACE_WITH_SHA256"
++    },
++    "admission_record": {},
++    "human_verified": false,
++    "source_review_reference": ""
++  }
++]
+--- a/examples/p2_listen/evaluation_protocol.example.json
++++ b/examples/p2_listen/evaluation_protocol.example.json
+@@ -1,9 +1,37 @@
+ {
+-  "sample_ids": ["example_0001"],
+-  "sample_seeds": [137, 251],
+-  "train_seeds": [20261023],
+-  "arms": ["E0", "E1"],
++  "sample_ids": [
++    "example_0001"
++  ],
++  "sample_seeds": [
++    137,
++    251
++  ],
++  "train_seeds": [
++    20261023
++  ],
++  "arms": [
++    "E0",
++    "E1"
++  ],
+   "tiou_threshold": 0.3,
+   "bootstrap_seed": 20261023,
+-  "bootstrap_repeats": 2000
++  "bootstrap_repeats": 2000,
++  "schema": "p2-listen-evaluation-v2-visual6-audio1",
++  "taxonomy": [
++    "head_nod",
++    "head_shake",
++    "smile",
++    "laugh",
++    "frown",
++    "surprise",
++    "listener_vocalization"
++  ],
++  "K_train": [
++    "head_nod",
++    "listener_vocalization"
++  ],
++  "K_primary": [
++    "head_nod",
++    "listener_vocalization"
++  ]
+ }
+--- a/examples/p2_listen/labels.example.json
++++ b/examples/p2_listen/labels.example.json
+@@ -1,17 +1,56 @@
+ [
+   {
+-    "schema": "listen-events-v1", "sample_id": "example_0001",
+-    "time_origin": "clip_start_seconds", "duration_s": 6.4,
+-    "taxonomy": ["listener_vocalization", "head_nod"],
+-    "coverage": {"listener_vocalization": [[0.0, 6.4]], "head_nod": [[0.0, 6.4]]},
+-    "unknown": {"listener_vocalization": [], "head_nod": [[3.0, 3.5]]},
+-    "events": [
+-      {"type": "listener_vocalization", "start": 1.2, "end": 1.6, "description": "brief vocal feedback", "verification": "human"},
+-      {"type": "head_nod", "start": 4.0, "end": 4.6, "description": "one nod cycle", "verification": "human"}
++    "schema": "listen-events-v2-visual6-audio1",
++    "sample_id": "example_0001",
++    "time_origin": "clip_start_seconds",
++    "duration_s": 6.4,
++    "taxonomy": [
++      "head_nod",
++      "head_shake",
++      "smile",
++      "laugh",
++      "frown",
++      "surprise",
++      "listener_vocalization"
+     ],
++    "training_admitted": false,
++    "coverage": {
++      "head_nod": [],
++      "head_shake": [],
++      "smile": [],
++      "laugh": [],
++      "frown": [],
++      "surprise": [],
++      "listener_vocalization": []
++    },
++    "unknown": {
++      "head_nod": [],
++      "head_shake": [],
++      "smile": [],
++      "laugh": [],
++      "frown": [],
++      "surprise": [],
++      "listener_vocalization": []
++    },
++    "events": [],
+     "provenance": {
+-      "media_hashes": {"target_video": "REPLACE_WITH_SHA256", "target_audio": "REPLACE_WITH_SHA256"},
+-      "human_verified": true, "annotator_version": "REPLACE_WITH_VERSION", "mapping_version": "v1"
++      "media_hashes": {
++        "target_video": "REPLACE_WITH_SHA256",
++        "target_audio": "REPLACE_WITH_SHA256"
++      },
++      "human_verified": false,
++      "mapping_version": "listen-candidate-training-v2",
++      "admission_policy": "explicit-review-v1",
++      "coverage_sources": {
++        "head_nod": {},
++        "head_shake": {},
++        "smile": {},
++        "laugh": {},
++        "frown": {},
++        "surprise": {},
++        "listener_vocalization": {}
++      },
++      "admission_record": {}
+     }
+   }
+ ]
+--- /dev/null
++++ b/examples/p2_listen/legacy_v1/evaluation_protocol.example.json
+@@ -0,0 +1,9 @@
++{
++  "sample_ids": ["example_0001"],
++  "sample_seeds": [137, 251],
++  "train_seeds": [20261023],
++  "arms": ["E0", "E1"],
++  "tiou_threshold": 0.3,
++  "bootstrap_seed": 20261023,
++  "bootstrap_repeats": 2000
++}
+--- /dev/null
++++ b/examples/p2_listen/legacy_v1/labels.example.json
+@@ -0,0 +1,17 @@
++[
++  {
++    "schema": "listen-events-v1", "sample_id": "example_0001",
++    "time_origin": "clip_start_seconds", "duration_s": 6.4,
++    "taxonomy": ["listener_vocalization", "head_nod"],
++    "coverage": {"listener_vocalization": [[0.0, 6.4]], "head_nod": [[0.0, 6.4]]},
++    "unknown": {"listener_vocalization": [], "head_nod": [[3.0, 3.5]]},
++    "events": [
++      {"type": "listener_vocalization", "start": 1.2, "end": 1.6, "description": "brief vocal feedback", "verification": "human"},
++      {"type": "head_nod", "start": 4.0, "end": 4.6, "description": "one nod cycle", "verification": "human"}
++    ],
++    "provenance": {
++      "media_hashes": {"target_video": "REPLACE_WITH_SHA256", "target_audio": "REPLACE_WITH_SHA256"},
++      "human_verified": true, "annotator_version": "REPLACE_WITH_VERSION", "mapping_version": "v1"
++    }
++  }
++]
+--- /dev/null
++++ b/related/P2_七类事件监督迁移实现与验证.md
+@@ -0,0 +1,89 @@
++# P2 七类事件监督：迁移实现与验证
++
++2026-10-25。七类训练接口、候选导出、损失、缓存、恢复与评测已迁移；完成 CPU 验证。尚未加载真实训练基座、运行 GPU S0 或正式 E0/E1 训练，不能据此判断生成效果。
++
++## 当前入口
++
++- CLI：[`scripts/p2_listen.py`](../scripts/p2_listen.py)，默认使用 [`configs/p2_listen_event_v2.json`](../configs/p2_listen_event_v2.json)。
++- 配对声明：[`configs/p2_listen_event_pair_v2.json`](../configs/p2_listen_event_pair_v2.json)，不会自动启动训练。
++- 标签和 decisions 示例：[`examples/p2_listen`](../examples/p2_listen/README.md)。
++- 验证产物：[`experiments/p2_listen_v2_migration_validation`](../experiments/p2_listen_v2_migration_validation/)。原二类配置和历史验证目录保持不变；修改前文件及 SHA256 保存在该目录的 `before/` 和 `before_manifest.json`。
++
++依据为[七类迁移要求](P2_多类Backchannel打标整合与代码迁移说明.md)和[实验计划](P2_倾听事件监督实验计划.md)。本次落实既有设计，没有改变原始打标 prompt、模型、裁框、音轨或全量任务。
++
++## 模型、标签和损失
++
++固定类别顺序为 `head_nod, head_shake, smile, laugh, frown, surprise, listener_vocalization`。`contracts.py` 保存显式类别到模态表；`EventHeads` 是视觉 `Linear(6)` 和音频 `Linear(1)`，输入都是实际供给 LTX 的最终 U。上层仍返回七个按类别命名的张量，视觉 `[B,Tv]`、音频 `[B,Ta]`，允许 Tv 与 Ta 不同。所有原来的两元素类别 zip 已移除。
++
++标签 schema 为 `listen-events-v2-visual6-audio1`，实验版本为 `p2-listen-event-v2-visual6-audio1`。必须提供七类 coverage/unknown、coverage 来源、准入记录、mapping/接受政策版本；事件保存唯一 ID、原文、来源、核验和边界状态。未准入标签不能导入或产生已知训练 bin。覆盖不完整、unknown、censored、结构 padding 和尾部部分有效 bin 均屏蔽；投影按秒计算事件并集的占用率，不改变原始事件次数。
++
++配置 `events.K_train` 是请求监督的类别集合，必须遵守固定顺序，可为空。按 **train** 的已知支持统计正负占用，缺正例、缺负例或无覆盖的类别自动停用并记录原因；最终有效集合冻结在 `pair.json`、`run.json` 和 checkpoint identity 的 `K_train`，E0/E1 必须一致。后续评测的 `K_train` 应使用这个有效集合。此筛选不使用 dev/test，也不改变七个输出通道。
++
++每类 BCE 先按整个 optimizer step（全部 rank 与累积 micro-batch）的有效 bin 数归一化，再对当步有支持的启用类求均值。七类均有效时每类权重为 1/7。`pos_weight=min(Nneg/max(Npos,1),cap)`，仅从 train 冻结。全 unknown 时事件项是可反向的零项，AV/feature 仍训练。
++
++E0 的事件输入 detach，E1 回传 U；保留公共模块与事件头分别裁剪。S0 审计扩为七类逐类梯度和两种模态的 AV/feature/event 路径。
++
++## 从现有候选导出
++
++新命令只做 CPU 数据转换，使用当前原文整合的 `labels.candidate.jsonl`、对应 `review.json` 和 `observations.jsonl`。不重新推断类别、不去重第二次、不改词、不修边界、不加窗口偏移；输入时间已经是 clip-local 秒数。
++
++```bash
++cd /private/liqi_workspace/project_code/audio-driven-v5
++CUDA_VISIBLE_DEVICES='' /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python scripts/p2_listen.py export-labels \
++  --candidates experiments/listen_existing_fusion_verbatim_20261025/labels.candidate.jsonl \
++  --review experiments/listen_existing_fusion_verbatim_20261025/review.json \
++  --observations experiments/listen_existing_fusion_verbatim_20261025/observations.jsonl \
++  --output /tmp/p2_v2_draft_new
++```
++
++输出目录须不存在或为空。不传 `--decisions` 时输出未准入草稿：coverage 全空、所有训练 bin 未知、0条 accepted event。候选没有被删除，完整输入逐字节保存在 `sources/`，全部候选的映射和未决原因保存在 `audit.json`。
++
++有实际核验或已批准弱标签政策后，使用独立 decisions 文件，并以同一配置增加 `--decisions /path/to/decisions.json`，写入另一个新目录。每个 decisions 样本需要：
++
++- `schema=listen-candidate-decisions-v2`、`sample_id`、`candidate_sha256`。该 hash 是 `p2_listen.contracts.digest(完整候选样本对象)`，不是文件 hash；候选改动后旧 decisions 会拒绝使用。
++- 七类 `coverage` / `unknown`，以及 `coverage_sources`；非空 coverage 的来源包含 `reference` 和 `verification=human|weak_accepted`。必须实际检查覆盖，不能从稀疏候选自动生成全段负例。
++- 两路目标媒体 SHA256、`admission_record.reference`、`source_review_reference` 和布尔 `human_verified`。
++- `events` 内逐候选 `candidate_event_id`、`decision=accepted|rejected|unresolved`、`reason`。accepted 还需 `verification=human|weak_accepted`、`boundary_status=verified|weak_accepted|censored`、与候选相符的 `reviewed_flags`。
++
++接受事件必须已有且仅有一个合法类别、模态匹配、有有效边界。复合描述不会被自动拆分成多类；修改文字或边界需要上游产生新的、可追溯的候选版本。一个未提供 decision 的候选保持未决，其区间在相关类别屏蔽；不因整体准入而成为负例。未定位词保留原记录并保守屏蔽该段音频类；上游待核验观测按可用模态/类别/时间屏蔽，无法定位时保守扩大 unknown。`out_of_scope` 观测继续保存在源数据，不强行分类。
++
++`labels.json` 保存全部 canonical 标签/草稿，`labels.admitted.json` 单列已准入样本供 `import-labels` 使用，支持先核验少量样本。没有准入样本时后者为空，不能用于开训。`audit.json` 保存 `candidate_event_id → training_event_id` 和排除原因。接受事件的 `source` 保留完整原候选对象，含所有原描述、描述出处、时间证据和分歧标记。导出还保留对应 review 与全部原始观测的原文件及 hash。
++
++**当前50段验证：** [`sample50_final/summary.json`](../experiments/p2_listen_v2_migration_validation/sample50_final/summary.json) 记录175条候选、682条原始观测、2个未定位词；50段均未准入，接受事件0。仅验证适配和完整性，没有编造弱标签政策或人工核验结论。
++
++## 导入、缓存、恢复与推理
++
++`import-labels --labels /path/to/labels.json` 验证已准入七类 schema、固定 taxonomy、mapping/政策与配置一致、真实目标媒体 hash；dev/test 还要求事件、边界和已知 coverage 的人工核验。一个批次先全部验证再写 canonical。包含未准入草稿的批次会拒绝，不能只把原候选的布尔值改成 true 后导入。
++
++事件缓存签名包含新 schema、taxonomy 顺序、请求的 K_train、mapping/政策、完整标签与时间网格。标签或监督集合改变时事件缓存失效；同一代码/输入/布局条件下 H 缓存不受这些标签改动影响。输入媒体或布局改变仍正常失效。本次代码版本升级保留原有源码指纹检查，没有添加忽略旧缓存指纹的开关。
++
++checkpoint 增加显式实验版本、label schema 和 taxonomy；旧二类头、optimizer、旧 taxonomy 或改变的 run identity 均拒绝严格恢复。没有实现隐式 warm start，也没有使用旧权重启动新实验。
++
++推理仍只使用 speaker 音频、listener 首帧、固定文本和外部几何，读取七通道 probe，但不把标签、描述或 probe 输出作为生成控制输入。真实模型推理与梯度仍须在 GPU S0 验证。
++
++早期 `listen_labeling` 的二类 schema/validator 已隔离到 `legacy_contract.py`，保持它的历史 prompt、类别和导出含义。旧工具输出的 `listen-events-v1` 不能直接导入七类训练；这是显式版本拒绝，不会自动补五类负例。当前全量开放打标和原文整合不使用该旧训练接口。
++
++## 评测
++
++评测协议新增 `schema=p2-listen-evaluation-v2-visual6-audio1`、固定 `taxonomy`、`K_train` 和预先冻结的非空 `K_primary`。报告全部七类的监督状态、参考数量、有效/未知时长、F1，以及视觉类别集合/分数、音频 F1 和失败率。K_primary 必须是 K_train 的子集。
++
++未启用/未知类不以0混入主平均；预定主类缺参考正例时完整 macro 为 N/A，另列有参考正例的公共子集并明确类别。主集合只有一类时报告该类 `primary_f1`，`macro_f1` 为 null。配对差值与 bootstrap 使用冻结主集合；重复回应仍逐类一对一匹配，生成失败仍计 FN。
++
++边界诊断与计划同步为起点0.2/0.5秒容差，新增 offset MAE 和起止均在0.2秒内的比例；onset 容差命中也一对一，不能用一个预测重复命中多次参考。评测不使用训练头作为裁判。
++
++## 验证与下一步
++
++- P2 CPU 测试68项通过：[`unit_tests.json`](../experiments/p2_listen_v2_migration_validation/unit_tests.json)。覆盖原有隔离/恢复/采样检查及七类专项。
++- 合成5步梯度及严格恢复：[`cpu_audit.json`](../experiments/p2_listen_v2_migration_validation/cpu_audit.json)。逐类记录 E0/E1 到 U 的梯度，明确 `real_s0_completed=false`。
++- 两进程 CPU/Gloo：[`cpu_ddp.json`](../experiments/p2_listen_v2_migration_validation/cpu_ddp.json)，覆盖无标签 rank、稀有类全 mask、不同有效覆盖和累积归一化；与单进程有效 batch 比较，E0最大参数误差 `2.98e-8`、E1 `3.04e-7`（容差 `2e-5`）。
++- 旧打标客户端37项回归及原文整合10项回归通过；记录见 [`regressions.json`](../experiments/p2_listen_v2_migration_validation/regressions.json)；这些是工程回归，不是语义或边界准确率评估。
++
++复验命令：
++
++```bash
++CUDA_VISIBLE_DEVICES='' /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python scripts/check_p2_listen_code.py
++CUDA_VISIBLE_DEVICES='' /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python scripts/p2_listen.py audit --suite cpu --output /tmp/p2_v2_cpu_audit.json
++CUDA_VISIBLE_DEVICES='' /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python -m torch.distributed.run --standalone --nproc-per-node=2 scripts/check_p2_listen_cpu_ddp.py
++```
++
++下一阶段仍是少量真实媒体与标签准入 → 至少5步真实 GPU S0及完整生成 → pilot。尚未实现“全量原始模型响应 → 当前原文候选”的批量适配，也未将本次50段草稿变成训练集。七类代码完成不代表标签质量已合格或事件监督已改善生成。
+--- a/related/P2_倾听事件监督代码修改要求.md
++++ b/related/P2_倾听事件监督代码修改要求.md
+@@ -1,6 +1,6 @@
+ # P2 倾听事件监督：代码修改要求
+ 
+-> 2026-10-25衔接：修改旧二类实现请先读[当前打标、原文整合与七类代码迁移说明](P2_多类Backchannel打标整合与代码迁移说明.md)。该文核对了实际代码、当前≥384原框打标范围与原文保留规则；本文旧二类接口/历史整合规则不作为当前实现要求。七类训练实现仍待迁移。
++> 2026-10-25衔接：修改旧二类实现请先读[当前打标、原文整合与七类代码迁移说明](P2_多类Backchannel打标整合与代码迁移说明.md)。该文核对了实际代码、当前≥384原框打标范围与原文保留规则；本文旧二类接口/历史整合规则不作为当前实现要求。七类训练接口现已迁移并通过CPU验证，见[实现与验证记录](P2_七类事件监督迁移实现与验证.md)；正文中的二类实现状态为历史快照，真实GPU S0仍待完成。
+ 
+ 日期：2026-10-23。本文保留接口设计与验收要求；**独立实现及 CPU 验证已准备，真实模型 S0 待数据。** 实际路径、命令和与草案的差异见 [实现与运行说明](P2_倾听事件监督实现与运行.md)，下文的拟定接口不是当前 CLI 使用手册。
+ 
+--- a/related/P2_倾听事件监督实现与运行.md
++++ b/related/P2_倾听事件监督实现与运行.md
+@@ -1,6 +1,6 @@
+ # P2 倾听事件监督：代码准备与运行说明
+ 
+-日期：2026-10-23。当前状态：**独立代码、配置、数据接口及 CPU 验证已准备；等待用户提供真实数据，未运行真实 Omni/LTX 缓存、GPU S0 或正式训练。**
++初版：2026-10-23；更新：2026-10-25。当前状态：**七类训练接口和CPU验证已完成，50段已有候选已验证导出且保持未准入；未运行真实Omni/LTX缓存、GPU S0或正式训练。** 新增命令、准入记录格式与迁移证据见[七类实现与验证记录](P2_七类事件监督迁移实现与验证.md)。
+ 
+ 设计依据：[实验计划](P2_倾听事件监督实验计划.md)、[代码修改要求](P2_倾听事件监督代码修改要求.md)。总入口：[README](../README.md)。本次没有修改旧 v4 P2、v5 P3 或生产 QC4 筛查逻辑，没有挑选用户尚未提供的数据替代正式实验输入。
+ 
+@@ -8,12 +8,12 @@
+ 
+ | 部分 | 入口 | 当前实现 |
+ |---|---|---|
+-| 独立命令行 | [scripts/p2_listen.py](../scripts/p2_listen.py) | prepare、import-labels、cache、audit、train、generate、evaluate、report |
+-| 配置 | [基础配置](../configs/p2_listen_event_base.json)、[配对协议](../configs/p2_listen_event_pair.json) | E0/E1、固定基座/四层提取器、8 FPS/8 Hz、冻结 Omni/LTX；配对文件为声明，不自动启动两个训练 seed |
++| 独立命令行 | [scripts/p2_listen.py](../scripts/p2_listen.py) | prepare、export-labels、import-labels、cache、audit、train、generate、evaluate、report |
++| 配置 | [基础配置](../configs/p2_listen_event_v2.json)、[配对协议](../configs/p2_listen_event_pair_v2.json) | E0/E1、固定基座/四层提取器、8 FPS/8 Hz、冻结 Omni/LTX；配对文件为声明，不自动启动两个训练 seed |
+ | 数据与身份 | [contracts.py](../src/p2_listen/contracts.py)、[dataset.py](../src/p2_listen/dataset.py) | 输入和目标分离、媒体哈希、角色准入标记、连通身份跨集合检查、时长/帧率/尺寸核验 |
+-| 标签/时间轴 | [annotations.py](../src/p2_listen/annotations.py)、[layout.py](../src/p2_listen/layout.py) | 两类独立事件、coverage/unknown、soft occupancy、边界截断屏蔽、实际秒数聚合 |
++| 标签/时间轴 | [annotations.py](../src/p2_listen/annotations.py)、[layout.py](../src/p2_listen/layout.py) | 七类独立事件、显式准入、逐类coverage/unknown/K_train、soft occupancy、边界截断屏蔽、实际秒数聚合 |
+ | 缓存 | [features.py](../src/p2_listen/features.py)、[cache.py](../src/p2_listen/cache.py) | 分离 input/teacher/vae/text/events；原子落盘、身份与内容校验；输入缓存不依赖目标/标签 |
+-| 模型与事件梯度 | [model.py](../src/p2_listen/model.py)、[events.py](../src/p2_listen/events.py) | 复用旧 P2 Extractor；最终 U 上接小型事件头；E0 detach，E1 joint |
++| 模型与事件梯度 | [model.py](../src/p2_listen/model.py)、[events.py](../src/p2_listen/events.py) | 复用旧 P2 Extractor；最终 U 上接视觉六输出／音频一输出事件头；E0 detach，E1 joint |
+ | 训练/恢复 | [training.py](../src/p2_listen/training.py)、[多卡入口](../scripts/train_p2_listen_distributed.py) | 相同初始化/样本/噪声、global batch 事件分母、梯度累积、分组裁剪、严格恢复、STOP；单卡 S0 记录 AV/feature/event 到 U 的梯度 |
+ | LTX 与推理 | [runtime.py](../src/p2_listen/runtime.py)、[generation.py](../src/p2_listen/generation.py) | 冻结 DiT 反向、两模态 masked loss、两分支 U 的 native schedule CFG、source-only 推理、remove_u/audio_swap、首帧条件 |
+ | 评测 | [evaluation.py](../src/p2_listen/evaluation.py) | 独立标注的生成事件匹配、失败计 FN、unknown/censored、误触发、按组 bootstrap、配对报告 |
+@@ -25,14 +25,14 @@
+ - 新增必填 `grouping_ids`，记录双方参与者/session，用来检查跨 split 身份重复；不输入模型。
+ - 事件来源通过 `provenance.media_hashes` 绑定目标音视频，而非单一不明确的 `media_sha256`。
+ - `audit` 当前提供 `config/data/cpu` 三种 suite；细项隔离/时间/梯度/恢复由测试覆盖，真实单卡 S0 另记录梯度路径。未把设计中的每个细项都暴露成独立命令。
+-- 外部标注模型调用已有独立的 [Joy + 音频模型打标客户端及 Omni 对照入口](P2_倾听事件自动标注实现与运行.md)，支持人工修订后导入；目前只通过模拟 HTTP 与合成媒体验证，真实模型/数据联调待完成。QC4 自动挑样和自然度盲评仍由后续数据/评测工作完成，不把自己的事件头当裁判。
++- 历史二类标注客户端：[Joy + 音频模型打标客户端及 Omni 对照入口](P2_倾听事件自动标注实现与运行.md)，其二类schema已隔离保留，旧导出不能直接导入七类训练。当前候选使用原文整合结果，通过 `export-labels` 和独立 decisions 进入新schema。QC4 自动挑样和自然度盲评仍由后续数据/评测工作完成，不把自己的事件头当裁判。
+ - 正式 checkpoint 的 dev32 生成矩阵和后续第二个训练 seed 由明确命令运行；不在训练结束后自动占用 GPU。训练代码已有确定数据顺序与恢复，不承担全量自动实验调度。
+ 
+ ## 2. 当前验证证据与限制
+ 
+-- [unit_tests.json](../experiments/p2_listen_code_validation/unit_tests.json)：P2 专项 CPU 测试、实际 Python 版本、文件 SHA256。覆盖输入隔离、时间/unknown、缓存、梯度、恢复、CFG、临时媒体导入和事件评测。
+-- [cpu_audit.json](../experiments/p2_listen_code_validation/cpu_audit.json)：真实旧 P2 模块的小尺寸实例运行 5 步合成更新；E0 的事件到 U 梯度为 0，E1 的两个模态梯度非零；保存恢复后的下一步参数完全一致。
+-- [cpu_ddp.json](../experiments/p2_listen_code_validation/cpu_ddp.json)：2 个 Gloo CPU 进程，含梯度累积和不均标签覆盖；对照单进程有效 batch 的参数误差小于 `2e-5`。
++- [unit_tests.json](../experiments/p2_listen_v2_migration_validation/unit_tests.json)：P2 专项 CPU 测试、实际 Python 版本、文件 SHA256。覆盖输入隔离、时间/unknown、缓存、梯度、恢复、CFG、临时媒体导入和事件评测。
++- [cpu_audit.json](../experiments/p2_listen_v2_migration_validation/cpu_audit.json)：真实旧 P2 模块的小尺寸实例运行 5 步合成更新；E0 的事件到 U 梯度为 0，E1 的两个模态梯度非零；保存恢复后的下一步参数完全一致。
++- [cpu_ddp.json](../experiments/p2_listen_v2_migration_validation/cpu_ddp.json)：2 个 Gloo CPU 进程，含梯度累积和不均标签覆盖；对照单进程有效 batch 的参数误差小于 `2e-5`。
+ - 预定真实运行环境中的 PyAV、SoundFile、P2/LTX 模块与 `i2av_only` 配置已完成导入检查，没有加载预训练权重。
+ 
+ 这些检查**不是实际 Omni/LTX 的 S0**。真实数据到位后仍需验证：感知塔输出与网格的实际形状、VAE/音频端点支持、全尺寸显存、冻结 DiT 的真实梯度、一次完整生成与音视频质量。这些未知不以“测试通过”代替。
+@@ -43,7 +43,7 @@
+ 
+ 示例目录：[examples/p2_listen](../examples/p2_listen/README.md)。文件是占位格式，不是可训练数据。用户可先提供其现有清单/路径，后续由代码适配，不要求手工填写示例。
+ 
+-每段需要：speaker 音轨、listener 首帧、listener 目标视频及自身音轨、片段时长、双方参与者/session 来源、数据质量准入状态；事件起止与 unknown/coverage 可随后补充，但训练前必须有合法标签。
++每段需要：speaker 音轨、listener 首帧、listener 目标视频及自身音轨、片段时长、双方参与者/session 来源、数据质量准入状态；事件起止与 unknown/coverage 可随后补充，但训练前必须有带接受记录和覆盖来源的合法七类标签。
+ 
+ 当前 `prepare` 导入**已经切好且对齐的片段**：默认 25 FPS、512×512，时长完整，不超过对齐后的 201 帧 pilot 预算。它不会从原始长视频自动切窗或改 QC4 的生产规则。路径相对输入 JSON 所在目录解析；目标 `admitted=false` 会拒绝导入，防止占位样本进入实验。
+ 
+@@ -58,11 +58,11 @@
+ /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python scripts/p2_listen.py --help
+ /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python scripts/p2_listen.py audit --suite config
+ /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python scripts/check_p2_listen_code.py
+-CUDA_VISIBLE_DEVICES='' /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python scripts/p2_listen.py audit --suite cpu --output experiments/p2_listen_code_validation/cpu_audit.json
++CUDA_VISIBLE_DEVICES='' /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python scripts/p2_listen.py audit --suite cpu --output experiments/p2_listen_v2_migration_validation/cpu_audit.json
+ CUDA_VISIBLE_DEVICES='' /private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python -m torch.distributed.run --standalone --nproc-per-node=2 scripts/check_p2_listen_cpu_ddp.py
+ ```
+ 
+-测试会创建合成样本或临时媒体，并写入独立的 `experiments/p2_listen_code_validation/`。不会创建真实实验数据、调用外部模型服务或启动真实训练。
++测试会创建合成样本或临时媒体，并写入独立的 `experiments/p2_listen_v2_migration_validation/`。不会创建真实实验数据、调用外部模型服务或启动真实训练。
+ 
+ ## 5. 数据到位后的首个 S0 命令顺序
+ 
+--- a/related/P2_倾听事件监督实验计划.md
++++ b/related/P2_倾听事件监督实验计划.md
+@@ -1,6 +1,6 @@
+ # P2 倾听事件监督：首轮实验计划
+ 
+-> 2026-10-25衔接：修改旧二类实现请先读[当前打标、原文整合与七类代码迁移说明](P2_多类Backchannel打标整合与代码迁移说明.md)。该文核对了实际代码、当前≥384原框打标范围与原文保留规则；本文旧二类接口/历史整合规则不作为当前实现要求。七类训练实现仍待迁移。
++> 2026-10-25衔接：修改旧二类实现请先读[当前打标、原文整合与七类代码迁移说明](P2_多类Backchannel打标整合与代码迁移说明.md)。该文核对了实际代码、当前≥384原框打标范围与原文保留规则；本文旧二类接口/历史整合规则不作为当前实现要求。七类训练接口现已迁移并通过CPU验证，见[实现与验证记录](P2_七类事件监督迁移实现与验证.md)；正文中的二类实现状态为历史快照，真实GPU S0仍待完成。
+ 
+ 日期：2026-10-23；2026-10-24 更新为用户认可的 **六类视觉反应＋一类音频回应** 方案。已有开放事件小样本标注可用于映射与核验，见 [标注整合报告](../experiments/listen_open_merge_20261024T084253Z/integration_report.json)。七类结果映射已实现（见 §5.2），但不代表七维训练事件头已经实现或真实训练已经完成；实现状态以 [实现与运行说明](P2_倾听事件监督实现与运行.md) 和实际运行记录为准，尚无本方案的生成效果结论。
+ 
+--- a/related/P2_多类Backchannel打标整合与代码迁移说明.md
++++ b/related/P2_多类Backchannel打标整合与代码迁移说明.md
+@@ -1,6 +1,6 @@
+ # P2 多类 Backchannel：打标、原文整合与旧代码迁移说明
+ 
+-更新：2026-10-25。本文供修改旧版二类 backchannel 代码使用，汇总当前已经确认的要求，并区分已实现流程与待实现的训练接口。本次仅编写说明，没有修改训练代码或启动任务。
++更新：2026-10-25。本文记录迁移前的二类代码快照及七类验收要求。**七类代码迁移与CPU验证现已完成，当前接口和证据见[实现与验证记录](P2_七类事件监督迁移实现与验证.md)**；下文“待实现／旧代码”描述保留为原始需求记录。真实GPU S0和正式训练尚未启动，175条候选仍未准入。
+ 
+ **目标：开放式发现所有可识别的 listener 反应，保留模型原文和逐次时间；整理跨窗重复后，派生“六类视觉反应＋一类音频回应”的多标签训练目标。开放原文不受七类限制，七类是首轮训练接口，不是原始打标词表。**
+ 
+--- a/scripts/check_p2_listen_code.py
++++ b/scripts/check_p2_listen_code.py
+@@ -21,5 +21,5 @@
+                 failures=len(result.failures),errors=len(result.errors),skipped=len(result.skipped),passed=result.wasSuccessful(),
+                 cuda_visible_devices=os.environ["CUDA_VISIBLE_DEVICES"],real_models_loaded=False,real_training_started=False,
+                 code={str(p.relative_to(ROOT)):sha(p) for p in sorted(files)})
+-    atomic_json(ROOT/"experiments/p2_listen_code_validation/unit_tests.json",report)
++    atomic_json(ROOT/"experiments/p2_listen_v2_migration_validation/unit_tests.json",report)
+     raise SystemExit(0 if result.wasSuccessful() else 1)
+--- a/scripts/check_p2_listen_cpu_ddp.py
++++ b/scripts/check_p2_listen_cpu_ddp.py
+@@ -11,7 +11,7 @@
+ from p2_listen.config import load
+ from p2_listen.model import ListeningExtractor
+ from p2_listen.training import optimization_step
+-from p2_listen.contracts import atomic_json
++from p2_listen.contracts import EVENTS, atomic_json
+ 
+ 
+ def main():
+@@ -23,11 +23,16 @@
+         torch.manual_seed(17)
+         cfg,sample=fixture(load())
+         samples=[copy.deepcopy(sample) for _ in range(4)]
+-        samples[1][4]["head_nod"]["known"].fill_(False)
++        # Rank 1 has no event supervision; rank 0 has unequal per-class counts.
++        for index in (1,3):
++            for k in EVENTS: samples[index][4][k]["known"].fill_(False)
++        for sample_ in samples:
++            sample_[4]["surprise"]["known"].fill_(False)
++        samples[2][4]["frown"]["known"][:,2:]=False
+         samples[3][4]["listener_vocalization"]["known"][:,2:]=False
+         initial=ListeningExtractor(cfg,8)
+         t=dict(connector_lr=.001,feature_lr=.001,event_lr=.001,clip_norm=1.)
+-        weights=dict(head_nod=1.,listener_vocalization=1.)
++        weights={k:1. for k in EVENTS}
+         callback=lambda u,_:(u.video-.2).square().mean()+(u.audio+.1).square().mean()
+         results={}
+         for mode in ("probe_only","joint_event"):
+@@ -45,8 +50,8 @@
+             if maximum>2e-5:raise AssertionError(sorted(errors.items(),key=lambda x:-x[1])[:5])
+             results[mode]=dict(max_parameter_error=maximum,tolerance=2e-5)
+         if rank==0:
+-            results.update(cpu_only=True,world_size=2,unequal_label_counts=True,gradient_accumulation=True)
+-            output=Path(__file__).resolve().parents[1]/"experiments/p2_listen_code_validation/cpu_ddp.json"
++            results.update(cpu_only=True,world_size=2,unequal_label_counts=True,gradient_accumulation=True,taxonomy=list(EVENTS),rank_without_labels=True,rare_class_all_masked=True)
++            output=Path(__file__).resolve().parents[1]/"experiments/p2_listen_v2_migration_validation/cpu_ddp.json"
+             atomic_json(output,results);print(results,flush=True)
+     finally:dist.destroy_process_group()
+ 
+--- a/scripts/p2_listen.py
++++ b/scripts/p2_listen.py
+@@ -14,10 +14,13 @@
+     sub=p.add_subparsers(dest="command",required=True)
+     def command(name):
+         q=sub.add_parser(name)
+-        q.add_argument("--config",type=Path,default=ROOT/"configs/p2_listen_event_base.json")
++        q.add_argument("--config",type=Path,default=ROOT/"configs/p2_listen_event_v2.json")
+         return q
+     q=command("prepare");q.add_argument("--observations",type=Path,required=True);q.add_argument("--targets",type=Path,required=True)
+     q=command("import-labels");q.add_argument("--labels",type=Path,required=True)
++    q=command("export-labels");q.add_argument("--candidates",type=Path,required=True)
++    q.add_argument("--review",type=Path,required=True);q.add_argument("--observations",type=Path,required=True)
++    q.add_argument("--decisions",type=Path);q.add_argument("--output",type=Path,required=True)
+     q=command("cache");q.add_argument("--part",choices=("input","teacher","vae","text","events","all"),required=True)
+     q.add_argument("--split",choices=("train","dev","test"),default="train");q.add_argument("--device",default="cuda:0")
+     q.add_argument("--shards",type=int,default=1);q.add_argument("--shard-index",type=int,default=0)
+@@ -44,6 +47,9 @@
+     elif a.command=="import-labels":
+         from p2_listen.dataset import import_labels
+         result=import_labels(c,a.labels)
++    elif a.command=="export-labels":
++        from p2_listen.candidates import export_candidates
++        result=export_candidates(c,a.candidates,a.review,a.observations,a.output,a.decisions)
+     elif a.command=="audit":
+         if a.suite=="config":
+             result=dict(config_sha256=digest(c),resolved_output=str(path_at(c["output"])),extractor=extractor_config(c).to_dict(),models_loaded=False)
+@@ -82,7 +88,7 @@
+         from p2_listen.evaluation import evaluate
+         result=evaluate(read(a.protocol),rows(a.observations),rows(a.references),prediction_rows(a.predictions))
+         atomic_json(a.output,result)
+-        result={"output":str(a.output),"mean_delta_macro_f1":result["mean_delta_macro_f1"]}
++        result={"output":str(a.output),"mean_delta_primary_f1":result["mean_delta_primary_f1"],"mean_delta_macro_f1":result["mean_delta_macro_f1"]}
+     else:
+         from p2_listen.evaluation import report
+         report(read(a.results),a.output);result=dict(output=str(a.output))
+--- /dev/null
++++ b/src/listen_labeling/legacy_contract.py
+@@ -0,0 +1,88 @@
++"""Frozen v1 label validation/rasterization for the historical annotation client.
++
++Copied from pre-migration p2_listen/annotations.py on 2026-10-25.
++These labels cannot be imported as v2 seven-class training targets.
++"""
++import math
++import torch
++from p2_listen.contracts import positive
++
++EVENTS = ("listener_vocalization", "head_nod")
++
++
++def union(intervals):
++    out = []
++    for a, b in sorted(intervals):
++        if out and a <= out[-1][1]:
++            out[-1][1] = max(out[-1][1], b)
++        else:
++            out.append([a, b])
++    return out
++
++
++def intersection_length(intervals, a, b):
++    return sum(max(0., min(b, y) - max(a, x)) for x, y in union(intervals))
++
++
++def validate(label, obs):
++    allowed = {"schema", "sample_id", "time_origin", "duration_s", "taxonomy", "coverage", "unknown", "events", "provenance"}
++    if set(label) != allowed or label["schema"] != "listen-events-v1" or label["sample_id"] != obs["sample_id"]:
++        raise ValueError("Label schema/identity mismatch")
++    if label["time_origin"] != "clip_start_seconds" or label["taxonomy"] != list(EVENTS):
++        raise ValueError("Label time origin/taxonomy mismatch")
++    duration = positive(label["duration_s"], "label duration")
++    if abs(duration - obs["requested_duration_s"]) > 1e-6:
++        raise ValueError("Label duration mismatch")
++    def interval(pair):
++        if len(pair) != 2 or not all(isinstance(t, (float, int)) and math.isfinite(t) for t in pair):
++            raise ValueError("Invalid interval")
++        a, b = pair
++        if not 0 <= a < b <= duration + 1e-6:
++            raise ValueError("Interval outside real support")
++    for key in ("coverage", "unknown"):
++        if set(label[key]) != set(EVENTS):
++            raise ValueError("Explicit per-class coverage/unknown required")
++        for values in label[key].values():
++            for value in values:
++                interval(value)
++    for e in label["events"]:
++        if e["type"] not in EVENTS:
++            raise ValueError("Unknown event type")
++        interval([e["start"], e["end"]])
++        if intersection_length(label["coverage"][e["type"]], e["start"], e["end"]) < e["end"] - e["start"] - 1e-6:
++            raise ValueError("Event outside annotated coverage")
++    if not label["provenance"]:
++        raise ValueError("Annotation provenance required")
++    return label
++
++
++def rasterize(label, layout):
++    result = {}
++    for name, mod in zip(EVENTS, ("audio", "video")):
++        events = [e for e in label["events"] if e["type"] == name]
++        unknown = label["unknown"][name] + [[e["start"], e["end"]] for e in events if e.get("boundary_censored", False)]
++        spans = [[e["start"], e["end"]] for e in events if not e.get("boundary_censored", False)]
++        bins = layout[mod + "_intervals"]
++        y, mask = torch.zeros(bins.shape[:2]), torch.zeros(bins.shape[:2], dtype=torch.bool)
++        for b in range(bins.shape[0]):
++            for i, (a, z) in enumerate(bins[b].tolist()):
++                known = (z <= label["duration_s"] + 1e-6 and
++                         intersection_length(label["coverage"][name], a, z) >= z - a - 1e-6 and
++                         intersection_length(unknown, a, z) < 1e-8)
++                if known:
++                    mask[b, i] = True
++                    y[b, i] = intersection_length(spans, a, z) / (z - a)
++        result[name] = dict(y=y, known=mask)
++    return result
++
++
++def class_statistics(all_labels, cap=10):
++    result = {}
++    for name in EVENTS:
++        pos = sum(float(x[name]["y"][x[name]["known"]].sum()) for x in all_labels)
++        count = sum(int(x[name]["known"].sum()) for x in all_labels)
++        if count == 0 or pos <= 0 or pos >= count:
++            raise ValueError(f"Need known positive and negative training support for {name}")
++        result[name] = dict(positive=pos, negative=count-pos, count=count,
++                            pos_weight=min((count-pos) / pos, cap))
++    return result
+--- a/src/listen_labeling/pipeline.py
++++ b/src/listen_labeling/pipeline.py
+@@ -4,7 +4,7 @@
+ import fcntl
+ from pathlib import Path
+ from p2_listen.contracts import atomic_json, digest, read, rows, sha
+-from p2_listen.annotations import validate
++from .legacy_contract import validate
+ from . import VERSION
+ from .client import call, prompt, validate_endpoint
+ from .media import frames, prepare_row, waveform
+@@ -13,7 +13,7 @@
+ 
+ def code_hash():
+     paths = list(Path(__file__).parent.glob("*.py"))
+-    paths += [Path(__file__).parents[1] / "p2_listen" / n for n in ("annotations.py", "contracts.py")]
++    paths += [Path(__file__).parents[1] / "p2_listen" / n for n in ("contracts.py",)]
+     return digest({str(p.relative_to(Path(__file__).parents[1])): sha(p) for p in sorted(paths)})
+ 
+ 
+--- a/src/listen_labeling/schema.py
++++ b/src/listen_labeling/schema.py
+@@ -2,8 +2,7 @@
+ import copy
+ import json
+ import math
+-from p2_listen.contracts import EVENTS
+-from p2_listen.annotations import validate, intersection_length
++from .legacy_contract import EVENTS, validate, intersection_length
+ from . import VERSION
+ 
+ CLASSES = {"visual": ["head_nod"], "audio": ["listener_vocalization"], "omni": list(EVENTS)}
+--- a/src/p2_listen/__init__.py
++++ b/src/p2_listen/__init__.py
+@@ -1,3 +1,3 @@
+ """Fixed-prompt listening with shared-condition event supervision."""
+ 
+-VERSION = "p2-listen-event-v1"
++VERSION = "p2-listen-event-v2-visual6-audio1"
+--- a/src/p2_listen/annotations.py
++++ b/src/p2_listen/annotations.py
+@@ -1,7 +1,7 @@
+ """Interval labels retain unknown support; no implicit negatives from omissions."""
+ import math
+ import torch
+-from .contracts import EVENTS, positive
++from .contracts import EVENTS, LABEL_SCHEMA, TYPE_TO_MODALITY, class_subset, positive, safe_id
+ 
+ 
+ def union(intervals):
+@@ -18,20 +18,23 @@
+     return sum(max(0., min(b, y) - max(a, x)) for x, y in union(intervals))
+ 
+ 
+-def validate(label, obs):
+-    allowed = {"schema", "sample_id", "time_origin", "duration_s", "taxonomy", "coverage", "unknown", "events", "provenance"}
+-    if set(label) != allowed or label["schema"] != "listen-events-v1" or label["sample_id"] != obs["sample_id"]:
++def validate(label, obs, require_admitted=True):
++    allowed = {"schema", "sample_id", "time_origin", "duration_s", "taxonomy", "coverage", "unknown", "events", "provenance", "training_admitted"}
++    if set(label) != allowed or label["schema"] != LABEL_SCHEMA or label["sample_id"] != obs["sample_id"]:
+         raise ValueError("Label schema/identity mismatch")
++    safe_id(label["sample_id"])
++    if type(label["training_admitted"]) is not bool or require_admitted and not label["training_admitted"]:
++        raise ValueError("Candidate labels have not been admitted")
+     if label["time_origin"] != "clip_start_seconds" or label["taxonomy"] != list(EVENTS):
+         raise ValueError("Label time origin/taxonomy mismatch")
+     duration = positive(label["duration_s"], "label duration")
+     if abs(duration - obs["requested_duration_s"]) > 1e-6:
+         raise ValueError("Label duration mismatch")
+     def interval(pair):
+-        if len(pair) != 2 or not all(isinstance(t, (float, int)) and math.isfinite(t) for t in pair):
++        if not isinstance(pair, (list, tuple)) or len(pair) != 2 or not all(type(t) in (float, int) and math.isfinite(t) for t in pair):
+             raise ValueError("Invalid interval")
+         a, b = pair
+-        if not 0 <= a < b <= duration + 1e-6:
++        if not 0 <= a < b <= duration:
+             raise ValueError("Interval outside real support")
+     for key in ("coverage", "unknown"):
+         if set(label[key]) != set(EVENTS):
+@@ -45,22 +48,52 @@
+         interval([e["start"], e["end"]])
+         if intersection_length(label["coverage"][e["type"]], e["start"], e["end"]) < e["end"] - e["start"] - 1e-6:
+             raise ValueError("Event outside annotated coverage")
+-    if not label["provenance"]:
+-        raise ValueError("Annotation provenance required")
++        safe_id(e.get("event_id"))
++        if not isinstance(e.get("description"), str) or not isinstance(e.get("source"), dict) or not e["source"]:
++            raise ValueError("Original description and event source required")
++        if e.get("verification") not in ("human", "weak_accepted"):
++            raise ValueError("Event requires explicit human/weak acceptance")
++        if e.get("boundary_status") not in ("verified", "weak_accepted", "censored"):
++            raise ValueError("Explicit boundary status required")
++        if e.get("boundary_censored", False) != (e["boundary_status"] == "censored"):
++            raise ValueError("Inconsistent censored boundary")
++    ids = [e["event_id"] for e in label["events"]]
++    if len(set(ids)) != len(ids):
++        raise ValueError("Duplicate training event ID")
++    p = label["provenance"]
++    for key in ("mapping_version", "admission_policy"):
++        if not isinstance(p.get(key), str) or not p[key].strip():
++            raise ValueError(f"Annotation {key} required")
++    sources = p.get("coverage_sources", {})
++    if set(sources) != set(EVENTS):
++        raise ValueError("Per-class coverage sources required")
++    for k in EVENTS:
++        if label["coverage"][k] and (not isinstance(sources[k], dict) or not sources[k].get("reference") or
++                                    sources[k].get("verification") not in ("human", "weak_accepted")):
++            raise ValueError("Known coverage requires explicit reviewed evidence")
++    if label["training_admitted"] and (not isinstance(p.get("admission_record"), dict) or not p["admission_record"].get("reference")):
++        raise ValueError("Admission requires a recorded decision, not just a boolean")
+     return label
+ 
+ 
+-def rasterize(label, layout):
++def rasterize(label, layout, k_train=EVENTS):
++    enabled = class_subset(k_train)
+     result = {}
+-    for name, mod in zip(EVENTS, ("audio", "video")):
++    for name in EVENTS:
++        mod = TYPE_TO_MODALITY[name]
+         events = [e for e in label["events"] if e["type"] == name]
+         unknown = label["unknown"][name] + [[e["start"], e["end"]] for e in events if e.get("boundary_censored", False)]
+         spans = [[e["start"], e["end"]] for e in events if not e.get("boundary_censored", False)]
+         bins = layout[mod + "_intervals"]
+-        y, mask = torch.zeros(bins.shape[:2]), torch.zeros(bins.shape[:2], dtype=torch.bool)
++        y = torch.zeros(bins.shape[:2], device=bins.device)
++        mask = torch.zeros(bins.shape[:2], device=bins.device, dtype=torch.bool)
++        supported = torch.zeros(bins.shape[:2], device=bins.device)
++        valid = layout[mod + "_valid"] & layout.get(mod + "_target_valid", layout[mod + "_valid"])
++        supported.scatter_add_(1, layout[mod + "_groups"], valid.to(supported.dtype))
+         for b in range(bins.shape[0]):
+             for i, (a, z) in enumerate(bins[b].tolist()):
+-                known = (z <= label["duration_s"] + 1e-6 and
++                known = (name in enabled and label.get("training_admitted") is True and supported[b, i] > 0 and 0 <= a < z and
++                         z <= label["duration_s"] + 1e-6 and
+                          intersection_length(label["coverage"][name], a, z) >= z - a - 1e-6 and
+                          intersection_length(unknown, a, z) < 1e-8)
+                 if known:
+@@ -70,13 +103,37 @@
+     return result
+ 
+ 
+-def class_statistics(all_labels, cap=10):
++def class_statistics(all_labels, cap=10, k_train=EVENTS):
++    enabled = class_subset(k_train)
+     result = {}
+     for name in EVENTS:
+         pos = sum(float(x[name]["y"][x[name]["known"]].sum()) for x in all_labels)
+         count = sum(int(x[name]["known"].sum()) for x in all_labels)
+-        if count == 0 or pos <= 0 or pos >= count:
+-            raise ValueError(f"Need known positive and negative training support for {name}")
++        reason = ("not_requested" if name not in enabled else "no_known_support" if count == 0 else
++                  "no_positive_support" if pos <= 0 else "no_negative_support" if pos >= count else None)
+         result[name] = dict(positive=pos, negative=count-pos, count=count,
+-                            pos_weight=min((count-pos) / pos, cap))
++                            enabled=reason is None, disabled_reason=reason,
++                            pos_weight=min((count-pos) / max(pos, 1.), cap) if reason is None else 1.)
+     return result
++
++
++def mask_classes(labels, k_train):
++    """Apply the train-frozen effective set without mutating the cached labels."""
++    enabled = class_subset(k_train)
++    return {k: dict(y=labels[k]["y"], known=labels[k]["known"] if k in enabled else torch.zeros_like(labels[k]["known"]))
++            for k in EVENTS}
++
++
++def validate_contract(label, cfg):
++    for key in ("mapping_version", "admission_policy"):
++        if label["provenance"][key] != cfg["events"][key]:
++            raise ValueError(f"Label/config {key} mismatch")
++
++
++def validate_reference(label):
++    if label["provenance"].get("human_verified") is not True:
++        raise ValueError("Dev/test references require human verification")
++    if any(e["verification"] != "human" or e["boundary_status"] == "weak_accepted" for e in label["events"]):
++        raise ValueError("Dev/test events and boundaries require human verification")
++    if any(label["coverage"][k] and label["provenance"]["coverage_sources"][k].get("verification") != "human" for k in EVENTS):
++        raise ValueError("Dev/test known coverage requires human verification")
+--- a/src/p2_listen/audit.py
++++ b/src/p2_listen/audit.py
+@@ -8,6 +8,7 @@
+ from .layout import make_layout
+ from .model import ListeningExtractor
+ from .events import normalized_event_loss
++from .contracts import EVENTS, TYPE_TO_MODALITY
+ from .training import optimization_step, save_checkpoint, checked_checkpoint, restore_checkpoint, rng_state
+ 
+ 
+@@ -25,8 +26,8 @@
+     for mod in ("video","audio"):
+         targets[mod]=torch.randn(1,layout[mod+"_valid"].shape[1],8)
+         targets[mod+"_valid"]=layout[mod+"_valid"]
+-    labels={"listener_vocalization":dict(y=torch.tensor([[0.,1.,0.,1.,0.,0.,1.,0.]]),known=torch.ones(1,8,dtype=torch.bool)),
+-            "head_nod":dict(y=torch.tensor([[0.,1.,0.,1.]]),known=torch.ones(1,4,dtype=torch.bool))}
++    labels={k: dict(y=torch.tensor([[0.,1.,0.,1.] if TYPE_TO_MODALITY[k] == "video" else [0.,1.,0.,1.,0.,0.,1.,0.]]),
++                    known=torch.ones(1, 4 if TYPE_TO_MODALITY[k] == "video" else 8, dtype=torch.bool)) for k in EVENTS}
+     return config,(condition,layout,targets,None,labels)
+ 
+ 
+@@ -36,7 +37,7 @@
+     cfg,sample=fixture(c)
+     initial=ListeningExtractor(cfg,8)
+     t=dict(connector_lr=1e-3,feature_lr=1e-3,event_lr=1e-3,clip_norm=1.)
+-    weights={"head_nod":1.,"listener_vocalization":1.}
++    weights={k:1. for k in EVENTS}
+     callback=lambda u,_: (u.video-0.2).square().mean()+(u.audio+0.1).square().mean()
+     evidence={}
+     models={}
+@@ -52,7 +53,11 @@
+         norms=[0. if g is None else float(g.norm()) for g in grad]
+         if mode=="probe_only" and any(norms): raise AssertionError("Probe gradient leaked")
+         if mode=="joint_event" and not all(x>0 for x in norms): raise AssertionError("Event gradient missing")
+-        evidence[mode]=dict(event_to_u_norms=norms)
++        per_class={}
++        for k in EVENTS:
++            grad_k=torch.autograd.grad(result["event_sums"][k],[result["u"].video,result["u"].audio],allow_unused=True,retain_graph=True)
++            per_class[k]=[0. if g is None else float(g.norm()) for g in grad_k]
++        evidence[mode]=dict(event_to_u_norms=norms,event_to_u_per_class=per_class)
+         models[mode]=model
+         if mode=="joint_event":
+             with tempfile.TemporaryDirectory() as tmp:
+--- /dev/null
++++ b/src/p2_listen/candidates.py
+@@ -0,0 +1,175 @@
++"""CPU-only export of immutable open candidates to explicitly reviewed training labels.
++
++This adapter neither classifies descriptions nor resolves timing/content disputes.
++Without a separate decision file it emits unadmitted, entirely unknown drafts.
++"""
++import copy
++import math
++from pathlib import Path
++import shutil
++
++from .contracts import (EVENTS, VISUAL_TYPES, LABEL_SCHEMA, TYPE_TO_MODALITY,
++                        atomic_json, digest, positive, read, rows, safe_id, sha)
++from .annotations import validate, union
++
++MAPPING_VERSION = "listen-candidate-training-v2"
++CANDIDATE_SCHEMA = "listen-existing-result-fusion-verbatim-v2"
++DECISION_SCHEMA = "listen-candidate-decisions-v2"
++
++
++def valid_time(event, duration):
++    a, b = event.get("start"), event.get("end")
++    return all(type(v) in (float, int) and math.isfinite(v) for v in (a, b)) and 0 <= a < b <= duration
++
++
++def uncertain_classes(event):
++    classes = [k for k in EVENTS if k in event.get("categories", [])]
++    return classes or (list(VISUAL_TYPES) if event.get("modality") == "visual" else
++                       ["listener_vocalization"] if event.get("modality") == "audio" else list(EVENTS))
++
++
++def convert_sample(candidate, cfg, decision=None, raw=None):
++    if candidate.get("schema") != CANDIDATE_SCHEMA:
++        raise ValueError("Expected current verbatim candidates, not legacy merged labels")
++    sid = safe_id(candidate["sample_id"])
++    duration = positive(candidate["duration_s"], "candidate duration")
++    events = candidate["events"]
++    ids = [safe_id(e["event_id"]) for e in events]
++    if len(ids) != len(set(ids)):
++        raise ValueError("Duplicate candidate event ID")
++    if cfg["events"]["mapping_version"] != MAPPING_VERSION:
++        raise ValueError("Unsupported candidate adapter mapping version")
++    d = decision or {}
++    if decision is not None:
++        allowed = {"schema", "sample_id", "candidate_sha256", "coverage", "unknown", "coverage_sources",
++                   "events", "media_hashes", "admission_record", "human_verified", "source_review_reference"}
++        if set(d) != allowed or d["schema"] != DECISION_SCHEMA or d["sample_id"] != sid or d["candidate_sha256"] != digest(candidate):
++            raise ValueError("Decision schema or candidate identity differs")
++        if not d["source_review_reference"] or not d["admission_record"].get("reference"):
++            raise ValueError("Explicit source review and admission record required")
++        if set(d["media_hashes"]) != {"target_video", "target_audio"} or not all(
++                isinstance(v, str) and len(v) == 64 and all(c in "0123456789abcdef" for c in v) for v in d["media_hashes"].values()):
++            raise ValueError("Decisions must bind target media SHA256 hashes")
++        if type(d["human_verified"]) is not bool:
++            raise ValueError("human_verified must be boolean")
++    decisions = {e["candidate_event_id"]: e for e in d.get("events", [])}
++    if len(decisions) != len(d.get("events", [])) or set(decisions) - set(ids):
++        raise ValueError("Duplicate or unknown event decision")
++    coverage = copy.deepcopy(d.get("coverage", {k: [] for k in EVENTS}))
++    unknown = copy.deepcopy(d.get("unknown", {k: [] for k in EVENTS}))
++    if set(coverage) != set(EVENTS) or set(unknown) != set(EVENTS):
++        raise ValueError("Explicit seven-class coverage/unknown required")
++    selected, mapping, excluded = [], [], []
++
++    def mask_event(event):
++        span = [event["start"], event["end"]] if valid_time(event, duration) else [0., duration]
++        for k in uncertain_classes(event):
++            unknown[k].append(span)
++
++    for event in events:
++        eid = event["event_id"]
++        choice = decisions.get(eid)
++        status = "unresolved" if choice is None else choice.get("decision")
++        if status not in ("accepted", "rejected", "unresolved"):
++            raise ValueError("Unknown candidate decision")
++        if choice is not None and not choice.get("reason"):
++            raise ValueError("Candidate decision reason required")
++        reason = "no_explicit_decision" if choice is None else choice["reason"]
++        categories = event.get("categories", [])
++        valid_category = len(categories) == 1 and categories[0] in EVENTS
++        valid_modality = valid_category and TYPE_TO_MODALITY[categories[0]] == {"visual": "video", "audio": "audio"}.get(event.get("modality"))
++        if status == "accepted":
++            allowed = {"candidate_event_id", "decision", "reason", "verification", "boundary_status", "reviewed_flags"}
++            if set(choice) != allowed or not valid_modality or not valid_time(event, duration):
++                raise ValueError("Accepted candidate requires one existing category, matching modality and valid clip-local time")
++            if sorted(choice["reviewed_flags"]) != sorted(event.get("review_flags", [])):
++                raise ValueError("Every candidate review flag must be explicitly reviewed")
++            training_id = "train-" + digest([sid, eid, MAPPING_VERSION])[:24]
++            selected.append(dict(event_id=training_id, type=categories[0], start=event["start"], end=event["end"],
++                                 description=event["description"], text=event.get("text"),
++                                 verification=choice["verification"], boundary_status=choice["boundary_status"],
++                                 boundary_censored=choice["boundary_status"] == "censored",
++                                 source=copy.deepcopy(event), admission=copy.deepcopy(choice)))
++        else:
++            training_id = None
++            excluded.append(dict(candidate_event_id=eid, status=status, reason=reason))
++            if status == "unresolved":
++                mask_event(event)
++        mapping.append(dict(sample_id=sid, candidate_event_id=eid, training_event_id=training_id,
++                            status=status, reason=reason))
++
++    # Unlocated words cannot silently become negative time; keep the entire audio
++    # class unknown until a new upstream candidate revision supplies their bounds.
++    failures = candidate.get("automatic_fusion", {}).get("alignment_failures", [])
++    if failures:
++        unknown["listener_vocalization"].append([0., duration])
++        excluded.append(dict(status="unresolved", reason="unlocated_words", evidence=copy.deepcopy(failures)))
++    raw_events = {e.get("event_id", e.get("id")): e for e in (raw or {}).get("events", [])}
++    for pending in candidate.get("unresolved_observations", []):
++        if pending.get("reason") != "out_of_scope":
++            mask_event(raw_events.get(pending.get("observation_id"), {}))
++            excluded.append(dict(status="unresolved", reason="upstream_observation", evidence=copy.deepcopy(pending)))
++    # Validate interval data before merging unknown spans: no silent correction.
++    label = dict(schema=LABEL_SCHEMA, sample_id=sid, time_origin="clip_start_seconds", duration_s=duration,
++                 taxonomy=list(EVENTS), coverage=coverage, unknown=unknown, events=selected,
++                 training_admitted=decision is not None,
++                 provenance=dict(mapping_version=MAPPING_VERSION, admission_policy=cfg["events"]["admission_policy"],
++                     candidate_sha256=digest(candidate), decision_sha256=digest(decision),
++                     media_hashes=copy.deepcopy(d.get("media_hashes", {})), human_verified=d.get("human_verified", False),
++                     coverage_sources=copy.deepcopy(d.get("coverage_sources", {k: {} for k in EVENTS})),
++                     admission_record=copy.deepcopy(d.get("admission_record", {})),
++                     source_review_reference=d.get("source_review_reference")))
++    validate(label, dict(sample_id=sid, requested_duration_s=duration), require_admitted=False)
++    label["unknown"] = {k: union(unknown[k]) for k in EVENTS}
++    return label, dict(sample_id=sid, mapping=mapping, excluded=excluded)
++
++
++def export_candidates(cfg, candidates_path, review_path, observations_path, output, decisions_path=None):
++    candidates = rows(candidates_path)
++    raw = {r["sample_id"]: r for r in rows(observations_path)}
++    review = read(review_path)
++    review_rows = {r["sample_id"]: r for r in review["samples"]}
++    ids = {r["sample_id"] for r in candidates}
++    if set(raw) != ids or set(review_rows) != ids or len(review_rows) != len(review["samples"]):
++        raise ValueError("Candidates, raw observations and review must cover identical sample IDs")
++    decisions = {} if decisions_path is None else {r["sample_id"]: r for r in rows(decisions_path)}
++    if set(decisions) - ids:
++        raise ValueError("Decision sample absent from candidates")
++    sources = {"candidates" + Path(candidates_path).suffix: Path(candidates_path), "review.json": Path(review_path),
++               "observations" + Path(observations_path).suffix: Path(observations_path)}
++    if decisions_path is not None:
++        sources["decisions" + Path(decisions_path).suffix] = Path(decisions_path)
++    hashes = {name: sha(p) for name, p in sources.items()}
++    labels, audits = [], []
++    for candidate in candidates:
++        sid = candidate["sample_id"]
++        if raw[sid]["duration_s"] != candidate["duration_s"] or review_rows[sid]["duration_s"] != candidate["duration_s"]:
++            raise ValueError("Source durations differ")
++        if review_rows[sid]["events"] != candidate["events"]:
++            raise ValueError("Review and candidate event identities differ")
++        label, audit = convert_sample(candidate, cfg, decisions.get(sid), raw[sid])
++        label["provenance"]["source_files"] = hashes
++        labels.append(label); audits.append(audit)
++    out = Path(output)
++    if out.exists() and any(out.iterdir()):
++        raise FileExistsError("Export requires an empty output directory")
++    out.mkdir(parents=True, exist_ok=True)
++    (out / "sources").mkdir(exist_ok=True)
++    for name, p in sources.items():
++        shutil.copyfile(p, out / "sources" / name)
++        if sha(out / "sources" / name) != hashes[name] or sha(p) != hashes[name]:
++            raise ValueError("Source changed during export")
++    atomic_json(out / "labels.json", labels)
++    atomic_json(out / "labels.admitted.json", [l for l in labels if l["training_admitted"]])
++    atomic_json(out / "audit.json", audits)
++    summary = dict(schema=LABEL_SCHEMA, mapping_version=MAPPING_VERSION, taxonomy=list(EVENTS), K_train=cfg["events"]["K_train"],
++                   source_files=hashes, samples=len(labels), candidate_events=sum(len(c["events"]) for c in candidates),
++                   preserved_observations=sum(len(r["events"]) for r in raw.values()),
++                   admitted_samples=sum(l["training_admitted"] for l in labels),
++                   accepted_events=sum(len(l["events"]) for l in labels),
++                   unresolved_words=sum(len(c.get("automatic_fusion", {}).get("alignment_failures", [])) for c in candidates),
++                   per_class={k: dict(events=sum(e["type"] == k for l in labels for e in l["events"]),
++                                      coverage_seconds=sum(b-a for l in labels for a,b in union(l["coverage"][k]))) for k in EVENTS},
++                   raw_preserved=True, real_training_started=False)
++    atomic_json(out / "summary.json", summary)
++    return summary
+--- a/src/p2_listen/config.py
++++ b/src/p2_listen/config.py
+@@ -3,9 +3,9 @@
+ from pathlib import Path
+ 
+ from . import VERSION
+-from .contracts import ROOT, path_at, read, positive, sha
++from .contracts import ROOT, EVENTS, LABEL_SCHEMA, class_subset, path_at, read, positive, sha
+ 
+-DEFAULT = ROOT / "configs/p2_listen_event_base.json"
++DEFAULT = ROOT / "configs/p2_listen_event_v2.json"
+ 
+ 
+ def load(path=DEFAULT):
+@@ -22,23 +22,29 @@
+     for key in ("global_batch", "steps", "warmup_steps", "save_every"):
+         if type(t[key]) is not int:
+             raise ValueError(key + " must be integer")
+-    if c["events"]["types"] != ["listener_vocalization", "head_nod"] or c["generation"]["u_in_cfg"] != "both_branches":
++    if c["events"]["types"] != list(EVENTS) or c["generation"]["u_in_cfg"] != "both_branches":
+         raise ValueError("Unsupported event/CFG protocol")
++    if c["events"].get("schema") != LABEL_SCHEMA:
++        raise ValueError("Seven-class label schema required; v1 is not a resume source")
++    class_subset(c["events"].get("K_train"))
++    for key in ("mapping_version", "admission_policy"):
++        if not isinstance(c["events"].get(key), str) or not c["events"][key].strip():
++            raise ValueError(f"Explicit {key} required")
+     for key in ("weight", "head_width", "pos_weight_cap"):
+         positive(c["events"][key], key)
+     if type(c["events"]["head_width"]) is not int:
+         raise ValueError("head_width must be integer")
+     if c["training"].get("weight_decay") != 0:
+-        raise ValueError("v1 paired protocol requires weight_decay=0")
++        raise ValueError("v2 paired protocol requires weight_decay=0")
+     for key in ("feature_video_weight", "feature_audio_weight", "av_weight"):
+         if c["extractor"].get(key, 1) != 1:
+-            raise ValueError("v1 base loss weights are fixed to 1")
++            raise ValueError("v2 base loss weights are fixed to 1")
+     for key in ("steps", "video_cfg", "audio_cfg"):
+         positive(c["generation"][key], key)
+     if type(c["generation"]["steps"]) is not int:
+         raise ValueError("sampling steps must be integer")
+     if c["extractor"].get("vision_fps") != 8 or c["extractor"].get("audio_hz") != 8:
+-        raise ValueError("v1 time contract requires 8 FPS / 8 Hz")
++        raise ValueError("v2 time contract requires 8 FPS / 8 Hz")
+     return c
+ 
+ 
+--- a/src/p2_listen/contracts.py
++++ b/src/p2_listen/contracts.py
+@@ -8,7 +8,17 @@
+ import tempfile
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+-EVENTS = ("listener_vocalization", "head_nod")
++VISUAL_TYPES = ("head_nod", "head_shake", "smile", "laugh", "frown", "surprise")
++AUDIO_TYPES = ("listener_vocalization",)
++EVENTS = VISUAL_TYPES + AUDIO_TYPES
++TYPE_TO_MODALITY = {**dict.fromkeys(VISUAL_TYPES, "video"), **dict.fromkeys(AUDIO_TYPES, "audio")}
++LABEL_SCHEMA = "listen-events-v2-visual6-audio1"
++
++
++def class_subset(value, name="K_train"):
++    if not isinstance(value, (list, tuple)) or list(value) != [k for k in EVENTS if k in value]:
++        raise ValueError(f"{name} must be a unique subset in fixed taxonomy order")
++    return tuple(value)
+ 
+ 
+ def digest(value):
+--- a/src/p2_listen/dataset.py
++++ b/src/p2_listen/dataset.py
+@@ -71,17 +71,21 @@
+ 
+ 
+ def import_labels(cfg, labels_path):
+-    from .annotations import validate
++    from .annotations import validate, validate_contract, validate_reference
+     observations = {o["sample_id"]: o for o in load_observations(cfg)}
+     targets = load_targets(cfg, list(observations.values()))
+     imported = []
+     for label in rows(labels_path):
+         sid = label["sample_id"]
+         validate(label, observations[sid])
++        validate_contract(label, cfg)
+         if label["provenance"].get("media_hashes") != targets[sid]["media_hashes"]:
+             raise ValueError("Labels must bind both target media hashes")
+-        if observations[sid]["experiment_split"] != "train" and label["provenance"].get("human_verified") is not True:
+-            raise ValueError("Dev/test reference labels require human verification")
++        if observations[sid]["experiment_split"] != "train":
++            validate_reference(label)
++        imported.append(label)
++    # Validate the entire batch before committing any new canonical labels.
++    for label in imported:
++        sid = label["sample_id"]
+         atomic_json(path_at(cfg["output"]) / "labels/canonical" / (sid + ".json"), label, immutable=True)
+-        imported.append(sid)
+-    return dict(imported=imported, input_sha256=sha(labels_path))
++    return dict(imported=[l["sample_id"] for l in imported], input_sha256=sha(labels_path))
+--- a/src/p2_listen/evaluation.py
++++ b/src/p2_listen/evaluation.py
+@@ -2,8 +2,8 @@
+ import math
+ import random
+ from collections import defaultdict
+-from .contracts import EVENTS, atomic_json
+-from .annotations import union, intersection_length
++from .contracts import EVENTS, VISUAL_TYPES, class_subset, atomic_json
++from .annotations import union, intersection_length, validate_reference
+ 
+ 
+ def subtract(spans, holes):
+@@ -49,14 +49,22 @@
+     negatives=subtract(support,truth)
+     neg_seconds=sum(y-x for x,y in negatives)
+     false_seconds=sum(intersection_length(negatives,x,y) for x,y in union(all_pred))
++    def onset_hits(tolerance):
++        if not truth or not pred:
++            return 0
++        eligible=np.array([[abs(t[0]-p[0])<=tolerance for p in pred] for t in truth], dtype=float)
++        ri,pi=linear_sum_assignment(-eligible)
++        return int(eligible[ri,pi].sum())
+     return dict(tp=len(pairs),fp=len(pred)-len(pairs),fn=len(truth)-len(pairs),reference_count=len(truth),
+                 onset_error_sum=sum(abs(truth[i][0]-pred[j][0]) for i,j in pairs),
+                 tiou_sum=sum(iou(truth[i],pred[j]) for i,j in pairs),
+-                onset_hits_025=sum(any(abs(t[0]-p[0])<=.25 for p in pred) for t in truth),
+-                onset_hits_050=sum(any(abs(t[0]-p[0])<=.5 for p in pred) for t in truth),
++                offset_error_sum=sum(abs(truth[i][1]-pred[j][1]) for i,j in pairs),
++                boundary_hits_020=sum(abs(truth[i][0]-pred[j][0])<=.2 and abs(truth[i][1]-pred[j][1])<=.2 for i,j in pairs),
++                onset_hits_020=onset_hits(.2), onset_hits_050=onset_hits(.5),
+                 negative_seconds=neg_seconds,false_seconds=false_seconds,
+                 false_events=sum(intersection_length(negatives,*p)>0 and not any(iou(p,t)>0 for t in truth) for p in pred),
+                 evaluated_seconds=sum(y-x for x,y in support),excluded_reference=len(excluded),
++                unknown_seconds=label["duration_s"]-sum(y-x for x,y in support),
+                 censored_predictions=len(all_pred)-len(pred))
+ 
+ 
+@@ -65,25 +73,49 @@
+     return dict(counts,f1=2*tp/(2*tp+fp+fn) if tp+fn>0 else None,
+                 precision=tp/(tp+fp) if tp+fp else None,recall=tp/(tp+fn) if tp+fn else None,
+                 onset_mae=counts["onset_error_sum"]/tp if tp else None,tiou=counts["tiou_sum"]/tp if tp else None,
++                offset_mae=counts["offset_error_sum"]/tp if tp else None,
++                boundary_accuracy_020=counts["boundary_hits_020"]/tp if tp else None,
++                onset_recall_020=counts["onset_hits_020"]/(tp+fn) if tp+fn else None,
++                onset_recall_050=counts["onset_hits_050"]/(tp+fn) if tp+fn else None,
+                 false_occupancy=counts["false_seconds"]/counts["negative_seconds"] if counts["negative_seconds"] else None,
+                 false_events_per_minute=60*counts["false_events"]/counts["negative_seconds"] if counts["negative_seconds"] else None)
+ 
+ 
+-def total_metrics(per_clip):
++def total_metrics(per_clip, primary, enabled):
+     result={}
+     for name in EVENTS:
+         values=defaultdict(float)
+         for row in per_clip:
+             for k,v in row[name].items(): values[k]+=v
+         result[name]=summarize(values)
+-    scores=[result[k]["f1"] for k in EVENTS]
+-    result["macro_f1"]=sum(scores)/len(scores) if all(x is not None for x in scores) else None
++        result[name]["supervision_enabled"] = name in enabled
++        result[name]["primary"] = name in primary
++    def macro(names):
++        scores=[result[k]["f1"] for k in names]
++        return sum(scores)/len(scores) if scores and all(x is not None for x in scores) else None
++    result["primary_f1"]=macro(primary)
++    result["primary_metric"]=primary[0]+"_f1" if len(primary)==1 else "macro_f1"
++    result["macro_f1"]=result["primary_f1"] if len(primary)>1 else None
++    result["primary_classes"]=list(primary)
++    visual=[k for k in primary if k in VISUAL_TYPES]
++    result["visual_primary_classes"]=visual
++    result["visual_macro_f1"]=macro(visual)
++    result["audio_f1"]=result["listener_vocalization"]["f1"]
++    supported=[k for k in primary if result[k]["reference_count"]>0]
++    result["supported_primary_classes"]=supported
++    result["supported_primary_macro_f1"]=macro(supported)
+     result["failure_rate"]=sum(r["failure_rate"] for r in per_clip)/len(per_clip)
+     return result
+ 
+ 
+ def evaluate(protocol, observations, labels, predictions):
+     """Require the complete locked matrix; missing outputs != silently discarded failures."""
++    if protocol.get("schema") != "p2-listen-evaluation-v2-visual6-audio1" or protocol.get("taxonomy") != list(EVENTS):
++        raise ValueError("Frozen seven-class evaluation protocol required")
++    enabled=class_subset(protocol.get("K_train"))
++    primary=class_subset(protocol.get("K_primary"), "K_primary")
++    if not primary or not set(primary)<=set(enabled):
++        raise ValueError("K_primary must be a nonempty frozen subset of K_train")
+     lookup={r["sample_id"]:r for r in observations}
+     refs={r["sample_id"]:r for r in labels}
+     ids=protocol["sample_ids"]; seeds=protocol["sample_seeds"]; trains=protocol["train_seeds"]
+@@ -114,6 +146,7 @@
+                 obs=lookup[sid];label=refs[sid]
+                 from .annotations import validate
+                 validate(label,obs)
++                validate_reference(label)
+                 item=dict(sample_id=sid,group_id=obs["group_id"],train_seed=t,arm=arm,failure_rate=0.)
+                 for name in EVENTS: item[name]=defaultdict(float)
+                 for seed in seeds:
+@@ -124,14 +157,15 @@
+                         for k,v in counts.items(): item[name][k]+=v/len(seeds)
+                 clips.append(item);rows.append(item)
+             arm_rows[arm]=clips
+-        result={a:total_metrics(r) for a,r in arm_rows.items()}
+-        e0,e1=result["E0"]["macro_f1"],result["E1"]["macro_f1"]
+-        result["delta_macro_f1"]=None if e0 is None or e1 is None else e1-e0
++        result={a:total_metrics(r,primary,enabled) for a,r in arm_rows.items()}
++        e0,e1=result["E0"]["primary_f1"],result["E1"]["primary_f1"]
++        result["delta_primary_f1"]=None if e0 is None or e1 is None else e1-e0
++        result["delta_macro_f1"]=result["delta_primary_f1"] if len(primary)>1 else None
+         groups=sorted({r["group_id"] for r in arm_rows["E0"]})
+         rng=random.Random(protocol.get("bootstrap_seed",20261023));deltas=[]
+         for _ in range(protocol.get("bootstrap_repeats",2000)):
+             selected=[rng.choice(groups) for _ in groups]
+-            score={a:total_metrics([r for group in selected for r in arm_rows[a] if r["group_id"]==group])["macro_f1"] for a in protocol["arms"]}
++            score={a:total_metrics([r for group in selected for r in arm_rows[a] if r["group_id"]==group],primary,enabled)["primary_f1"] for a in protocol["arms"]}
+             if all(v is not None for v in score.values()): deltas.append(score["E1"]-score["E0"])
+         if deltas:
+             import numpy as np
+@@ -139,15 +173,32 @@
+         else: result["paired_group_ci95"]=None
+         result["bootstrap_valid_repeats"]=len(deltas);result["independent_groups"]=len(groups)
+         results[str(t)]=result
+-    differences=[r["delta_macro_f1"] for r in results.values()]
+-    return dict(training_seeds=results,mean_delta_macro_f1=sum(differences)/len(differences) if all(x is not None for x in differences) else None,
++    differences=[r["delta_primary_f1"] for r in results.values()]
++    mean_delta=sum(differences)/len(differences) if all(x is not None for x in differences) else None
++    return dict(protocol=protocol,training_seeds=results,mean_delta_primary_f1=mean_delta,
++                mean_delta_macro_f1=mean_delta if len(primary)>1 else None,
+                 per_clip=rows,quality_assessed=False,note="Event reference consistency only; naturalness and role quality require blind review.")
+ 
+ 
+ def report(result,path):
+     from pathlib import Path
++    primary=result["protocol"]["K_primary"]
++    metric=primary[0]+" F1" if len(primary)==1 else "macro-F1"
+     lines=["# P2 事件评测结果","","生成事件参考一致性；自然度、角色保持和音质仍需独立盲评。","",
+-           "| 训练 seed | E0 macro-F1 | E1 macro-F1 | 差值 | 组级 95% CI |","|---|---|---|---|---|"]
++           f"| 训练 seed | E0 {metric} | E1 {metric} | 差值 | 组级 95% CI |","|---|---|---|---|---|"]
+     for seed,r in result["training_seeds"].items():
+-        lines.append(f"| {seed} | {r['E0']['macro_f1']} | {r['E1']['macro_f1']} | {r['delta_macro_f1']} | {r['paired_group_ci95']} |")
++        lines.append(f"| {seed} | {r['E0']['primary_f1']} | {r['E1']['primary_f1']} | {r['delta_primary_f1']} | {r['paired_group_ci95']} |")
++    lines += ["", "主评测类别：" + ", ".join(result["protocol"]["K_primary"]), "",
++              "| seed / arm | 类别 | 监督启用 | 主指标 | 参考事件 | 已知秒数 | 未知秒数 | F1 |",
++              "|---|---|---|---|---|---|---|---|"]
++    for seed, r in result["training_seeds"].items():
++        for arm in ("E0", "E1"):
++            for k in EVENTS:
++                v=r[arm][k]
++                lines.append(f"| {seed}/{arm} | {k} | {v['supervision_enabled']} | {v['primary']} | {v['reference_count']} | {v['evaluated_seconds']} | {v['unknown_seconds']} | {v['f1']} |")
++    lines += ["", "| seed / arm | 视觉主评测类别 | 视觉 macro-F1 | 音频 F1 | 失败率 |", "|---|---|---|---|---|"]
++    for seed, r in result["training_seeds"].items():
++        for arm in ("E0", "E1"):
++            v=r[arm]
++            lines.append(f"| {seed}/{arm} | {', '.join(v['visual_primary_classes'])} | {v['visual_macro_f1']} | {v['audio_f1']} | {v['failure_rate']} |")
+     Path(path).write_text("\n".join(lines)+"\n")
+--- a/src/p2_listen/events.py
++++ b/src/p2_listen/events.py
+@@ -1,35 +1,41 @@
+ import torch
+ from torch import nn
+ from torch.nn import functional as F
+-from .contracts import EVENTS
++from .contracts import EVENTS, VISUAL_TYPES, AUDIO_TYPES
+ from .layout import pool_by_time
+ 
+ 
+ class EventHeads(nn.Module):
+     def __init__(self, video_dim, audio_dim, width=128):
+         super().__init__()
+-        self.heads = nn.ModuleDict({k: nn.Sequential(nn.LayerNorm(d), nn.Linear(d, width), nn.GELU(), nn.Linear(width, 1))
+-                                   for k, d in zip(EVENTS, (audio_dim, video_dim))})
++        self.heads = nn.ModuleDict({
++            mod: nn.Sequential(nn.LayerNorm(dim), nn.Linear(dim, width), nn.GELU(), nn.Linear(width, count))
++            for mod, dim, count in (("video", video_dim, len(VISUAL_TYPES)), ("audio", audio_dim, len(AUDIO_TYPES)))})
+ 
+     def forward(self, u, layout, mode):
+         if mode not in ("probe_only", "joint_event"):
+             raise ValueError("Unknown event gradient mode")
+         result = {}
+-        for name, mod in zip(EVENTS, ("audio", "video")):
++        for mod, names in (("video", VISUAL_TYPES), ("audio", AUDIO_TYPES)):
+             x, _ = pool_by_time(getattr(u, mod), layout[mod + "_groups"], getattr(u, mod + "_valid"),
+                                 layout[mod + "_intervals"].shape[1])
+             if mode == "probe_only":
+                 x = x.detach()
+-            result[name] = self.heads[name](x).squeeze(-1)
++            logits = self.heads[mod](x)
++            result.update({name: logits[..., i] for i, name in enumerate(names)})
+         return result
+ 
+ 
+ def event_sums(logits, labels, pos_weights):
++    if any(set(x) != set(EVENTS) for x in (logits, labels, pos_weights)):
++        raise ValueError("Exactly seven event keys required")
+     sums, counts = {}, {}
+     for name in EVENTS:
+         y, known = labels[name]["y"], labels[name]["known"]
+         if logits[name].shape != y.shape or known.shape != y.shape:
+             raise ValueError("Event target shape mismatch")
++        if known.dtype != torch.bool or not torch.isfinite(y).all() or ((y < 0) | (y > 1)).any():
++            raise ValueError("Invalid event occupancy/mask")
+         raw = F.binary_cross_entropy_with_logits(logits[name].float(), y.float(), reduction="none",
+                  pos_weight=torch.as_tensor(pos_weights[name], device=y.device, dtype=torch.float32))
+         sums[name] = raw.masked_fill(~known, 0).sum()
+--- a/src/p2_listen/features.py
++++ b/src/p2_listen/features.py
+@@ -4,7 +4,7 @@
+ from pathlib import Path
+ import torch
+ from .config import extractor_config
+-from .contracts import ROOT, path_at, sha, input_identity, read
++from .contracts import ROOT, EVENTS, LABEL_SCHEMA, path_at, sha, input_identity, read
+ from .cache import save_part, load_part, cpu, tree_to
+ from .layout import make_layout, aggregate_audio, geometry
+ from p3_listen.prompts import OMNI, GEMMA, FixedPrompt, contract as prompts
+@@ -41,6 +41,8 @@
+         value.update(target=target, ltx=weights_identity(c,"ltx"), mask_policy="causal-prefix-v1")
+     elif part == "events":
+         value.update(label=label, grid=[c["extractor"]["vision_fps"], c["extractor"]["audio_hz"]],
++                     schema=LABEL_SCHEMA, taxonomy=list(EVENTS), K_train=c["events"]["K_train"],
++                     mapping_version=c["events"]["mapping_version"], admission_policy=c["events"]["admission_policy"],
+                      annotation_code=sha(Path(__file__).with_name("annotations.py")))
+     return value
+ 
+@@ -141,10 +143,13 @@
+ 
+ 
+ def load_training_sample(c, obs, target, device="cpu"):
++    from .annotations import validate, validate_contract
+     x, layout = load_input(c, obs, device)
+     teacher = load_part(folder(c,"teacher",obs["sample_id"]), identity(c,"teacher",obs,target), device)
+     av = load_part(folder(c,"vae",obs["sample_id"]), identity(c,"vae",obs,target), device)
+     label = read(path_at(c["output"]) / "labels/canonical" / (obs["sample_id"] + ".json"))
++    validate(label, obs)
++    validate_contract(label, c)
+     events = load_part(folder(c,"events",obs["sample_id"]), identity(c,"events",obs,label=label),device)
+     return x, layout, teacher, av, events
+ 
+@@ -154,7 +159,7 @@
+ 
+ 
+ def cache_parts(c, observations, targets, parts, device="cuda:0"):
+-    from .annotations import validate, rasterize
++    from .annotations import validate, validate_contract, rasterize
+     cfg = extractor_config(c)
+     if any(p in parts for p in ("input","teacher")):
+         from omni_av_p2.data import load_omni
+@@ -195,5 +200,6 @@
+         for obs in observations:
+             label = read(path_at(c["output"]) / "labels/canonical" / (obs["sample_id"] + ".json"))
+             validate(label,obs)
++            validate_contract(label,c)
+             _,layout = load_input(c,obs)
+-            save_part(folder(c,"events",obs["sample_id"]),identity(c,"events",obs,label=label),rasterize(label,layout))
++            save_part(folder(c,"events",obs["sample_id"]),identity(c,"events",obs,label=label),rasterize(label,layout,c["events"]["K_train"]))
+--- a/src/p2_listen/training.py
++++ b/src/p2_listen/training.py
+@@ -7,7 +7,8 @@
+ import time
+ import torch
+ import torch.distributed as dist
+-from .contracts import EVENTS, atomic_json, digest, path_at, read, sha
++from .contracts import EVENTS, TYPE_TO_MODALITY, LABEL_SCHEMA, atomic_json, digest, path_at, read, sha
++from . import VERSION
+ from .cache import atomic_torch, cpu
+ from .events import normalized_event_loss
+ 
+@@ -41,6 +42,8 @@
+         for value in counts.values(): dist.all_reduce(value)
+     optimizer.zero_grad(set_to_none=True)
+     totals={"base":0.,"event":0.}
++    totals["event_known_bins"] = {k: int(v) for k, v in counts.items()}
++    event_totals = torch.zeros(len(EVENTS), device=device)
+     for i,(sample,ordinal) in enumerate(zip(samples,ordinals)):
+         condition,layout,teacher,av,labels=sample
+         torch.manual_seed(seed+ordinal)
+@@ -65,13 +68,32 @@
+                 if mode=="probe_only" and any(trace["event"]):raise RuntimeError("Probe gradient leaked into U")
+                 if not all(x>0 for x in trace["av"]):raise RuntimeError("AV gradient does not reach both U modalities")
+                 if mode=="joint_event":
+-                    for j,k in enumerate(("head_nod","listener_vocalization")):
+-                        if labels[k]["known"].any() and trace["event"][j]<=0:raise RuntimeError("Known event gradient missing")
++                    for j,mod in enumerate(("video", "audio")):
++                        if any(labels[k]["known"].any() for k in EVENTS if TYPE_TO_MODALITY[k] == mod) and trace["event"][j]<=0:
++                            raise RuntimeError("Known event gradient missing for " + mod)
++                trace["event_per_class"] = {}
++                for k in EVENTS:
++                    g = torch.autograd.grad(values["event_sums"][k], variables, retain_graph=True, allow_unused=True)
++                    norms = [0. if v is None else float(v.detach().float().norm()) for v in g]
++                    trace["event_per_class"][k] = norms
++                    j = 0 if TYPE_TO_MODALITY[k] == "video" else 1
++                    if mode == "joint_event" and labels[k]["known"].any() and norms[j] <= 0:
++                        raise RuntimeError("Known event gradient missing for " + k)
+                 totals["paths_first_micro"]=trace
+             if not torch.isfinite(loss): raise FloatingPointError("Nonfinite training objective")
+             loss.backward()
+         totals["base"]+=float(base.detach())/len(samples)
+         totals["event"]+=float(event.detach())
++        event_totals += torch.stack([values["event_sums"][k].detach().float() for k in EVENTS])
++    if world > 1:
++        dist.all_reduce(event_totals)
++    active = sum(float(counts[k]) > 0 for k in EVENTS)
++    totals["event_loss_per_class"] = {k: float(event_totals[j] / counts[k]) if float(counts[k]) > 0 else None
++                                      for j, k in enumerate(EVENTS)}
++    totals["event_loss_by_modality"] = {
++        mod: sum(v for k, v in totals["event_loss_per_class"].items() if v is not None and TYPE_TO_MODALITY[k] == mod) / max(active, 1)
++        for mod in ("video", "audio")}
++    totals["event"] = sum(totals["event_loss_by_modality"].values())
+     grads=clip_groups(model,config["clip_norm"])
+     optimizer.step()
+     totals["grad_norm"]=grads
+@@ -90,7 +112,8 @@
+ 
+ def save_checkpoint(path, model, optimizer, step, identity, rank_rng):
+     raw=model.module if hasattr(model,"module") else model
+-    atomic_torch(path,dict(model=cpu(raw.state_dict()),optimizer=cpu(optimizer.state_dict()),step=step,
++    atomic_torch(path,dict(version=VERSION, taxonomy=list(EVENTS), label_schema=LABEL_SCHEMA,
++                          model=cpu(raw.state_dict()),optimizer=cpu(optimizer.state_dict()),step=step,
+                           identity=identity,rank_rng=rank_rng))
+     atomic_json(Path(path).with_suffix(".complete.json"),dict(sha256=sha(path),step=step))
+ 
+@@ -98,10 +121,18 @@
+ def checked_checkpoint(path):
+     if sha(path)!=read(Path(path).with_suffix(".complete.json"))["sha256"]:
+         raise ValueError("Checkpoint checksum mismatch")
+-    return torch.load(path,map_location="cpu",weights_only=True)
++    saved = torch.load(path,map_location="cpu",weights_only=True)
++    validate_checkpoint_schema(saved)
++    return saved
++
++
++def validate_checkpoint_schema(saved):
++    if saved.get("version") != VERSION or saved.get("taxonomy") != list(EVENTS) or saved.get("label_schema") != LABEL_SCHEMA:
++        raise ValueError("Checkpoint is not the seven-class protocol; old heads/optimizer cannot resume")
+ 
+ 
+ def restore_checkpoint(saved, model, optimizer, identity, rank=0):
++    validate_checkpoint_schema(saved)
+     if saved["identity"]!=identity: raise ValueError("Strict resume identity mismatch")
+     current=model.state_dict()
+     if set(current)!=set(saved["model"]) or any(v.shape!=current[k].shape or not torch.isfinite(v).all() for k,v in saved["model"].items()):
+@@ -116,7 +147,7 @@
+     from .config import extractor_config,source_identity
+     from .dataset import load_observations,load_targets
+     from .features import load_training_sample,load_text,weights_identity
+-    from .annotations import class_statistics
++    from .annotations import class_statistics, mask_classes
+     from .model import ListeningExtractor
+     from .runtime import av_loss
+     cfg=extractor_config(c)
+@@ -135,7 +166,8 @@
+         sample=load_training_sample(c,row,targets[row["sample_id"]])
+         labels.append(sample[4]); del sample
+         signatures.append(digest(read(path_at(c["output"])/"labels/canonical"/(row["sample_id"]+".json"))))
+-    stats=class_statistics(labels,c["events"]["pos_weight_cap"])
++    stats=class_statistics(labels,c["events"]["pos_weight_cap"],c["events"]["K_train"])
++    effective = [k for k in EVENTS if stats[k]["enabled"]]
+     pos={k:stats[k]["pos_weight"] for k in EVENTS}
+     rank=int(os.environ.get("RANK",0)); world=int(os.environ.get("WORLD_SIZE",1)); local=int(os.environ.get("LOCAL_RANK",0))
+     t=c["training"]
+@@ -150,11 +182,11 @@
+         raw=ListeningExtractor(cfg,c["events"]["head_width"]).to(device)
+         initial=digest({k:sha_tensor(v) for k,v in raw.state_dict().items()})
+         ident=dict(config=c,arm=arm,seed=seed,s0=s0,budget=budget,world=world,observations=digest(rows),
+-                   targets=digest(targets),labels=signatures,statistics=stats,initialization=initial,source=source_identity(c),
++                   targets=digest(targets),labels=signatures,statistics=stats,K_train=effective,initialization=initial,source=source_identity(c),
+                    assets={k:weights_identity(c,k) for k in ("omni","ltx","gemma")})
+         root=path_at(c["output"])
+         pair=dict(config=c,seed=seed,s0=s0,budget=budget,world=world,observations=digest(rows),targets=digest(targets),
+-                  labels=signatures,statistics=stats,initialization=initial,source=ident["source"],assets=ident["assets"])
++                  labels=signatures,statistics=stats,K_train=effective,initialization=initial,source=ident["source"],assets=ident["assets"])
+         out=root/"runs"/(("s0_" if s0 else "")+str(seed))/arm
+         if world>1:
+             identities=[None]*world;dist.all_gather_object(identities,digest(ident))
+@@ -201,6 +233,7 @@
+                 group["lr"]=t[key]*min(1.,step/t["warmup_steps"])
+             chosen=indices(len(rows),step,t["global_batch"],seed,rank,world)
+             samples=[load_training_sample(c,rows[i],targets[rows[i]["sample_id"]],device) for i,_ in chosen]
++            samples=[(*s[:4], mask_classes(s[4], effective)) for s in samples]
+             begin=time.monotonic()
+             record=optimization_step(model,opt,samples,av_callback,mode=MODES[arm],pos_weights=pos,
+                 event_weight=c["events"]["weight"],seed=seed,ordinals=[n for _,n in chosen],config=t,world=world,audit=s0 and world==1)
+--- a/tests/test_listen_labeling.py
++++ b/tests/test_listen_labeling.py
+@@ -24,7 +24,7 @@
+ from listen_labeling.schema import parse, validate_response
+ from p2_listen.contracts import atomic_json, digest, read, sha
+ from p2_listen.dataset import prepare, import_labels
+-from p2_listen.annotations import rasterize
++from listen_labeling.legacy_contract import rasterize
+ import torch
+ 
+ DURATION = 1.28
+@@ -175,7 +175,7 @@
+         with self.assertRaisesRegex(ValueError, "support"):
+             run(self.manifest, self.cfg, self.out, "omni")
+ 
+-    def test_export_review_and_actual_p2_import(self):
++    def test_legacy_export_review_and_p2_v2_rejection(self):
+         result = run(self.manifest, self.cfg, self.out)
+         with self.assertRaisesRegex(ValueError, "No eligible"):
+             export(result["summary"], self.root / "none.json")
+@@ -192,7 +192,7 @@
+         verified = self.root / "verified.json"
+         export(result["summary"], verified, reviews)
+         self.assertTrue(read(verified)[0]["provenance"]["human_verified"])
+-        # Exercise existing prepare/import code on dev, including its weak-label rejection.
++        # Legacy exports remain v1, even after review; v2 import must reject them.
+         image = self.root / "i.png"
+         Image.new("RGB", (32, 32)).save(image)
+         obs = dict(schema="p2-listen-observation-v1", sample_id="s1", experiment_split="dev", official_split="dev",
+@@ -204,9 +204,10 @@
+         atomic_json(self.root / "obs.json", [obs]); atomic_json(self.root / "target.json", [target])
+         p2cfg = dict(output=str(self.root / "p2"), data=dict(fps=25, size=32, min_seconds=1, max_frames=201))
+         prepare(p2cfg, self.root / "obs.json", self.root / "target.json")
+-        with self.assertRaisesRegex(ValueError, "human verification"):
++        with self.assertRaisesRegex(ValueError, "schema/identity"):
+             import_labels(p2cfg, weak)
+-        self.assertEqual(import_labels(p2cfg, verified)["imported"], ["s1"])
++        with self.assertRaisesRegex(ValueError, "schema/identity"):
++            import_labels(p2cfg, verified)
+         record["draft_sha256"] = "wrong"
+         atomic_json(reviews, [record])
+         with self.assertRaisesRegex(ValueError, "bind"):
+--- a/tests/test_p2_listen_core.py
++++ b/tests/test_p2_listen_core.py
+@@ -8,7 +8,8 @@
+ 
+ import torch
+ from p2_listen.config import load,activate
+-from p2_listen.contracts import observation,audit_splits,target,digest,sha,atomic_json
++from p2_listen import VERSION
++from p2_listen.contracts import EVENTS, LABEL_SCHEMA, observation,audit_splits,target,digest,sha,atomic_json
+ from p2_listen.layout import make_layout,geometry,aggregate_audio,pool_by_time
+ from p2_listen.annotations import validate,rasterize,class_statistics
+ from p2_listen.cache import save_part,load_part
+@@ -25,10 +26,14 @@
+ 
+ 
+ def label():
+-    return dict(schema="listen-events-v1",sample_id="s1",time_origin="clip_start_seconds",duration_s=1.,
+-        taxonomy=["listener_vocalization","head_nod"],coverage={"listener_vocalization":[[0.,1.]],"head_nod":[[0.,1.]]},
+-        unknown={"listener_vocalization":[],"head_nod":[]},events=[dict(type="listener_vocalization",start=.125,end=.25),dict(type="head_nod",start=.25,end=.5)],
+-        provenance={"human_verified":True})
++    return dict(schema=LABEL_SCHEMA,sample_id="s1",time_origin="clip_start_seconds",duration_s=1.,
++        taxonomy=list(EVENTS),coverage={k:[[0.,1.]] for k in EVENTS}, unknown={k:[] for k in EVENTS},
++        training_admitted=True,
++        events=[dict(event_id="voice1",type="listener_vocalization",start=.125,end=.25,description="Yeah",verification="human",boundary_status="verified",source={"record":"audio1"}),
++                dict(event_id="nod1",type="head_nod",start=.25,end=.5,description="Nods",verification="human",boundary_status="verified",source={"record":"video1"})],
++        provenance={"human_verified":True,"mapping_version":"listen-candidate-training-v2","admission_policy":"explicit-review-v1",
++                    "coverage_sources":{k:{"reference":"test-review", "verification":"human"} for k in EVENTS},
++                    "admission_record":{"reference":"test-review"}})
+ 
+ 
+ class Contracts(unittest.TestCase):
+@@ -113,9 +118,10 @@
+         y,_=pool_by_time(x,torch.tensor([[0,0,1,1]]),torch.tensor([[True,False,True,True]]),2)
+         self.assertEqual(y.tolist(),[[[1.],[4.]]])
+ 
+-    def test_no_positive_labels_blocks_main_training(self):
++    def test_no_positive_labels_disables_classes(self):
+         l=label();l["events"]=[]
+-        with self.assertRaises(ValueError):class_statistics([rasterize(l,make_layout(1.,(1,1)))])
++        stats=class_statistics([rasterize(l,make_layout(1.,(1,1)))])
++        self.assertTrue(all(not v["enabled"] and v["disabled_reason"]=="no_positive_support" for v in stats.values()))
+ 
+ 
+ class CacheAndLoss(unittest.TestCase):
+@@ -129,7 +135,7 @@
+             with self.assertRaises(ValueError):load_part(p,{"audio":"v1"})
+ 
+     def test_all_unknown_differentiable_zero(self):
+-        logits={k:torch.ones(1,2,requires_grad=True) for k in ("head_nod","listener_vocalization")}
++        logits={k:torch.ones(1,2,requires_grad=True) for k in EVENTS}
+         labels={k:dict(y=torch.zeros(1,2),known=torch.zeros(1,2,dtype=torch.bool)) for k in logits}
+         sums,counts=event_sums(logits,labels,{k:1 for k in logits})
+         z=normalized_event_loss(sums,counts);z.backward()
+@@ -184,7 +190,7 @@
+         for weight in (0.,10000.):
+             m=copy.deepcopy(initial);o=torch.optim.AdamW(m.optimizer_groups(t),weight_decay=0)
+             optimization_step(m,o,[sample],lambda u,_:(u.video-.2).square().mean()+u.audio.square().mean(),
+-                mode="probe_only",pos_weights={"head_nod":1.,"listener_vocalization":1.},event_weight=weight,
++                mode="probe_only",pos_weights={k:1. for k in EVENTS},event_weight=weight,
+                 seed=2,ordinals=[0],config=t)
+             models.append(m)
+         self.assertTrue(all(torch.equal(v,models[1].extractor.state_dict()[k]) for k,v in models[0].extractor.state_dict().items()))
+@@ -192,7 +198,7 @@
+     def test_resume_rejects_changed_identity_before_mutation(self):
+         from p2_listen.training import restore_checkpoint
+         m=torch.nn.Linear(2,2);before=copy.deepcopy(m.state_dict())
+-        with self.assertRaises(ValueError):restore_checkpoint({"identity":{"arm":"E0"}},m,None,{"arm":"E1"})
++        with self.assertRaises(ValueError):restore_checkpoint({"version":VERSION,"taxonomy":list(EVENTS),"label_schema":LABEL_SCHEMA,"identity":{"arm":"E0"}},m,None,{"arm":"E1"})
+         self.assertTrue(all(torch.equal(v,m.state_dict()[k]) for k,v in before.items()))
+ 
+     def test_sample_schedule_global_batch(self):
+--- a/tests/test_p2_listen_evaluation.py
++++ b/tests/test_p2_listen_evaluation.py
+@@ -2,6 +2,7 @@
+ import unittest
+ from p2_listen.evaluation import event_counts,evaluate
+ from test_p2_listen_core import obs,label
++from p2_listen.contracts import EVENTS
+ 
+ 
+ class Evaluation(unittest.TestCase):
+@@ -22,7 +23,7 @@
+         self.assertAlmostEqual(c["false_seconds"],.2)
+ 
+     def matrix(self):
+-        p=dict(sample_ids=["s1"],sample_seeds=[1,2],train_seeds=[7],arms=["E0","E1"],bootstrap_repeats=5)
++        p=dict(schema="p2-listen-evaluation-v2-visual6-audio1",taxonomy=list(EVENTS),K_train=list(EVENTS),K_primary=["head_nod","listener_vocalization"],sample_ids=["s1"],sample_seeds=[1,2],train_seeds=[7],arms=["E0","E1"],bootstrap_repeats=5)
+         r=[]
+         for arm in p["arms"]:
+             for seed in p["sample_seeds"]:
+--- /dev/null
++++ b/tests/test_p2_listen_v2.py
+@@ -0,0 +1,323 @@
++import copy
++import json
++import tempfile
++import unittest
++from pathlib import Path
++from types import SimpleNamespace
++from unittest.mock import patch
++
++import torch
++
++from p2_listen import VERSION
++from p2_listen.annotations import (class_statistics, mask_classes, rasterize, validate,
++                                  validate_contract, validate_reference)
++from p2_listen.cache import load_part, save_part
++from p2_listen.candidates import (CANDIDATE_SCHEMA, DECISION_SCHEMA, convert_sample,
++                                 export_candidates)
++from p2_listen.config import load
++from p2_listen.contracts import EVENTS, VISUAL_TYPES, LABEL_SCHEMA, ROOT, atomic_json, digest, sha
++from p2_listen.events import EventHeads, event_sums, normalized_event_loss
++from p2_listen.evaluation import evaluate, event_counts
++from p2_listen.features import identity
++from p2_listen.layout import make_layout
++from p2_listen.training import restore_checkpoint
++from test_p2_listen_core import label, obs
++import test_p2_listen_evaluation as evaluation_tests
++
++
++def candidate():
++    return dict(schema=CANDIDATE_SCHEMA, sample_id="s1", duration_s=1., training_admitted=False,
++                events=[dict(event_id=f"e{i}", modality="audio", categories=["listener_vocalization"],
++                             start=a, end=b, description=text, text=text, original_descriptions=[text],
++                             review_flags=["boundary_review"], status={"boundary":"unverified"},
++                             description_source={"pass_id":"full", "word":i},
++                             timing_evidence={"start":a,"end":b,"window_offset_already_applied":True})
++                        for i,(a,b,text) in enumerate(((.1,.2,"Okay"),(.3,.4,"Okay"),(.5,.6,"嘿"),(.7,.8,"Ed")))],
++                automatic_fusion={"alignment_failures":[]}, unresolved_observations=[])
++
++
++def decision(c):
++    return dict(schema=DECISION_SCHEMA, sample_id=c["sample_id"], candidate_sha256=digest(c),
++                coverage={k:[[0.,1.]] for k in EVENTS}, unknown={k:[] for k in EVENTS},
++                coverage_sources={k:{"reference":"human-review-1", "verification":"human"} for k in EVENTS},
++                media_hashes={"target_video":"a"*64,"target_audio":"b"*64},
++                admission_record={"reference":"human-review-1"}, human_verified=True, source_review_reference="human-review-1",
++                events=[dict(candidate_event_id=e["event_id"],decision="accepted",reason="Reviewed media and original source",
++                             verification="human",boundary_status="verified",reviewed_flags=e["review_flags"])
++                        for e in c["events"]])
++
++
++class SevenChannels(unittest.TestCase):
++    def test_all_seven_outputs_route_to_correct_modality(self):
++        torch.manual_seed(5)
++        heads=EventHeads(12,7,8)
++        layout=make_layout(1.,(2,2))
++        u=SimpleNamespace(video=torch.randn(1,16,12,requires_grad=True),audio=torch.randn(1,8,7,requires_grad=True),
++                          video_valid=layout["video_valid"],audio_valid=layout["audio_valid"])
++        out=heads(u,layout,"joint_event")
++        self.assertEqual(list(out),list(EVENTS))
++        self.assertEqual(heads.heads["video"][-1].out_features,6)
++        self.assertEqual(heads.heads["audio"][-1].out_features,1)
++        for k in EVENTS:
++            j=0 if k in VISUAL_TYPES else 1
++            self.assertEqual(out[k].shape,(1,4 if j==0 else 8))
++            gradients=torch.autograd.grad(out[k].sum(),[u.video,u.audio],retain_graph=True,allow_unused=True)
++            self.assertGreater(gradients[j].abs().sum(),0)
++            self.assertIsNone(gradients[1-j])
++        for k,v in heads(u,layout,"probe_only").items():
++            grads=torch.autograd.grad(v.sum(),[u.video,u.audio],retain_graph=True,allow_unused=True)
++            self.assertEqual(grads,(None,None))
++
++    def test_nod_smile_voice_overlap_with_different_grids(self):
++        l=label()
++        for e in l["events"]: e.update(start=.25,end=.5)
++        l["events"].append(dict(l["events"][1],event_id="smile1",type="smile"))
++        r=rasterize(validate(l,obs()),make_layout(1.,(1,1)))
++        self.assertEqual(set(r),set(EVENTS))
++        self.assertEqual(float(r["head_nod"]["y"][0,1]),1.)
++        self.assertEqual(float(r["smile"]["y"][0,1]),1.)
++        self.assertEqual(r["listener_vocalization"]["y"][0,2:4].tolist(),[1.,1.])
++
++    def test_loss_equal_class_weight_not_equal_modality_weight(self):
++        logits={k:torch.full((1,4 if k in VISUAL_TYPES else 8),float(i)/4,requires_grad=True) for i,k in enumerate(EVENTS)}
++        labels={k:dict(y=torch.zeros_like(v),known=torch.ones_like(v,dtype=torch.bool)) for k,v in logits.items()}
++        sums,counts=event_sums(logits,labels,{k:1 for k in EVENTS})
++        loss=normalized_event_loss(sums,counts)
++        expected=sum(torch.nn.functional.softplus(v).mean() for v in logits.values())/7
++        self.assertTrue(torch.allclose(loss,expected))
++        labels["surprise"]["known"].zero_()
++        sums,counts=event_sums(logits,labels,{k:1 for k in EVENTS})
++        expected=sum(torch.nn.functional.softplus(v).mean() for k,v in logits.items() if k!="surprise")/6
++        self.assertTrue(torch.allclose(normalized_event_loss(sums,counts),expected))
++
++    def test_structural_padding_and_disabled_class_mask(self):
++        layout=make_layout(1.,(1,1));layout["video_valid"][:,1]=False
++        r=rasterize(label(),layout,["head_nod","listener_vocalization"])
++        self.assertFalse(r["head_nod"]["known"][0,1])
++        self.assertTrue(r["listener_vocalization"]["known"].all())
++        self.assertTrue(all(not r[k]["known"].any() for k in VISUAL_TYPES if k!="head_nod"))
++
++    def test_sparse_support_records_effective_classes_and_does_not_mutate_cache(self):
++        r=rasterize(label(),make_layout(1.,(1,1)))
++        r["frown"]["known"].zero_()
++        r["laugh"]["y"].fill_(1)
++        stats=class_statistics([r])
++        enabled=[k for k in EVENTS if stats[k]["enabled"]]
++        self.assertEqual(enabled,["head_nod","listener_vocalization"])
++        self.assertEqual(stats["frown"]["disabled_reason"],"no_known_support")
++        self.assertEqual(stats["laugh"]["disabled_reason"],"no_negative_support")
++        self.assertEqual(stats["smile"]["disabled_reason"],"no_positive_support")
++        masked=mask_classes(r,enabled)
++        self.assertFalse(masked["smile"]["known"].any())
++        self.assertTrue(r["smile"]["known"].all())
++
++    def test_fractional_positive_weight_uses_frozen_train_support(self):
++        r=rasterize(label(),make_layout(1.,(1,1)))
++        r["head_nod"]["y"].zero_();r["head_nod"]["y"][0,0]=.5
++        self.assertEqual(class_statistics([r])["head_nod"]["pos_weight"],3.5)
++
++    def test_missing_seventh_key_is_an_error(self):
++        r=rasterize(label(),make_layout(1.,(1,1)))
++        logits={k:torch.zeros_like(v["y"]) for k,v in r.items() if k!="surprise"}
++        with self.assertRaises(ValueError):event_sums(logits,r,{k:1 for k in EVENTS})
++
++    def test_all_unknown_still_updates_base_model(self):
++        from p2_listen.audit import fixture
++        from p2_listen.model import ListeningExtractor
++        from p2_listen.training import optimization_step
++        cfg,sample=fixture(load());sample=(*sample[:4],mask_classes(sample[4],[]))
++        m=ListeningExtractor(cfg,8)
++        t=dict(connector_lr=.001,feature_lr=.001,event_lr=.001,clip_norm=1.)
++        opt=torch.optim.AdamW(m.optimizer_groups(t),weight_decay=0)
++        before=copy.deepcopy(m.state_dict())
++        r=optimization_step(m,opt,[sample],lambda u,_:(u.video-.2).square().mean()+(u.audio+.1).square().mean(),
++                            mode="joint_event",pos_weights={k:1. for k in EVENTS},event_weight=.05,seed=1,ordinals=[0],config=t,audit=True)
++        self.assertEqual(r["event"],0)
++        self.assertTrue(any(not torch.equal(v,before[k]) for k,v in m.state_dict().items() if k.startswith("extractor.")))
++        self.assertTrue(all(torch.equal(v,before[k]) for k,v in m.state_dict().items() if k.startswith("event_heads.")))
++
++
++class VersionAndIsolation(unittest.TestCase):
++    def test_old_config_and_label_rejected(self):
++        with self.assertRaises(ValueError):load(ROOT/"configs/p2_listen_event_base.json")
++        l=label();l["schema"]="listen-events-v1"
++        with self.assertRaises(ValueError):validate(l,obs())
++
++    def test_invalid_taxonomy_order_or_duplicates_rejected(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            p=Path(tmp)/"config.json"
++            for keys in (["listener_vocalization","head_nod"],["head_nod","head_nod"],["unknown"]):
++                c=load();c["events"]["K_train"]=keys;atomic_json(p,c)
++                with self.assertRaises(ValueError):load(p)
++
++    def test_old_checkpoint_refused_even_when_identity_claims_to_match(self):
++        m=torch.nn.Linear(2,2);before=copy.deepcopy(m.state_dict())
++        with self.assertRaises(ValueError):restore_checkpoint(dict(identity={}),m,None,{})
++        self.assertTrue(all(torch.equal(v,before[k]) for k,v in m.state_dict().items()))
++
++    def test_seven_class_checkpoint_wrong_taxonomy_refused(self):
++        saved=dict(version=VERSION,label_schema=LABEL_SCHEMA,taxonomy=list(reversed(EVENTS)),identity={})
++        with self.assertRaises(ValueError):restore_checkpoint(saved,torch.nn.Linear(2,2),None,{})
++
++    def test_label_mapping_and_k_train_change_only_event_cache(self):
++        c=load();l=label();o=obs()
++        fake=SimpleNamespace(to_dict=lambda:copy.deepcopy(c["extractor"]))
++        with patch("p2_listen.features.weights_identity",return_value={"mock":"stable"}),patch("p2_listen.features.extractor_config",return_value=fake):
++            h=identity(c,"input",o);e=identity(c,"events",o,label=l)
++            c2=copy.deepcopy(c);c2["events"]["K_train"]=["head_nod"]
++            c2["events"]["mapping_version"]="new-mapping"
++            l2=copy.deepcopy(l);l2["unknown"]["head_nod"]=[[0.,1.]]
++            self.assertEqual(h,identity(c2,"input",o))
++            e2=identity(c2,"events",o,label=l2)
++            self.assertNotEqual(e,e2)
++            with tempfile.TemporaryDirectory() as tmp:
++                save_part(Path(tmp)/"input",h,{"h":torch.zeros(1)})
++                save_part(Path(tmp)/"events",e,{"events":torch.zeros(1)})
++                load_part(Path(tmp)/"input",identity(c2,"input",o))
++                with self.assertRaises(ValueError):load_part(Path(tmp)/"events",e2)
++            o2=copy.deepcopy(o);o2["media_hashes"]["speaker_audio"]="new"
++            self.assertNotEqual(h,identity(c,"input",o2))
++
++    def test_admitted_boolean_without_evidence_is_rejected(self):
++        l=label();l["provenance"]["admission_record"]={}
++        with self.assertRaises(ValueError):validate(l,obs())
++        l=label();l["provenance"]["coverage_sources"]["smile"]={}
++        with self.assertRaises(ValueError):validate(l,obs())
++
++    def test_weak_reference_and_mapping_mismatch_refused(self):
++        l=label();l["events"][0]["verification"]="weak_accepted"
++        with self.assertRaises(ValueError):validate_reference(l)
++        l=label();l["provenance"]["mapping_version"]="other"
++        with self.assertRaises(ValueError):validate_contract(l,load())
++
++
++class CandidateAdapter(unittest.TestCase):
++    def test_partial_review_exports_separate_admitted_file(self):
++        c=candidate();c2=copy.deepcopy(c);c2["sample_id"]="s2"
++        with tempfile.TemporaryDirectory() as tmp:
++            p=Path(tmp)
++            atomic_json(p/"c.json",[c,c2]);atomic_json(p/"r.json",{"samples":[c,c2]})
++            atomic_json(p/"o.json",[dict(sample_id=x["sample_id"],duration_s=1.,events=x["events"]) for x in (c,c2)])
++            atomic_json(p/"d.json",[decision(c)])
++            summary=export_candidates(load(),p/"c.json",p/"r.json",p/"o.json",p/"out",p/"d.json")
++            self.assertEqual(summary["admitted_samples"],1)
++            admitted=json.loads((p/"out/labels.admitted.json").read_text())
++            self.assertEqual([l["sample_id"] for l in admitted],["s1"])
++            self.assertEqual(len(json.loads((p/"out/labels.json").read_text())),2)
++            validate(admitted[0],obs())
++
++    def test_no_decisions_no_negatives_no_admission(self):
++        c=candidate();before=copy.deepcopy(c)
++        l,a=convert_sample(c,load())
++        self.assertEqual(c,before)
++        self.assertFalse(l["training_admitted"])
++        self.assertEqual(l["events"],[])
++        self.assertEqual(len(a["mapping"]),4)
++        self.assertTrue(all(not v["known"].any() for v in rasterize(l,make_layout(1.,(1,1))).values()))
++        with self.assertRaises(ValueError):validate(l,obs())
++
++    def test_original_words_repeat_count_sources_and_times_survive(self):
++        c=candidate();l,a=convert_sample(c,load(),decision(c))
++        validate(l,obs());validate_reference(l)
++        self.assertEqual([e["description"] for e in l["events"]],["Okay","Okay","嘿","Ed"])
++        self.assertEqual([e["source"] for e in l["events"]],c["events"])
++        self.assertEqual([(e["start"],e["end"]) for e in l["events"]],[(e["start"],e["end"]) for e in c["events"]])
++        self.assertEqual(len({m["training_event_id"] for m in a["mapping"]}),4)
++
++    def test_candidate_boolean_does_not_admit_and_stale_decision_rejected(self):
++        c=candidate();c["training_admitted"]=True
++        self.assertFalse(convert_sample(c,load())[0]["training_admitted"])
++        d=decision(c);c["events"][0]["text"]="changed"
++        with self.assertRaises(ValueError):convert_sample(c,load(),d)
++
++    def test_review_flags_cannot_be_ignored(self):
++        c=candidate();d=decision(c);d["events"][0]["reviewed_flags"]=[]
++        with self.assertRaises(ValueError):convert_sample(c,load(),d)
++
++    def test_missing_candidate_decision_masks_its_interval(self):
++        c=candidate();d=decision(c);d["events"]=d["events"][1:]
++        l,a=convert_sample(c,load(),d)
++        self.assertIn([.1,.2],l["unknown"]["listener_vocalization"])
++        self.assertEqual(len(l["events"]),3)
++        self.assertEqual(a["mapping"][0]["status"],"unresolved")
++
++    def test_invalid_times_are_not_clipped_or_interpolated(self):
++        for a,b in ((.2,.2),(-.1,.2),(.1,1.01),(float("nan"),.2)):
++            c=candidate();c["events"][0].update(start=a,end=b)
++            if math_isfinite(a):
++                with self.assertRaises(ValueError):convert_sample(c,load(),decision(c))
++            else:
++                with self.assertRaises(ValueError):convert_sample(c,load())
++
++    def test_modality_mismatch_and_compound_categories_not_inferred(self):
++        for categories in (["smile"],["head_nod","smile"]):
++            c=candidate();c["events"][0]["categories"]=categories
++            with self.assertRaises(ValueError):convert_sample(c,load(),decision(c))
++
++    def test_unlocated_word_masks_audio_without_inventing_boundaries(self):
++        c=candidate();c["automatic_fusion"]["alignment_failures"]=[{"text":"Yeah", "reason":"no_interval"}]
++        l,a=convert_sample(c,load(),decision(c))
++        self.assertEqual(l["unknown"]["listener_vocalization"],[[0.,1.]])
++        self.assertFalse(rasterize(l,make_layout(1.,(1,1)))["listener_vocalization"]["known"].any())
++        self.assertEqual(a["excluded"][-1]["reason"],"unlocated_words")
++
++    def test_export_preserves_input_bytes_and_rejects_overwrite(self):
++        c=candidate()
++        with tempfile.TemporaryDirectory() as tmp:
++            p=Path(tmp)
++            atomic_json(p/"c.json",[c]);atomic_json(p/"r.json",{"samples":[c]})
++            atomic_json(p/"o.json",[{"sample_id":"s1","duration_s":1.,"events":c["events"]}])
++            summary=export_candidates(load(),p/"c.json",p/"r.json",p/"o.json",p/"out")
++            self.assertEqual(summary["accepted_events"],0)
++            self.assertEqual(sha(p/"c.json"),sha(p/"out/sources/candidates.json"))
++            with self.assertRaises(FileExistsError):export_candidates(load(),p/"c.json",p/"r.json",p/"o.json",p/"out")
++
++
++def math_isfinite(x):
++    import math
++    return math.isfinite(x)
++
++
++class FrozenEvaluation(unittest.TestCase):
++    def test_single_primary_reports_class_f1(self):
++        p,r=evaluation_tests.Evaluation().matrix();p["K_primary"]=["head_nod"]
++        result=evaluate(p,[obs()],[label()],r)
++        score=result["training_seeds"]["7"]["E0"]
++        self.assertEqual(score["primary_metric"],"head_nod_f1")
++        self.assertEqual(score["primary_f1"],1.)
++        self.assertIsNone(score["macro_f1"])
++        self.assertIsNone(result["mean_delta_macro_f1"])
++
++    def test_missing_primary_class_makes_full_macro_unavailable(self):
++        p,r=evaluation_tests.Evaluation().matrix();p["K_primary"]=["head_nod","smile","listener_vocalization"]
++        result=evaluate(p,[obs()],[label()],r)["training_seeds"]["7"]["E0"]
++        self.assertIsNone(result["macro_f1"])
++        self.assertIsNone(result["smile"]["f1"])
++        self.assertEqual(result["supported_primary_classes"],["head_nod","listener_vocalization"])
++        self.assertEqual(result["supported_primary_macro_f1"],1)
++
++    def test_visual_audio_and_enabled_flags_reported_separately(self):
++        p,r=evaluation_tests.Evaluation().matrix();p["K_train"]=["head_nod","listener_vocalization"]
++        result=evaluate(p,[obs()],[label()],r)["training_seeds"]["7"]["E0"]
++        self.assertEqual(result["visual_primary_classes"],["head_nod"])
++        self.assertEqual(result["visual_macro_f1"],1.)
++        self.assertEqual(result["audio_f1"],1.)
++        self.assertFalse(result["smile"]["supervision_enabled"])
++
++    def test_primary_cannot_include_disabled_or_duplicate_class(self):
++        p,r=evaluation_tests.Evaluation().matrix();p["K_train"]=["head_nod"]
++        with self.assertRaises(ValueError):evaluate(p,[obs()],[label()],r)
++        p,r=evaluation_tests.Evaluation().matrix();p["K_primary"]=["head_nod","head_nod"]
++        with self.assertRaises(ValueError):evaluate(p,[obs()],[label()],r)
++
++    def test_onset_tolerance_is_point_two_and_one_to_one(self):
++        l=label();l["events"]=[dict(l["events"][1],start=.1,end=.2),dict(l["events"][1],start=.3,end=.4,event_id="nod2")]
++        counts=event_counts(l,[dict(type="head_nod",start=.2,end=.4)],"head_nod")
++        self.assertEqual(counts["onset_hits_020"],1)
++        counts=event_counts(label(),[dict(type="head_nod",start=.46,end=.7)],"head_nod")
++        self.assertEqual(counts["onset_hits_020"],0)
++        self.assertEqual(counts["onset_hits_050"],1)
++
++
++if __name__ == "__main__":
++    unittest.main()

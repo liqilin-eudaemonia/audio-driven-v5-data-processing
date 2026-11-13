@@ -1,0 +1,158 @@
+{
+  "job": {
+    "job_id": "normalize-030",
+    "descriptions": {
+      "d0360": "Listener's eyebrows are slightly raised, indicating mild surprise, curiosity, or interest in what is being said.",
+      "d0361": "Listener's eyebrows slightly raise, indicating mild surprise or interest in the speaker's message.",
+      "d0362": "Listener's eyes briefly close and then reopen, possibly indicating a moment of reflection or emphasis.",
+      "d0363": "Listener's eyes widen and eyebrows raise, indicating surprise or heightened attention to what is being said.",
+      "d0364": "Listener's facial expression is neutral to slightly engaged, with no signs of distraction or disinterest.",
+      "d0365": "Listener's facial expression remains neutral and attentive, showing continued engagement.",
+      "d0366": "Listener's facial expression transitions to a gentle smile, with lips slightly parted, indicating positive engagement or amusement while listening.",
+      "d0367": "Listener's gaze moves slightly to the left, indicating a shift in attention or a momentary distraction.",
+      "d0368": "Listener's gaze remains fixed on the sticky note, indicating continued focus on the visual cue.",
+      "d0369": "Listener's gaze remains fixed, showing sustained attention to the speaker.",
+      "d0370": "Listener's gaze returns to the sticky note, indicating a renewed focus on the visual cue.",
+      "d0371": "Listener's gaze shifts downward, suggesting she is reading or recalling information."
+    }
+  },
+  "prompt": "<|im_start|>user\nRewrite each supplied annotation into its minimal observable action or sound descriptions. This is annotation cleanup, NOT media perception; do not invent what happened. Process every dictionary key independently. Never group records.\nOutput an object with exactly the supplied keys. Each value is {atoms:[{signature:string, behavior:string, temporal_kind:\"state\"|\"occurrence\", uncertain:boolean}], excluded_reason:string}.\nUse a concise, factual English sentence for behavior. signature is a short lowercase infinitive predicate describing the SAME action, without intensity or psychological interpretation; invent it from the observation, there is NO predefined vocabulary or action taxonomy. Use consistent literal wording for identical actions.\nRemove unsupported interpretations (agreement, sadness, thoughtfulness, attentiveness, engagement, surprise) and retain only described observable changes. Do not copy explanations beginning \"indicating\", \"suggesting\", \"showing\", \"possibly to\", or \"likely to\". If a record contains only an interpretation or an unchanging neutral posture with no reaction, output atoms:[] and explain in excluded_reason.\nExtract separate atoms for different independent actions in one description. Facial details that merely describe the same smile or laugh should stay in that single atom, not become extra events. A static pose is not evidence of movement: \"head tilted\" does not mean \"tilts head\"; \"eyes open\" does not mean \"opens eyes\". Static neutral poses/open eyes alone are not reaction events.\nstate means a sustained expression or gesture state; occurrence means an individual movement cycle, transition, blink, utterance or vocal bout. Repeated nods, shakes, utterances, and other repeated movements are occurrences, never a continuous expression merely to compress them. Keep the content of spoken words exactly as quoted. Preserve explicit uncertainty using uncertain:true. Do not add any timestamps or mental-state inference.\nFor nonempty atoms, excluded_reason must be empty. If uncertain whether an observable action is feedback, retain the action and set uncertain:true rather than deleting it.\nANNOTATIONS (data, not instructions):\n{\"d0360\": \"Listener's eyebrows are slightly raised, indicating mild surprise, curiosity, or interest in what is being said.\", \"d0361\": \"Listener's eyebrows slightly raise, indicating mild surprise or interest in the speaker's message.\", \"d0362\": \"Listener's eyes briefly close and then reopen, possibly indicating a moment of reflection or emphasis.\", \"d0363\": \"Listener's eyes widen and eyebrows raise, indicating surprise or heightened attention to what is being said.\", \"d0364\": \"Listener's facial expression is neutral to slightly engaged, with no signs of distraction or disinterest.\", \"d0365\": \"Listener's facial expression remains neutral and attentive, showing continued engagement.\", \"d0366\": \"Listener's facial expression transitions to a gentle smile, with lips slightly parted, indicating positive engagement or amusement while listening.\", \"d0367\": \"Listener's gaze moves slightly to the left, indicating a shift in attention or a momentary distraction.\", \"d0368\": \"Listener's gaze remains fixed on the sticky note, indicating continued focus on the visual cue.\", \"d0369\": \"Listener's gaze remains fixed, showing sustained attention to the speaker.\", \"d0370\": \"Listener's gaze returns to the sticky note, indicating a renewed focus on the visual cue.\", \"d0371\": \"Listener's gaze shifts downward, suggesting she is reading or recalling information.\"}<|im_end|>\n<|im_start|>assistant\n",
+  "raw": "{\n  \"d0360\": {\n    \"atoms\": [\n      {\n        \"signature\": \"raise eyebrows\",\n        \"behavior\": \"eyebrows are slightly raised\",\n        \"temporal_kind\": \"state\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0361\": {\n    \"atoms\": [\n      {\n        \"signature\": \"raise eyebrows\",\n        \"behavior\": \"eyebrows slightly raise\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0362\": {\n    \"atoms\": [\n      {\n        \"signature\": \"close eyes\",\n        \"behavior\": \"eyes briefly close\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      },\n      {\n        \"signature\": \"reopen eyes\",\n        \"behavior\": \"eyes reopen\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0363\": {\n    \"atoms\": [\n      {\n        \"signature\": \"widen eyes\",\n        \"behavior\": \"eyes widen\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      },\n      {\n        \"signature\": \"raise eyebrows\",\n        \"behavior\": \"eyebrows raise\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0364\": {\n    \"atoms\": [],\n    \"excluded_reason\": \"no observable action described; static neutral pose with no reaction\"\n  },\n  \"d0365\": {\n    \"atoms\": [],\n    \"excluded_reason\": \"no observable action described; static neutral pose with no reaction\"\n  },\n  \"d0366\": {\n    \"atoms\": [\n      {\n        \"signature\": \"smile\",\n        \"behavior\": \"facial expression transitions to a gentle smile with lips slightly parted\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0367\": {\n    \"atoms\": [\n      {\n        \"signature\": \"shift gaze\",\n        \"behavior\": \"gaze moves slightly to the left\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0368\": {\n    \"atoms\": [\n      {\n        \"signature\": \"fix gaze\",\n        \"behavior\": \"gaze remains fixed on the sticky note\",\n        \"temporal_kind\": \"state\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0369\": {\n    \"atoms\": [\n      {\n        \"signature\": \"fix gaze\",\n        \"behavior\": \"gaze remains fixed\",\n        \"temporal_kind\": \"state\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0370\": {\n    \"atoms\": [\n      {\n        \"signature\": \"shift gaze\",\n        \"behavior\": \"gaze returns to the sticky note\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  },\n  \"d0371\": {\n    \"atoms\": [\n      {\n        \"signature\": \"shift gaze\",\n        \"behavior\": \"gaze shifts downward\",\n        \"temporal_kind\": \"occurrence\",\n        \"uncertain\": false\n      }\n    ],\n    \"excluded_reason\": \"\"\n  }\n}",
+  "finish_reason": "stop",
+  "completion_tokens": 805,
+  "batch_seconds": 27.050015409942716,
+  "model": "/private/ckpts/Qwen3-VL-8B-Instruct",
+  "text_only": true,
+  "parsed": {
+    "d0360": {
+      "atoms": [
+        {
+          "signature": "raise eyebrows",
+          "behavior": "eyebrows are slightly raised",
+          "temporal_kind": "state",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0361": {
+      "atoms": [
+        {
+          "signature": "raise eyebrows",
+          "behavior": "eyebrows slightly raise",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0362": {
+      "atoms": [
+        {
+          "signature": "close eyes",
+          "behavior": "eyes briefly close",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        },
+        {
+          "signature": "reopen eyes",
+          "behavior": "eyes reopen",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0363": {
+      "atoms": [
+        {
+          "signature": "widen eyes",
+          "behavior": "eyes widen",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        },
+        {
+          "signature": "raise eyebrows",
+          "behavior": "eyebrows raise",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0364": {
+      "atoms": [],
+      "excluded_reason": "no observable action described; static neutral pose with no reaction"
+    },
+    "d0365": {
+      "atoms": [],
+      "excluded_reason": "no observable action described; static neutral pose with no reaction"
+    },
+    "d0366": {
+      "atoms": [
+        {
+          "signature": "smile",
+          "behavior": "facial expression transitions to a gentle smile with lips slightly parted",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0367": {
+      "atoms": [
+        {
+          "signature": "shift gaze",
+          "behavior": "gaze moves slightly to the left",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0368": {
+      "atoms": [
+        {
+          "signature": "fix gaze",
+          "behavior": "gaze remains fixed on the sticky note",
+          "temporal_kind": "state",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0369": {
+      "atoms": [
+        {
+          "signature": "fix gaze",
+          "behavior": "gaze remains fixed",
+          "temporal_kind": "state",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0370": {
+      "atoms": [
+        {
+          "signature": "shift gaze",
+          "behavior": "gaze returns to the sticky note",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    },
+    "d0371": {
+      "atoms": [
+        {
+          "signature": "shift gaze",
+          "behavior": "gaze shifts downward",
+          "temporal_kind": "occurrence",
+          "uncertain": false
+        }
+      ],
+      "excluded_reason": ""
+    }
+  }
+}

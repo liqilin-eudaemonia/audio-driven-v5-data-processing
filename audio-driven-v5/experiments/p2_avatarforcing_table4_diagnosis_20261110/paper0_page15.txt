@@ -1,0 +1,149 @@
+AR Diffusion
+Diffusion Forcing
+Reference
+Training Horizon
+Long Horizon
+…
+…
+Figure 11. Comparison of autoregressive diffusion and diffusion forcing. Autoregressive diffusion suffers from motion drift (red arrow)
+over the long horizon, whereas diffusion forcing maintains stable motion generation over the long horizon.
+Table 6. Ablation study with additional metrics on user motion and preference optimization. “w/ mu” indicates whether the user motion
+latent mu is provided as input to the model during both training and inference.
+Method
+Reactiveness
+Motion Richness
+Visual Quality
+Lip Synchronization
+w/ mu
+DPO
+rPCC-Exp ↓
+rPCC-Pose ↓
+SID ↑
+Var ↑
+FID ↓
+FVD ↓
+CSIM ↑
+LSE-D ↓
+LSE-C ↑
+✗
+✗
+0.052
+0.175
+2.165
+1.586
+28.746
+185.593
+0.818
+8.260
+6.423
+✓
+✗
+0.042
+0.146
+2.236
+1.408
+25.600
+175.322
+0.854
+8.160
+6.803
+✓
+✓
+0.003
+0.036
+2.442
+1.734
+24.328
+170.874
+0.833
+8.060
+6.723
+𝐾
+𝑄
+𝐾
+𝑄
+𝐾
+𝑄
+Blockwise Causal 
+Look-ahead
+Blockwise Causal
+(Framewise) Causal
+Figure 12. Attention Mask Comparison. (Left) framewise causal
+mask; (Middle) blockwise causal mask; (Right) blockwise causal
+look-ahead mask (Ours).
+parameters x:
+  \text {
+PCC} ( z|x) = \fr
+ac {\ s um ( z_i - \ba r {z})(x_i - \bar {x})}{\sqrt {\sum (z_i - \bar {z})^2 \sum (x_i - \bar {x})^2}}, 
+(16)
+where i ∈[0, N] is the frame index, and ¯z and ¯x denote
+the mean of z and y, respectively. Based on this nota-
+tion, we can define rPCC as |PCC(y|x) −PCC(ˆy|x)|.
+• SID (Shannon Index for Diversity) [40] is to mea-
+sure the motion diversity of the generated avatars us-
+ing K-means clustering on 3DMM parameters. Follow-
+ing [40], we compute the average entropy (Shannon in-
+dex) of the clusters with K = 15, 9 for expression and
+pose, respectively.
+• Var is the variance of the parameters from generated
+avatars, which is computed along the time axis and then
+averaged along the feature axis.
+• FD (Frechet Distance) [48] measures the distance be-
+tween the expression and pose distributions of the gen-
+Table 7. Ablation studies on motion block sizes on RealTalk.
+# blocks
+Latency (s) ↓
+rPCC-Exp ↓
+rPCC-Pose ↓
+FVD ↓
+SID ↑
+LSE-D ↓
+10
+0.3
+0.012
+0.056
+222.47
+2.355
+7.290
+2
+1.5
+0.003
+0.031
+155.81
+2.145
+6.555
+5 (Ours)
+0.5
+0.003
+0.036
+170.87
+2.442
+6.723
+erated avatars and the ground truth by calculating
+  |\ m u _ { \hat { y }} - \mu _{
+y
+} | + \text {tr}(\Sigma _{\hat {y}} + \Sigma _{y} - 2 (\Sigma _{\hat {y}} \Sigma _{y})^{\frac {1}{2}}), \label {eq:fd} 
+(17)
+where µ and Σ are the mean and the covariance matrix,
+respectively.
+Visual Quality
+We utilize FID [48] and FVD [56] to as-
+sess the image and video quality of the generated avatars,
+and CSIM [12] to measure the identity preservation perfor-
+mance of avatar generation models.
+• FID (Frechet Inception Distance) measures the quality
+of the generated frames by comparing the distribution of
+image features extracted from a pre-trained feature ex-
+tractor [48]. The FD computation in Eq. (17) is adopted
+using the extracted image features.
+• FVD (Frechet Video Distance) quantifies the spatio-
+temporal quality of the generated videos by comparing
+the feature distributions of real and generated videos in a
+learned video feature space [56]. It reflects both frame-
+wise quality and temporal consistency. The FD compu-
+tation in Eq. (17) is adopted using the extracted video
+features.
+• CSIM (Cosine Similarity for Identity Embedding) eval-
+uates identity preservation by computing cosine similar-
+ity between the facial embeddings from the generated
+15

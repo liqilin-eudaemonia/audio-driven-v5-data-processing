@@ -1,0 +1,133 @@
+{
+  "at": 1794532962.334671,
+  "controllers": {
+    "gpu4": {
+      "pid": 3329755,
+      "live": true,
+      "state": "S",
+      "start_ticks": "1725656943",
+      "cpu_ticks": 384,
+      "cmd": "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python -u /private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_lora6000_seamless_full_gpu4_20261112.py controller "
+    },
+    "gpu7": {
+      "pid": 3329756,
+      "live": true,
+      "state": "S",
+      "start_ticks": "1725656945",
+      "cpu_ticks": 107,
+      "cmd": "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python -u /private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_responsenet_full586_all_lora_20261111.py controller "
+    }
+  },
+  "children": {
+    "gpu4": [
+      {
+        "pid": 3330361,
+        "live": true,
+        "state": "S",
+        "start_ticks": "1725657497",
+        "cpu_ticks": 10,
+        "cmd": "/private/software/conda/envs/AnyTalker/bin/python -u /private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_pipelined_testsets_eval.py metrics --work /private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_lora6000_seamless_full_gpu4_20261112 --rank 17 --arms ltx_all_lora_event_feature_whisper_6000_sft2752 ",
+        "record": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_lora6000_seamless_full_gpu4_20261112/processes/metric_17.json",
+        "stage": "metric",
+        "slot": 17,
+        "log": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_lora6000_seamless_full_gpu4_20261112/logs/metric_17_1794532870723324387.log"
+      },
+      {
+        "pid": 3329901,
+        "live": true,
+        "state": "R",
+        "start_ticks": "1725657088",
+        "cpu_ticks": 8247,
+        "cmd": "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python -u /private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_lora6000_seamless_full_gpu4_20261112.py worker --stage render --slot 0 ",
+        "record": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_lora6000_seamless_full_gpu4_20261112/processes/render_0.json",
+        "stage": "render",
+        "slot": 0,
+        "log": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_lora6000_seamless_full_gpu4_20261112/logs/render_0_1794532866633714396.log"
+      }
+    ],
+    "gpu7": [
+      {
+        "pid": 3329926,
+        "live": true,
+        "state": "R",
+        "start_ticks": "1725657093",
+        "cpu_ticks": 8275,
+        "cmd": "/private/liqi_workspace/project_code/Omni-LTX-stage2/.venv/bin/python /private/liqi_workspace/project_code/audio-driven-v5/scripts/p2_responsenet_full586_all_lora_20261111.py worker --stage render --step 6500 --slot 0 ",
+        "record": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_responsenet_full586_all_lora6000_6500_20261111/step_006500/processes/render_0.json",
+        "stage": "render",
+        "slot": 0,
+        "log": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_responsenet_full586_all_lora6000_6500_20261111/step_006500/logs/render_0_1794532866686157302.log"
+      }
+    ]
+  },
+  "gpus": {
+    "4": {
+      "uuid": "GPU-c0ca8be5-8935-4e6c-d3d7-a2c5b58c37c0",
+      "util": 23.0,
+      "used_mib": 60037.0,
+      "free_mib": 83131.0,
+      "power_w": 638.35,
+      "processes": [
+        {
+          "pid": 3329901,
+          "memory_mib": "54260"
+        },
+        {
+          "pid": 3330415,
+          "memory_mib": "5762"
+        }
+      ]
+    },
+    "7": {
+      "uuid": "GPU-4d5ee808-e829-c824-c506-cad80ff133f5",
+      "util": 61.0,
+      "used_mib": 53636.0,
+      "free_mib": 89532.0,
+      "power_w": 621.53,
+      "processes": [
+        {
+          "pid": 3329926,
+          "memory_mib": "53624"
+        }
+      ]
+    }
+  },
+  "status": {
+    "gpu4": {
+      "stage": "cache_generation_decode_scoring",
+      "at": 1794532943.052658,
+      "step": 6000,
+      "total": 6624,
+      "generated": 588,
+      "new_latents": 392,
+      "reused_generated": 196,
+      "cache_complete": true,
+      "scored_shards": 17,
+      "total_shards": 207,
+      "active": [
+        "render",
+        "metric:17"
+      ],
+      "gpu": {
+        "free_gib": 81.1826171875,
+        "total_gib": 140.4013671875,
+        "util": 100.0
+      }
+    },
+    "gpu7": {
+      "stage": "generation_and_export",
+      "at": 1794532932.05628,
+      "step": 6500,
+      "latents": 317,
+      "videos": 317,
+      "total": 586,
+      "render_pid": 3329926,
+      "decoder_pids": [],
+      "gpu": {
+        "free_gib": 91.08984375,
+        "total_gib": 140.4013671875,
+        "util": 2.0
+      }
+    }
+  }
+}

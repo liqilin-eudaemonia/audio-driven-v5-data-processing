@@ -1,0 +1,107 @@
+frames. To tackle this problem, we introduce an offset Oi
+for i-th block generation. Specifically, the offset Oi con-
+sists of the last l clean motion latents and the corresponding
+condition from the previous block:
+  \m a thb
+f {O }^{ i+1} = (\mathbf {m}_1^{i}[-l:], \mathbf {c}^{i}([-l:])),\label {eq:offset} 
+(15)
+where i = 1, · · · , L −1. These offset motion frames are
+concatenated with the current noisy motion block mi
+tj ∈
+RB×d and the condition ci ∈R3×B×d along the time axis,
+resulting in l + B motion frames and corresponding con-
+ditions (Line 7 in Algorithm 2). Due to the flexibility of
+diffusion forcing, we can assign difference flow time sched-
+ules, i.e., t = 1 for the offset and t = tj for the current
+noisy latent block.
+As we compute the modified vector field ˜vθ for CFG as
+in Eq. (14), we separately cache and update the KV of these
+vector fields vθ(·; c{∅,∅}), vθ(·; c{a,∅}), and vθ(·; c{∅,u}).
+To obtain the KV caches of the clean block, we compute
+all three by reusing the generated motion block along with
+the existing KV caches [25]. Moreover, due to the introduc-
+tion of lookahead attention and offset, the KV caches are
+updated except the for last l frames and these frames are
+provided by the offset. Therefore, the maximum cache size
+is M = L −B −l = 38.
+D.2. Training Details
+We train the vector field model vθ in Eq. (6) for 2000k steps
+while freezing the motion latent auto-encoder. We use L1
+distance for ∥· ∥. For fine-tuning the model using the pro-
+posed preference optimization method in Eq. (7), we set the
+balancing coefficient to λ = 0.1 and the deviation param-
+eter to β = 1000. We initialize the reference model vref
+with the same weights as the trained vθ. We fine-tune vθ for
+5k steps and observe that additional tuning does not yield
+further performance gains.
+D.3. Baseline Implementation
+One major challenge of evaluating an interactive head avatar
+model is the absence of official implementation of base-
+line methods. To bridge this gap, we reproduce INFP [70]
+on the motion latent space of [28], following its core mod-
+ule, Motion Guider and denote the reproduced model as
+INFP*. Based on the description in the original paper, we
+adopt a bidirectional Transformer encoder for motion gen-
+eration, where a single window consists of N = 75 frames
+and additional 10 frames serve as context frames. For Mo-
+tion Guider, we set K = 64 for both verbal and non-verbal
+motion memory banks. We train INFP* on our dataset for
+2000k steps.
+D.4. Additional Ablation Studies
+Comparison with Autoregressive Diffusion
+We com-
+pare our motion latent diffusion forcing with standard au-
+toregressive diffusion, where the motion generator is con-
+ditioned on clean context motion latents. Specifically, we
+train the motion generator in an autoregressive diffusion
+manner using four clean context blocks (40 frames) and one
+noisy block (10 frames). As shown in Fig. 11, autoregres-
+sive diffusion suffers from degraded long-horizon genera-
+tion, whereas diffusion forcing is much more robust to mo-
+tion drift, highlighting its necessity.
+Ablation on Motion Motion block Size
+In Tab. 7, we
+provide an ablation study on motion block size under a
+fixed number of training frames N = 50. Increasing block
+size (i.e., reducing the number of frames in each block)
+leads to lower latency while achieving quantitative perfor-
+mance. Conversely, reducing the block size (i.e., increas-
+ing the number of frames in each block) can improve the
+temporal consistency (FVD) and Lip-sync quality (LSE-D)
+with higher latency.
+Additional Quantitative Results
+In Tab. 6, we present
+the ablation studies on our model with additional metrics,
+including Visual Quality and Lip Synchronization. We pro-
+vide a video results of the ablation study. Please refer to the
+videos “02_ablation_wo_user_motion.mp4” and “02_ab-
+lation_wo_DPO.mp4”.
+Moreover, we provide video ab-
+lation results on the attention mask, where each masking
+method is illustrated in Fig. 12. The motion jittering ob-
+served when using only the blockwise causal mask is clearly
+visible in the video results, yet difficult to capture with
+quantitative metrics. We highly recommend watching the
+ablation video “02_ablation_attention_mask_XX.mp4”.
+D.5. Evaluation Metrics
+Reactiveness and Motion Richness
+Reactiveness and
+Motion Richness are computed using the EMOCA-
+based [11] 3D morphable models (3DMMs) that model the
+facial dynamics via 50-dim expression parameters and 6-
+dim pose parameters. We extract those parameters using
+an off-the-shelf 3DMM extractor, SPECTRE [16], for each
+video frame. Let us denote x ∈RN×d as the ground-truth
+user parameters, y ∈RN×d as the ground-truth avatar pa-
+rameters, and ˆy ∈RN×d as the generated avatar parame-
+ters. L is the number of frames and d is the feature dimen-
+sion. As reported in Tab. 1 and Tab. 4, we can compute
+rPCC, SID, Var, and FD for expression and pose, respec-
+tively.
+• rPCC (residual Pearson Correlation Coefficients) [55]
+is to measure the motion synchronization between the
+user parameters and avatar parameters. Specifically, L1
+distance is used to measure the discrepancy between
+generated PCC and ground-truth PCC where we define
+PCC as a function of z ∈RN×d given ground-truth user
+14

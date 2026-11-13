@@ -1,0 +1,46 @@
+{
+  "model": "/private/ckpts/Qwen3-VL-8B-Instruct",
+  "samples": 50,
+  "arms": [
+    "image8",
+    "video8",
+    "video16"
+  ],
+  "prompt_variant": "observation_v1",
+  "prompt_example": "Watch this 6-second listener clip. Describe all directly visible movements and facial-expression changes you recognize.\nFor each occurrence, give its start time, end time (seconds from clip start), and a brief description of what visibly changes.\nDescribe physical observations only, without interpreting their psychological or communicative meaning.\nRepresent a continuous action or state as one interval, not separate entries for successive frames. Keep genuinely separate occurrences separate.\nReturn JSON with an events array. Each event has start, end, modality (\"visual\"), and behavior (description).",
+  "window_seconds": 3,
+  "stride_seconds": 1,
+  "crop_size": [
+    512,
+    512
+  ],
+  "jpeg_quality": 85,
+  "same_frames_for_image8_video8": true,
+  "video16_superset": true,
+  "native_video_input": "original file decoded once, passed as official video tensor+metadata; not independent images",
+  "native_do_sample_frames": false,
+  "native_do_resize": false,
+  "native_temporal_patch_size": 2,
+  "native_timestamp_precision": "nearest source-frame index; error bounded by half source-frame period; logged per frame",
+  "seed": 20261029,
+  "temperature": 0,
+  "max_tokens": 4096,
+  "max_model_len": 49152,
+  "max_num_seqs": 3,
+  "mm_size_budget": {
+    "shortest_edge": 65536,
+    "longest_edge": 67108864
+  },
+  "source_decode_concurrency": 3,
+  "source_readers_per_host": 1,
+  "max_num_batched_tokens": 4096,
+  "dtype": "bfloat16",
+  "enforce_eager": true,
+  "shards": 9,
+  "same_batch_all_three_arms": true,
+  "production_modified": false,
+  "human_ground_truth": false,
+  "audio_input": false,
+  "previous_runs_are_not_concurrent_baseline": true,
+  "samples_sha256": "f8b3dff427171c721054718f9ceef1dfc44467eefe87d6fa8b37d6121edf4b3b"
+}

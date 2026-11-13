@@ -1,0 +1,692 @@
+
+=== PDF PAGE 1 ===
+                        This CVPR paper is the Open Access version, provided by the Computer Vision Foundation.
+                                   Except for this watermark, it is identical to the accepted version;
+                                   the final published version of the proceedings is available on IEEE Xplore.
+
+
+
+
+
+           CustomListener: Text-guided Responsive Interaction for
+                   User-friendly Listening Head Generation
+
+
+             Xi Liu*, Ying Guo*, Cheng Zhen, Tong Li, Yingying Ao, Pengfei Yan†
+
+                                 Vision AI Department, Meituan
+                             https://customlistener.github.io/
+
+
+
+                 Abstract
+
+   Listening head generation aims to synthesize a non-verbal
+responsive listener head by modeling the correlation be-
+tween the speaker and the listener in dynamic conversion.
+The applications of listener agent generation in virtual in-
+teraction have promoted many works achieving diverse and
+fine-grained motion generation. However, they can only ma-
+nipulate motions through simple emotional labels, but cannot
+freely control the listener’s motions. Since listener agents
+should have human-like attributes (e.g. identity, personality)
+which can be freely customized by users, this limits their
+realism. In this paper, we propose a user-friendly framework      Figure 1. The process of text-guided listener generation in our
+called CustomListener to realize the free-form text prior      CustomListener. The text prior provides the basic portrait style of
+guided listener generation. To achieve speaker-listener co-      the listener, which is input into CustomListener and combined with
+ordination, we design a Static to Dynamic Portrait module      the speaker’s information to obtain the listener’s motions.
+(SDP), which interacts with speaker information to trans-
+                                                                  will affect whether the speaker can actively express theform static text into dynamic portrait token with completion
+                                                            follow-up content [17, 19]. Unlike speaker head generationrhythm and amplitude information. To achieve coherence
+                                                  (SHG) [7, 16, 31, 38], listeners can only convey informationbetween segments, we design a Past Guided Generation
+                                                           through non-verbal feedback (nodding, frowning, etc.), andmodule (PGG) to maintain the consistency of customized
+                                                                      their responses are affected by both sides of the interactionlistener attributes through the motion prior, and utilize a
+                                                                (speaker’s motion, tone, and listener’s own personality anddiffusion-based structure conditioned on the portrait token
+                                                        emotion state). Currently, many applications, such as digitaland the motion prior to realize the controllable generation.
+                                                                avatar generation [8, 20] and human-computer interactionTo train and evaluate our model, we have constructed two
+                                                                    [43], use the listener agent to simulate more realistic conver-text-annotated listening head datasets based on ViCo and
+                                                                     sations, which has promoted many studies in LHG.RealTalk, which provide text-video paired labels. Extensive
+experiments have verified the effectiveness of our model.        Some early works manually integrate motions based on
+                                                                  rules [1, 5, 35], or rely on 2D facial keypoints [11, 26]
+                                                                  to manipulate the head, but they are limited in the vari-
+1. Introduction                                            ety of motions and the detailed control ability.  Recent
+                                                    works [15, 21, 25, 34, 44] have introduced 3D face coef-
+Listening Head Generation (LHG) is to generate listener      ficients [9], combined with the post-rendering module to
+motions (face expressions, head movements, etc.) that re-     achieve more precise control. Specifically, RLHG [44] uses
+spond synchronously to the speaker during face-to-face     a sequence-sequence structure as the baseline method for de-
+communication. Good communication is a two-way pro-     coding 3DMM coefficients. PCH [15] further improves the
+cess, and the roles of speakers and listeners are equally     render module to inpaint image artifacts. L2L [25] quantizes
+important [4].  Whether the listener responds promptly      listener motions into the discrete one-dimensional codebook
+   *Equal Contribution                                     by VQ-VAE [36], and ELP [34] expands the codebook to a
+   †Corresponding Author                                      composition of several discrete codewords to achieve more
+
+
+
+                                                       2415
+
+=== PDF PAGE 2 ===
+fine-grained control. MFR-Net [21] designs a feature ag-   we transform the static portrait provided by the text prior
+gregation module to achieve better identity preservation and      to be dynamic one, which interacts with audio to obtain
+motion diversity.                                               the time-dependent information about the completion time
+   Although the above methods can combine speaker-    and rhythm of the gradual motion changes, and refines the
+listener information to generate diverse and fine-grained lis-      listener’s motions to make the speaker-listener fluctuations
+tener motions, they have restrictions in the explicit control of      relevant.  In PGG, we generate a motion prior based on
+the listener agent’s response. Specifically, L2L [25] focuses     the similarity of dynamic portrait tokens between adjacent
+on the motion diversity but cannot control the motion under     segments, which provides reference information for features
+specific conditions. RLHG [44], PCH [15], MFR-Net [21],      that need to be maintained in the current compared to the
+and ELP [34] achieves controllable listener motion condi-      past. Then, the motion prior and the dynamic portrait token
+tioned on the input attitude. However, the attitude is limited      are input as conditions into the diffusion-based structure [14]
+to a few fixed labels (eg. positive, neutral, negative), posing     with fixed noise at the segment connection, finally generating
+limitations on the generation of realistic listeners: First, sim-      listener coefficients that enable coordination and coherence
+ple labels are not enough to give accurate responses. For ex-     in interactions.
+ample, for negative attitudes, the two emotions of doubt and        In summary, this paper has the following contributions:
+anger correspond to different facial expressions. More impor-      • We argue that simple labels are not sufficient to achieve
+tantly, a realistic listener agent should have its own identity        freely controllable listener generation, and thus propose
+(parent, friend, teacher, etc.), personality (lively, calm, etc.)       the CustomListener framework that can freely control lis-
+and behavioral habits (e.g. frowning when thinking), which        tener head motions guided by the text prior.
+users can customize and set in advance. However, simple      • We design a SDP module to achieve the speaker-listener
+labels cannot achieve the control under these conditions.           coordination, so that the completion timing and rhythm of
+                                                                       text-specified motions correspond to the speaker, and fluc-   Considering the above limitations of simple labels, in this
+                                                                     tuate with the speaker’s semantics, tone, and movements.paper, we propose a user-friendly framework called Custom-
+                                                                          • For long-term generation, we design a PGG module toListener to enable the text-guided generation, as shown in
+                                                      meet listener motion coherence between different text-Figure 1. Users can pre-customize detailed attributes of the
+                                                                  prior-conditioned segments, so that the consistency of thelistener agent. Then using a large language model, we com-
+                                                                           listener’s customized behavioral habits between segmentsbine speech content and user-customized attributes to obtain
+                                                          can be maintained and the motion switching is smooth.the text prior of the listener’s basic portrait. In CustomLis-
+                                                                          • Extensive experiments on ViCo [44] and Realtalk [12]tener, we seamlessly incorporate speaker information while
+                                                                   datasets confirm that our method can realize the state-being guided by the text prior, so as to generate realistic
+                                                                      of-the-art performance, and achieve the controllable andlistener responses that are controllable and interactive.
+                                                                       interactive realistic listener motion generation.
+   For the guidance of text prior, due to the interactive na-
+ture of communication, listener motions cannot simply be
+                                                          2. Related workregarded as text-conditioned motion generation, but faces
+the following challenges: 1) Speaker-listener coordination:     Listening head generation (LHG):  Some early works
+the text provides the basic portrait style of the listener’s re-      [1, 5, 35] use rule-based methods to manually incorporate
+sponse. While to precisely express the listener’s emotional      interactive motions.  Later, data-driven methods [11, 26]
+empathy towards the speaker, the response not only needs to     generate 2D motions based on facial keypoints or movement
+complete the text-specified motion, but also needs to adjust     frequencies, but 2D information cannot fully represent the
+its completion timing and rhythm, and fluctuate with the      details of facial movements.
+speaker’s semantics, intonation and movement amplitude. 2)        Recently, motion generation based on 3D face coeffi-
+Listener motion coherence: When motions conditioned on      cients, coupled with the post-processing renderer, has gradu-
+different text priors are combined into a long video, differ-     ally become mainstream due to its stronger representation
+ent segments should be coherent. Due to the customization,      ability of facial movements. RLHG [44] proposes a rep-
+apart from ensuring smooth motion switching, we also need      resentative ViCo dataset and constructs a baseline coeffi-
+to guarantee that the user-customized listener’s behavioral      cient decoding method using a sequence-sequence structure.
+habits reflected in past segments are maintained in the cur-     After that, PCH [15] assembles an enhanced renderer to
+rent segment. Maintaining the style of the past while still    make the generated results visually better and more stable
+showing the motion of the current text can be challenging.     by inpainting the image boundary and background. Learn-
+  To solve the above challenges, in our CustomListener,     ing2Listen (L2L) [25] proposes to use a sequence-encoding
+we design the Static to Dynamic Portrait module (SDP)    VQ-VAE [36] to learn the discrete codebook of listener mo-
+and the Past Guided Generation module (PGG) to achieve      tion. ELP [34] further utilizes a composition of multiple dis-
+the coordination and the coherence respectively. In SDP,      crete motion-codewords to represent facial motion in a more
+
+
+
+                                                       2416
+
+=== PDF PAGE 3 ===
+       User Customization                     a person listens with slightly                                               Store for the next segment
+                                                                                                          past                                                           raised lip corner and lifted chin …          The                   listener                              is an
+                                                                                                            portrait                                                                                                         token                   ⋯   ⋯                 ⋯   ⋯            outgoing                      teacher            …
+                                                                                                                                                             past motion
+                                                              text prior                MappingNet                                          GPT                                                                                                         RoBERTa                    ⋯
+                 I just couldn't keep                                                                                                                                Linear
+  Content   balance and took a                                                                                                      Past-guided
+            tumble …                                               static portrait token                                            Module
+                                                      ⋯                                                                                                     Diffusion
+                                                                                                                                                   Transformer      Denoising
+                                                                                                                                          Decoder                                                                    Render
+                                                    Audio-Text                         ⋯                   motion prior
+                                                    Responsive          ⋯       C
+  Video                                                     Interaction                               dynamic                                                         ...       PE
+                                                                  E t                 portrait token                C
+
+                                                 Speaker-Motion                                                                              Motion
+                                                                                                                                             Encoder                                                 based Refinement        ⋯    E t                                                           SDP-Module                     ...  Audio                           EncoderAudio
+
+                                                                                 window
+        Speaker                 Extract                     ⋯   ⋯                              PGG-Module        noised listener motion           Listener
+
+
+Figure 2. Overall framework of CustomListener. Given the text prior providing the listener’s static portrait style, SDP-Module transforms
+the static portrait into a dynamic one. Then in PGG-Module, the dynamic portrait token are combined with motion prior generated from
+Past-guided Module and are utilized as conditions of the diffusion-based structure to realize the controllable generation. The ’C’ in the figure
+denotes concatenation and the small pink squares denotes diffusion time-step token.
+
+fine-grained manner. MFR-Net [21] achieves the preserva-     3. Method
+tion of listener’s identity and the diversity of generation.
+                                                               3.1. Overview   Regarding the listener’s motion status, L2L [25] focuses
+on the diversity but cannot explicitly control specific actions.     In our CustomListener framework, under the guidance of
+RLHG [44], PCH [15], MFR-Net [21] achieve controllable     the fine-grained text prior, we can synthesize natural and
+generation conditioned on the input emotion, but the emotion      controllable listener motions, which can seamlessly integrate
+is limited to a few labels and cannot specifically control the     the speaker’s information (motion, speech content, audio)
+expression and posture of each emotion. Although ELP [34]      to give interactive non-verbal responses. Let Lm ∈RT ×70
+represents the latent space under different emotions in a fine-     denote the listener motions to be generated, and T is the
+grained manner through the codebook, what the user can    number of frames, 70 denotes 64-dim expression and 6-dim
+control is still the input emotion rather than the fine-grained     pose. Given speaker’s motions Sm ∈RT ×70, audio Sa,
+motions. In this way, the listener’s response to each emotion     speech content Sc and text prior R, our framework can be
+may depend on the data distribution of the training set.         formulated as:
+Conditional motion generation:  The motion generation
+                                             Lm = Custom(Sm, Sa, Sc; R)           (1)
+task derives applications under a variety of conditions. For
+example, body motion conditioned on text descriptions       The overview of our proposed framework is shown in
+[13, 18, 27, 28, 41], motion trajectory conditioned on scene     Figure 2. Before generation, for each video segment, we
+image [3], and dance motion conditioned on music [39]. Re-     use GPT to generate a text prior based on user-customized
+cently, large language models promote the development of      listener attributes and the speaker’s speech content, which
+free-form text conditioned generation based on auto-encoder     provides the listener’s static portrait reference. Then, we
+[28], hierarchical model [13], and diffusion models [18]. We      extract the speaker’s audio features from the Audio Encoder
+also generate motions conditioned on free-form text. How-    and speaker’s motion coefficients from a pre-trained face re-
+ever, for our responsive interaction, in addition to focusing      construction model [9]. Following this, we generate realistic
+on the matching of motion and text like the above methods,      listener motions through a two-stage process: (1) Static to
+we also need to make the motion and the speaker’s action,    Dynamic Portrait generation (SDP-Module): it can transform
+speech, tone and rhythm harmonious to express the listener’s      static portrait tokens into the dynamic through audio-text
+empathy. In our paper, we adopt the SDP module to achieve     responsive interaction and speaker-motion based refinement.
+this harmony. For long-term generation, to ensure the co-    The dynamic portrait token includes the time-dependent in-
+herent fluency between clips under different text commands,     formation about the motion completion and rhythm, and
+some methods have adopted transition sampling [40], speci-    makes the speaker-listener motion fluctuations correlated;
+fying noise [42], etc. However, the coherence for the custom      (2) Past-guided Listener Motion Generation (PGG-Module):
+listener, which has some motion habits, is more complex.     to produce coherent motions and maintain the listener’s pre-
+It is not just a simple motion switch, but is related to past     vious behavioral habits in long-term generation, we use a
+habits and styles, and our PGG module solves this challenge.     past guided module to produce the motion prior, combined
+
+
+
+                                                       2417
+
+=== PDF PAGE 4 ===
+with the diffusion denoising process with a fixed initial noise
+to generate the listener coefficients. Finally, listener videos
+are obtained through the post-rendering process.
+
+3.2. Static to Dynamic Portrait generation
+
+In this section, we first introduce the generation of the static
+portrait-token, and then present SDP-Module, which can
+convert static tokens into dynamic one by two stages: (1)
+Audio-text Responsive Interaction: static portrait tokens are
+converted into time-dependent portrait tokens, which reflects
+the completion time and rhythm of motions according to
+the semantics and intonation in the audio, ensuring gradual
+motion changes; (2) Speaker Motion-based Refinement: it
+refines the listener’s motions according to the fluctuations
+of speaker’s motions, producing the final dynamic portrait      Figure 3. Illustration of Audio-text Responsive Interaction. We first
+token combined with the time-dependent portrait token.          generate a weight matrix by responsive interaction between audio
+Static Portrait-token Generation  To establish a better      features and static portrait-token (SP Token), and then generate
+                                                                  time-dependent portrait token (TP Token) guided by weight matrix.connection between the user-customized listener attributes
+(identity, personality, relationship, attitude, etc.) and the     (indicated by a pink circle dot in the weight map). This
+listener’s motions, we leverage the powerful GPT for se-     weight matrix M(A, H) can be formulated as Equation 2.
+mantic understanding of both user-customized contents and       Part B After obtaining a weight matrix M(A, H), we
+speaker’s speech contents, and generate the text prior that     can generate time-dependent portrait tokens based on static
+accurately describes the listener’s expressions and poses.      portrait tokens with the guidance of M(A, H). Specifically,
+Following this, we use RoBERTa [22], a robust and efficient     as illustrated in Figure 3, the time-dependent portrait tokens
+model with high natural language understanding capability,    (TP Token) at the time stamp k is generated with the highest
+to encode the text prior into text embeddings. To obtain     weighting assigned to the static portrait tokens (SP Token)
+portrait-related tokens, we further employ a mapping net to      at l = j, which corresponds to the phrase “raised lip corner”.
+convert text embeddings into portrait tokens. We consider     This part can be formulated as Equation 3.
+these portrait tokens to be static portrait tokens since the text                     1
+                                          M(A, H) = Sm(         × Linear(H)T )), (2)prior describes the listener’s static portrait (eg. expressions                  √α(Linear(A)
+and poses) in the entire video clip.                                                       L−1
+Audio-text Responsive Interaction  Since static portrait     Et = X M(A, H)i,t·Hi,j=0:C−1, t ∈{0, ..., T −1} (3)
+tokens from text prior provide a comprehensive representa-            i=0
+tion of listener head in a video segment, it lacks the time-                                                      where Sm denotes Softmax, A ∈RT ×C is the audio feature,
+dependent information. Thus, the model would be limited                               H ∈RL×C is the static portrait token, M ∈RT ×L is the
+to generating constant motion and cannot effectively con-                                                        weight map, α is a scaling factor, Et ∈R1×C is the time-
+vey gradual variation in movement without a specific design.                                                        dependent portrait token at time stamp t. L is the length of
+To address this critical issue, we make use of the semantic                                                                      text embeddings, and C is the feature dimension.
+knowledge in speaker’s utterances, which serves as a guid-                                                       With the help of two parts above, we can obtain portrait
+ance for motion shifts. Specifically, we choose the speaker                                                           tokens that contain time-dependent information about the
+audio to provide semantics instead of speech contents. The                                                     rhythm of motion completion. This enables the model to
+underlying intuition is the former contains not only semantic                                                                 learn the progressive changes in facial/head motions within
+information but also the temporal information. This entire                                                           a single video segment, as opposed to the constant motions.
+process can be split into two parts, part A and part B.
+   Part A In this part, we generate a weight matrix through     Speaker Motion-based Refinement  In human-to-human
+responsive interaction between speaker audio features and      conversations, we believe that the amplitude of the speaker’s
+the static portrait tokens obtained from text prior. It provides     motion fluctuation also has an impact on the changes in the
+the correlation degree between the speaker’s semantics at      listener’s motion response[21, 32]. Therefore, we utilize the
+each timestamp and the motion description in the text prior.     past speaker’s motion changes to refine the listener’s motion
+For example, as shown in Figure 3, if the phrase “love you”     amplitude. This process can be well-designed formulated as:
+in the speaker’s audio at time stamp k exhibits the strongest                            t−1
+                                                                                  ∂Sicorrelation with the phrase “raised lip corner” in the descrip-                                                                                                                                                          ,              (4)                                                               Et = X  exp
+tion texts, the corresponding weight value will reach its peak                       i=t−1−w      ∂i
+
+
+
+                                                       2418
+
+=== PDF PAGE 5 ===
+                 Et = Et ⊕Et,                    (5)     segments, but also ensure the maintenance of customized         f
+                                                                         listener’s behavioral habits between two adjacent sequences.
+where ⊕means concatenation, Et, Et, Et is time-dependent               f
+portrait token, speaker motion-weighted portrait token and     Diffusion Model  To achieve diverse and natural head mo-
+dynamic portrait token at frame t, respectively. Si denotes      tion generation, our generation module is built on denoising
+speaker motion at frame i, w is the time-window length. For      diffusion probabilistic models (DDPM) [14].
+efficiency, we set w to 5, which means we only take the       During forward diffusion process q, we progressively
+past five-frame speaker motions into account. For each time      inject noise into the listener motion x0 until it becomes a
+stamp t, the listener’s portrait token Et is affected by the     Gaussian noise xT , which can be defined as a Markov chain:
+cumulative gradients of several previous speaker motions.
+                                                                                T
+This process can be illustrated in the lower part of the SDP-
+                                                                          q(x1:T  | x0) = Y q(xt | xt−1),           (8)Module in Figure 2. Notably, when generating portrait token
+                                                                                      t=1
+at frame t, we only focus on the speaker motions up to frame
+t−1. Due to the listener and the speaker communicating con-                                                                   q(xt | xt−1) = N(xt; p1 −βtxt−1, βtI),      (9)
+currently, the listener’s state at frame t should not influenced
+by the speaker’s motion at the same frame t.                 where x1, ..., xT are noised listener motions, β1, ..., βT are
+                                                                 the variance schedule. In the reverse process pθ, we produce
+3.3. Past-guided Listenr Motion Generation               listener motion x0 by removing noise from xT step-by-step:
+
+The PGG-Module is to ensure that motions between seg-
+                                                          pθ(xt−1 | xt, c) = N(xt−1; µθ(xt, c, t), Pθ(xt, c, t)),ments are coherent, and the customized listener attributes in
+                                                                                                                    (10)
+the previous segment can be maintained in the current seg-
+                                                    where c is a conditioning variable. We perform denoising
+ment. It contains Past-guided Module and diffusion-based
+                                                             process with a transformer decoder [37] conditioned on the
+motion generation module, which can generate motion prior
+                                                       motion prior and dynamic portrait tokens.
+based on past motions and then synthesize listener motions.
+Following this, a renderer is used to obtain listener videos.     Render  We utilize PIRenderer [30] for rendering, which
+                                                         can produce natural listener videos by incorporating a single
+Past-guided Module  To produce long video with arbi-                                                                       listener reference image as well as the 3DMM coefficients.
+trary length, we opt for a segment-by-segment generation
+approach during inference. However, we have observed that                                                          4. Experiments
+there are unsmooth pose transitions between segments. This
+issue can be attributed to the neglect of correlations between     4.1. Datasets
+adjacent segments. To address this, we take past motions
+                                                   Data Annotation  Since the existing listener head datasets
+into consideration.
+                                                    do not contain the full data required for training our model,
+   Since our final goal is to synthesize a customized listener,
+                                            we conduct additional data annotations on two datasets:(1)
+in addition to ensuring smooth transition, we also need to
+                                                 ViCo [44], a popular dataset in listener head generation; (2)
+take the listener’s past behavioral habits into account (e.g.
+                                                            RealTalk, proposed by [12], which serves as a database for
+frowning when thinking). Hence, we sought assistance from
+                                                                  retrieving listener videos in [12].  Firstly, to learn the re-
+dynamic portrait tokens of two adjacent segments to guide
+                                                                 lationships between the text prior and listener expressions,
+the generation of motion prior. Specifically, the weight we
+                                            we follow the text annotation pipeline in TalkCLIP [24],
+assign to past motions at different times is determined by the
+                                                      and conduct text annotation on ViCo[44] and RealTalk[12].
+similarity between portrait tokens in the current segment and
+                                                                    Specifically, we employ [6] to acquire emotion labels, ac-
+those in the last segment. Formally, we calculate the motion
+                                                                   tivated AUs as well as their intensities.  Additionally, to
+weight and obtain the motion prior Gt:t+L by:                                                                learn realistic head movements such as nodding to convey
+                                                       agreement and shaking the head to signify disagreement,            Simt:t+L = Et:t+L × ETt−L:t,            (6)
+                                            we use Hopenet [33] to detect head motions. Finally, we
+                                                            generate diverse text prior description for each video seg-            Gt:t+L = Simt:t+L × Pt−L:t,            (7)
+                                                   ment according to the format: [A person <EMOTION>
+where × denotes matrix multiplication, L is the segment     and listens with <AU> (and <HEAD MOTION>)], where
+length, t is the time stamp, Simt:t+L denotes the similarity   <EMOTION> denotes the emotional labels, <AU> de-
+between portrait tokens in the current segment Et:t+L and     notes fine-grained expression-related texts based on AU ac-
+those in the last segment Et−L:t, which is the weight we      tivation intensities and Facial Action Coding System [10],
+assign to past motions Pt−L:t. The higher the similarity,    and <HEAD MOTION> indicates head nodding/shaking
+the greater the weight we assign. This approach can not      labels. We use “and” to link when there is more than one
+only encourage continuous transitions between two adjacent      activated AU. Detailed examples can be seen in Appendix A.
+
+
+
+                                                       2419
+
+=== PDF PAGE 6 ===
+                             FD ↓          RTLCC ↓     RWTLCC↓    FID△fm↓     SND ↓       V-D ↑        Methods       Testset
+                                exp     angle    trans    exp     pose    exp     pose    exp    pose   exp    pose   exp    pose
+                      Dtest    15.03    7.90    6.55    0.113   0.160   0.108   0.160   11.65    0.90    2.90    0.09    0.69    0.10      RLHG∗[44]
+                   Dood    22.81    8.58    8.90    0.124   0.101   0.104   0.100    9.32    0.82    7.20    0.11    1.01    0.12
+
+                      Dtest    19.02   13.26    7.74    0.124   0.163   0.109   0.198   11.59    0.96    3.10    0.13    0.31    0.12       PCH∗[15]
+                   Dood    18.63   17.96    8.80    0.121   0.115   0.107   0.140    8.67    0.87    7.01    0.12    0.51    0.16
+
+                      Dtest    14.89    7.35    6.34    0.102   0.153   0.101   0.113    8.64    0.87    2.62    0.09    0.57    0.20       L2L∗[25]
+                   Dood    15.64    8.23    7.89    0.095   0.098   0.100   0.101    6.78    0.74    6.89    0.10    1.23    0.28
+
+                      Dtest    13.37    6.82    6.02        -          -          -          -          -          -         -         -         -         -     MFR-Net† [21]
+                   Dood    14.70    8.12    6.37        -          -          -          -          -          -         -         -         -         -
+
+                      Dtest    11.54    6.12    5.90    0.072   0.103   0.081   0.097    3.12    0.06    2.40    0.07    1.55    0.32
+          Ours
+                   Dood    12.67    7.49    6.01    0.081   0.073   0.084   0.075    3.59    0.07    5.94    0.05    1.25    0.30
+
+Table 1. Comparisons of our model with other methods on Dtest and Dood of ViCo. Bold represents the best. The † means we directly refer
+to data in their paper and ∗denotes we retrain the model. The ↓indicates lower is better and the ↑indicates higher is better. The values of
+FD and FID△fm are multiplied by 100. The quantitative results on RealTalk [12] are in Appendix B.
+
+
+Data Construction  For ViCo, which contains three parts:             Method     SSIM ↑  CPBD ↑  PSNR ↑   FID ↓
+train set Dtrain, test set Dtest, out-of-domain set Dood (all          RLHG∗[44]      0.56       0.12      17.39     27.70
+                                                                 PCH∗[15]       0.58       0.15      18.48     21.29identities in Dood have not appeared in Dtrain), we obtain                                                                     L2L∗[25]       0.58       0.16      17.67     22.13
+the transcripts of the speaker’s audios by a speech recog-          MFR-Net† [21]     0.59       0.18      17.82     20.08
+nition model [29], and get an extended version of ViCo.               Ours          0.60       0.19      17.98     20.06
+For RealTalk, to align the dimension of 3DMM coefficients
+with ViCo, we re-extract facial 3DMM coefficients using      Table 2. Quantitative results with state-of-the-art methods on image
+[9] and then obtain two subsets: Dtrain and Dtest. These       quality. The best results are highlighted in bold.
+two extended datasets are important for future research on
+text-guided listener head generation task.
+                                                                    that a good custom listener should have four characteris-
+4.2. Experimental Settings                                        tics: (1) natural-looking and diverse facial/head motions;
+                                                                    (2) highly synchronous with the speaker motions; (3) highly
+Loss Fuction  During training, followed by [14], we per-
+                                                            coherent motions in a long video; (4) high image quality:
+form denoising on noised listener motions xt conditioned
+                                                      • FD: L1 distance between the predicted 70-dim listener
+on motion prior and dynamic portrait token step-by-step,
+                                                        motions and the ground-truth listener motions.
+and our optimization goal is to predict noise term ϵ at each
+                                                      • Variation for Diversity (V-D) : Variance across the timestep. The objective function can be defined as a conditional
+                                                                     series sequence of 3DMM coefficients.diffusion loss as follows:
+                                                      • Residual Time Lagged Cross Correlation (RTLCC):
+                      h                           ∥ϵt −ϵθ(xt, c, t)∥2i ,       (11)    L1 distance between generated TLCC [2] and TLCC [2]        Ld = Ex0,t,ϵt
+                                                             of ground truth. RTLCC indicates the correlation between
+where ϵt ∼N(0, I) is the noise at step t, c denotes condi-      listener motions and lagged speaker motions.
+tions, x0 is the original listener motions.                      • Residual Windowed Time Lagged Cross Correlation
+                                               (RWTLCC): RTLCC in a fixed window. We set the window
+Implementation Details  The resolution of videos  is
+                                                              length to 4 seconds following ELP [34].
+256×256, and the FPS is 30. For training, we clip the origi-
+                                                      • FID△fm: FID score of differences in 3DMM coeffi-nal videos to several 60-frame video segments. We extract
+                                                                    cients between adjacent frames, which indicates the temporal
+3DMM coefficients from speaker videos and listener videos
+                                                                naturalness of facial motions, followed by [42].
+by [9], which serve as speaker motions and listener motions,
+                                                      • SND: Sequence Naturalness Distance proposed by [42],respectively. Following MFR-Net [21], we extract 45-dim
+                                                     showing the distribution difference between generated andacoustic features from audio. We utilize AdamW optimizer
+                                                              ground-truth motions.[23] to train our model with a learning rate of 1e−4.
+                                                      • SSIM, CPBD, PSNR and FID: Common metrics for
+4.3. Quantitative Results                              image quality evaluation.
+
+Metrics   It’s non-trivial to measure the realism of generated    Comparisons with Existing Methods We retrain PCH
+listener motions. We choose the following metrics based on      [15], RLHG [44] and L2L [25] on ViCo[44]. It should be
+
+
+
+                                                       2420
+
+=== PDF PAGE 7 ===
+  Speaker
+  Video
+
+
+
+
+
+  The listener is
+  the speaker’s
+   friend with an
+  outgoing
+   personality.
+
+
+
+
+  The listener is
+  an impatient
+  person, and
+  he is not
+  interested in
+  the speaker’s
+  words.
+
+
+
+  The listener is
+  a humble
+  person who
+  wants to know
+  more.
+
+
+
+
+  The listener is
+  a reserved
+  professor who
+  believes in the
+  speaker's
+  words.
+
+
+Figure 4. Visual results produced by CustomListener. All listener videos are generated conditioned on different pre-set text priors, the same
+speaker video (the 1st row) and the same reference listener image.
+
+noted that, source codes of ELP [34] and MFR-Net [21] is
+unavailable. For MFR-Net [21], we utilize the data from                               Speaker
+the original paper. For ELP [34], the 3DMM coefficient
+extraction model used is different from ours, resulting in                  RLHG
+distinct dimensions of coefficients (e.g., β ∈R100T for ELP
+[34], β ∈R64T for ours), thus it is not reasonable to directly                                                                                                                                                            PCH
+compare with evaluation data in ELP [34]. Therefore, we
+only provide its visual comparisons in Appendix C. Our
+quantitative comparisons consist of four parts: 1) precision         GT
+and diversity of listener motions: as presented in Table 1,
+for the realism of listener motion generation, our proposed                  Ours
+method achieves the lowest FD on both Dtest and Dood in
+ViCo. Meanwhile, the V-D of our model is comparable to
+                                                                 Figure 5. Qualitative comparisons with PCH [15], RLHG [44]other methods, which indicates that our model can maintain
+                                                                  conditioned on the same speaker and the same listener reference
+certain diversity when generating controllable listener mo-
+                                                                image.
+tions. This may benefit from the probabilistic nature of the
+diffusion model. 2) speaker-listener synchronization: com-
+pared to all existing methods, CustomListener can decrease
+                                                               4.4. Qualitative Resultsthe RTLCC and the RWTLCC, which justifies the effective-
+ness of our dynamic portrait tokens. 3) temporal smoothness:     Visual Results  Since previous methods cannot generate
+in Table 1, the FID△fm and SND of our model outperform      listener head based on fine-grained texts, we first present
+other existing methods by a large margin, which validates     visual results generated by CustomListener. As shown in
+that our model can mitigate un-smooth transitions. 4) image-     Figure 4, given different texts, covering diverse listener’s
+level quality: although image quality is not our main focus,      personalities, identities and attitudes toward the speaker’s
+we still have a certain performance gain in related metrics, as      utterances, our framework can produce fine-grained non-
+shown in Table 2. These results indicate that our generated     verbal listener motions closely aligned with pre-customized
+motion is closer to GT motion, thus achieving relatively high      texts. For example, if the listener is an impatient person
+image-level quality without special design in rendering.      who is not interested in the speaker’s words(the 3rd row in
+
+
+
+                                                       2421
+
+=== PDF PAGE 8 ===
+                                                                                                Segment1                           Segment2
+
+ PGM
+                                                                        GT
+ w/o
+
+ Ours                                                                                                        PGM
+                                                                                                           w/o
+Figure 6. Ablation study of PGM to verify that PGM can improve
+motion coherency. Each group includes adjacent four frames, and
+the frames enclosed by red box are the two frames at the transition            Ours
+point between two video clips.
+
+          FD ↓  RTLCC ↓  RWTLCC ↓  FID △fm↓  SND ↓       Figure 7. Ablation study of PGM. For different segments, the habit  Method
+             (x100)                             (x100)                                                                     of frowning is maintained using PGM.
+  w/o ATRI   20.67     0.206       0.203         5.01       4.53
+ w/o SMW   19.05     0.201       0.196         5.07       4.58        4.5. Ablation Study
+  w/o SDP   21.97     0.213       0.210         5.90       4.60
+  w/o PGM   20.53     0.197       0.201         6.47       4.65     SDP module  In Section 3.2, we design a SDP module to
+    Ours     18.48     0.165       0.169         3.42       4.23
+                                                            generate dynamic portrait tokens for realizing progressive
+Table 3. Ablation study. Each cell represents the average results of     motion shifts that correspond well to the speaker. To validate
+70-dim motions (64-dim exp + 6-dim pose) on Dtest and Dood.          its effectiveness, we conduct ablation study on Audio-text
+                                                        Responsive Interaction (ATRI) and Speaker Motion-based
+                 Similarity      Overall      Speaker-listener    Video     Weighting (SMW). The results are shown in Table 3. In   Method
+                    to GT     Naturalness     Coordination    Smooth
+ RLHG [44]      1.28         1.12            1.64          2.04       addition to the improvement in FD, the improvement in the
+  PCH [15]       2.08         2.40            2.48          2.28    RTLCC and RWTLCC is more pronounced, which demon-
+  L2L [25]       2.68         2.56            1.92          1.80       strates the SDP module is crucial for enhancing speaker-
+    Ours         3.96         3.92            3.96          3.88        listener synchronization, and each of its components matters.
+
+Table 4. User study results. The best results are highlighted in bold.                                                        Past-guided module  To validate the effectiveness of our
+                                                              Past-guided module (PGM), we train networks without PGM.
+                                                As presented in Table 3, without PGM, the metrics FID△fm
+Figure 4), he may appear indifferent and show impatience.
+                                                     and SND, which are related to the temporal naturalness
+Additionally, the produced listener’s responses can fluctuate
+                                                             of motions, increase significantly, indicating a decrease in
+with the speaker’s semantics and movement, showing great
+                                                          smoothness. This observation shows the necessity of PGM
+effectiveness of our proposed dynamic portrait tokens.
+                                                                    for mitigating unnatural transitions between video clips. The
+Comparisons with Existing Methods  In Figure 5, we     visual results are shown in Figure 6. Apart from this, our
+compare our results with RLHG [44], PCH [15].  It can     proposed PGM can maintain the consistency of listener’s cus-
+be seen that our method is capable of generating more re-     tomized behavioral habits between adjacent clips, as shown
+alistic listener heads than other baselines. In the left four      in Figure 7. The listener is customized a habit of frowning
+columns, both RLHG [44] and PCH [15] suffer from un-    when thinking, and when segment 2 is guided by “lips mildly
+natural motions (e.g., disorderly opened mouth) and visible      parted and lip corner raised slightly”, the frowning habit can
+facial artifacts. In the right four columns, RLHG [44] still     be still maintained.
+exhibits incorrect motions and PCH [15] can not display                                                          5. Conclusion
+negative attitude accurately. While our method can produce
+                                                             In this paper, we present a user-friendly framework callednatural listener head that highly aligns with the ground truth
+                                                          CustomListener, which can realize freely-controllable lis-conditioned on the given texts. More detailed comparisons
+                                                                  tener head generation conditioned on text priors. To achievecan be seen in Appendix C.
+                                                                 the speaker-listener coordination, we propose a SDP-module
+User Study  We conduct user studies to evaluate from hu-     for dynamic portrait-token generation, which is capable of
+man perceptual perspective. We randomly choose 25 speaker      representing progressive motion changes. To ensure coherent
+videos from ViCo[44] and RealTalk[12] to generate listen-      listener responses in a long video, we design a PGG-module
+ers for each method. 28 people are asked to rate different      for smooth transition between adjacent video segments as
+methods(1-4, 4 is the best) for each video from 4 metrics:     well as maintaining customized behavioral habits. Com-
+similarity to GT, overall naturalness, speaker-listener co-     prehensive experiments demonstrate the superiority of our
+ordination and video smooth. The average scores of each    whole framework.  In future work, it may be interesting
+method are shown in Table 4. Our method outperformed      to generalize our framework to listening body generation,
+other methods in all aspects.                                    yielding a complete and realistic listener agent.
+
+
+
+                                                       2422
+
+=== PDF PAGE 9 ===
+References                                                      [13] Anindita Ghosh, Noshaba Cheema, Cennet Oguz, Christian
+                                                                         Theobalt, and Philipp Slusallek. Synthesis of compositional
+ [1] Dan Bohus and Eric Horvitz. Facilitating multiparty dialog                                                                     animations from textual descriptions.  In Proceedings of
+     with gaze, gesture, and speech.  In International Confer-                                                                            the IEEE/CVF international conference on computer vision,
+     ence on Multimodal Interfaces and the Workshop on Machine                                                                    pages 1396–1406, 2021. 3
+     Learning for Multimodal Interaction, pages 1–8, 2010. 1, 2
+                                                                     [14] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffu-
+ [2] Steven M Boker, Jennifer L Rotondo, Minquan Xu, and Kadi-                                                                         sion probabilistic models. Advances in neural information
+     jah King. Windowed cross-correlation and peak picking for                                                                        processing systems, 33:6840–6851, 2020. 2, 5, 6
+     the analysis of variability in the association between behav-
+                                                                     [15] Ailin Huang, Zhewei Huang, and Shuchang Zhou. Perceptual
+      ioral time series.  Psychological methods, 7(3):338, 2002.
+                                                                          conversational head generation with regularized driver and
+    6
+                                                                  enhanced renderer. In Proceedings of the 30th ACM Interna-
+ [3] Zhe Cao, Hang Gao, Karttikeya Mangalam, Qi-Zhi Cai, Minh            tional Conference on Multimedia (MM’22), 2022. 1, 2, 3, 6,
+     Vo, and Jitendra Malik. Long-term human motion prediction             7, 8
+     with scene context. In Computer Vision–ECCV 2020: 16th                                                                     [16] Xinya  Ji, Hang Zhou,  Kaisiyuan Wang, Wayne Wu,
+    European Conference, Glasgow, UK, August 23–28, 2020,                                                          Chen Change Loy, Xun Cao, and Feng Xu. Audio-driven
+     Proceedings, Part I 16, pages 387–404. Springer, 2020. 3                                                                     emotional video portraits. In Proceedings of the IEEE/CVF
+ [4] Justine Cassell and Kristinn R Thorisson. The power of a nod           conference on computer vision and pattern recognition, pages
+     and a glance: Envelope vs. emotional feedback in animated          14080–14089, 2021. 1
+     conversational agents. Applied Artificial Intelligence, 13(4-5):                                                                     [17] Adam Kendon. Movement coordination in social interaction:
+     519–538, 1999. 1                                                      Some examples described. Acta psychologica, 32:101–125,
+ [5] Justine Cassell, Catherine Pelachaud, Norman Badler, Mark          1970. 1
+     Steedman, Brett Achorn, Tripp Becket, Brett Douville, Scott      [18] Jihoon Kim, Jiseob Kim, and Sungjoon Choi. Flame: Free-
+     Prevost, and Matthew Stone. Animated conversation: rule-          form language-based motion synthesis & editing. In Proceed-
+     based generation of facial expression, gesture & spoken in-           ings of the AAAI Conference on Artificial Intelligence, pages
+     tonation for multiple conversational agents. In Proceedings          8255–8263, 2023. 3
+      of the 21st annual conference on Computer graphics and                                                                     [19] Marianne LaFrance. Nonverbal synchrony and rapport: Anal-
+      interactive techniques, pages 413–420, 1994. 1, 2                                                                              ysis by the cross-lag panel technique.  Social Psychology
+ [6] Di Chang, Yufeng Yin, Zongjian Li, Minh Tran, and Moham-           Quarterly, pages 66–70, 1979. 1
+    mad Soleymani. Libreface: An open-source toolkit for deep                                                                     [20] Ruilong Li, Shan Yang, David A Ross, and Angjoo Kanazawa.
+      facial expression analysis. arXiv preprint arXiv:2308.10713,                                                             Ai choreographer: Music conditioned 3d dance generation
+     2023. 5                                                                     with aist++. In Proceedings of the IEEE/CVF International
+ [7] Lele Chen, Ross K Maddox, Zhiyao Duan, and Chenliang          Conference on Computer Vision, pages 13401–13412, 2021.
+    Xu. Hierarchical cross-modal talking face generation with         1
+    dynamic pixel-wise loss. In Proceedings of the IEEE/CVF      [21] Jin Liu, Xi Wang, Xiaomeng Fu, Yesheng Chai, Cai Yu, Jiao
+     conference on computer vision and pattern recognition, pages           Dai, and Jizhong Han. Mfr-net: Multi-faceted responsive
+     7832–7841, 2019. 1                                                     listening head generation via denoising diffusion model. In
+ [8] Lele Chen, Chen Cao, Fernando De la Torre, Jason Saragih,          Proceedings of the 31th ACM International Conference on
+     Chenliang Xu, and Yaser Sheikh. High-fidelity face tracking          Multimedia (MM’23), 2023. 1, 2, 3, 4, 6, 7
+      for ar/vr via deep lighting adaptation.  In Proceedings of      [22] Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar
+     the IEEE/CVF conference on computer vision and pattern            Joshi, Danqi Chen, Omer Levy, Mike Lewis, Luke Zettle-
+      recognition, pages 13059–13069, 2021. 1                           moyer, and Veselin Stoyanov. Roberta: A robustly optimized
+ [9] Yu Deng, Jiaolong Yang, Sicheng Xu, Dong Chen, Yunde Jia,            bert pretraining approach. arXiv preprint arXiv:1907.11692,
+     and Xin Tong. Accurate 3d face reconstruction with weakly-          2019. 4
+     supervised learning: From single image to image set.  In      [23] Ilya Loshchilov and Frank Hutter. Decoupled weight decay
+     Proceedings of the IEEE/CVF conference on computer vision            regularization. arXiv preprint arXiv:1711.05101, 2017. 6
+    and pattern recognition workshops, pages 0–0, 2019. 1, 3, 6      [24] Yifeng Ma, Suzhen Wang, Yu Ding, Bowen Ma, Tangjie
+[10] Paul Ekman. Facial action coding system (facs). A human           Lv, Changjie Fan, Zhipeng Hu, Zhidong Deng, and Xin Yu.
+      face, 2002. 5                                                             Talkclip: Talking head generation with text-guided expressive
+[11] Will  Feng,  Anitha  Kannan,  Georgia  Gkioxari,  and           speaking styles. arXiv preprint arXiv:2304.00334, 2023. 5
+   C Lawrence Zitnick. Learn2smile: Learning non-verbal inter-      [25] Evonne Ng, Hanbyul Joo, Liwen Hu, Hao Li, Trevor Darrell,
+     action through observation. In 2017 IEEE/RSJ International         Angjoo Kanazawa, and Shiry Ginosar. Learning to listen:
+     Conference on Intelligent Robots and Systems (IROS), pages          Modeling non-deterministic dyadic facial motion. In Proceed-
+     4131–4138. IEEE, 2017. 1, 2                                        ings of the IEEE/CVF Conference on Computer Vision and
+[12] Scott Geng, Revant Teotia, Purva Tendulkar, Sachit Menon,           Pattern Recognition (CVPR), pages 20395–20405, 2022. 1, 2,
+     and Carl Vondrick. Affective faces for goal-driven dyadic             3, 6, 8
+     communication. arXiv preprint arXiv:2301.10939, 2023. 2,      [26] Behnaz Nojavanasghari, Yuchi Huang, and Saad Khan. In-
+      5, 6, 8                                                                    teractive generative adversarial networks for facial expres-
+
+
+
+                                                       2423
+
+=== PDF PAGE 10 ===
+     sion generation in dyadic interactions.   arXiv preprint      [40] Zhao Yang, Bing Su, and Ji-Rong Wen. Synthesizing long-
+     arXiv:1801.09092, 2018. 1, 2                                      term human motions with diffusion models via coherent sam-
+[27] Mathis Petrovich, Michael J Black, and G¨ul Varol. Action-            pling. In Proceedings of the 31st ACM International Confer-
+     conditioned 3d human motion synthesis with transformer vae.          ence on Multimedia, pages 3954–3964, 2023. 3
+     In Proceedings of the IEEE/CVF International Conference      [41] Zhao Yang, Bing Su, and Ji-Rong Wen. Synthesizing long-
+    on Computer Vision, pages 10985–10995, 2021. 3                   term human motions with diffusion models via coherent sam-
+                                                                                 pling. In Proceedings of the 31st ACM International Confer-[28] Mathis Petrovich, Michael J Black, and G¨ul Varol. Temos:
+                                                                    ence on Multimedia, pages 3954–3964, 2023. 3     Generating diverse human motions from textual descriptions.
+     In European Conference on Computer Vision, pages 480–497.      [42] Zhentao Yu, Zixin Yin, Deyu Zhou, Duomin Wang, Finn
+     Springer, 2022. 3                                         Wong, and Baoyuan Wang. Talking head generation with
+                                                                               probabilistic audio-to-visual diffusion priors.  In Proceed-[29] Alec Radford, Jong Wook Kim, Tao Xu, Greg Brockman,
+                                                                            ings of the IEEE/CVF International Conference on Computer      Christine McLeavey, and Ilya Sutskever. Robust speech recog-
+                                                                               Vision, pages 7645–7655, 2023. 3, 6      nition via large-scale weak supervision. In International Con-
+     ference on Machine Learning, pages 28492–28518. PMLR,      [43] Zhimeng Zhang, Lincheng Li, Yu Ding, and Changjie
+                                                                      Fan.  Flow-guided one-shot talking face generation with     2023. 6
+                                                                     a high-resolution audio-visual dataset.  In Proceedings of
+[30] Yurui Ren, Ge Li, Yuanqi Chen, Thomas H Li, and Shan
+                                                                           the IEEE/CVF Conference on Computer Vision and Pattern
+     Liu. Pirenderer: Controllable portrait image generation via
+                                                                         Recognition, pages 3661–3670, 2021. 1
+     semantic neural rendering. In Proceedings of the IEEE/CVF
+                                                                     [44] Mohan Zhou, Yalong Bai, Wei Zhang, Ting Yao, Tiejun Zhao,     International Conference on Computer Vision, pages 13759–
+                                                                  and Tao Mei. Responsive listening head generation: A bench-     13768, 2021. 5
+                                                           mark dataset and baseline. In Proceedings of the European
+[31] Alexander Richard, Michael Zollh¨ofer, Yandong Wen, Fer-
+                                                                         conference on computer vision (ECCV), 2022. 1, 2, 3, 5, 6, 7,
+    nando De la Torre, and Yaser Sheikh. Meshtalk: 3d face
+                                                              8
+     animation from speech using cross-modality disentanglement.
+     In Proceedings of the IEEE/CVF International Conference
+    on Computer Vision, pages 1173–1182, 2021. 1
+[32] Daniel Richardson, Rick Dale, and Kevin Shockley. Syn-
+     chrony and swing in conversation: Coordination, temporal
+     dynamics, and communication. Embodied communication in
+    humans and machines, pages 75–94, 2008. 4
+[33] Nataniel Ruiz, Eunji Chong, and James M Rehg. Fine-grained
+     head pose estimation without keypoints. In Proceedings of the
+    IEEE conference on computer vision and pattern recognition
+     workshops, pages 2074–2083, 2018. 5
+[34] Luchuan Song, Guojun Yin, Zhenchao Jin, Xiaoyi Dong,
+     and Chenliang Xu. Emotional listener portrait: Neural lis-
+     tener head generation with emotion. In Proceedings of the
+    IEEE/CVF International Conference on Computer Vision
+     (ICCV), pages 20839–20849, 2023. 1, 2, 3, 6, 7
+[35] Sinan Sonlu, U˘gur G¨ud¨ukbay, and Funda Durupinar. A con-
+     versational agent framework with multi-modal personality
+     expression. ACM Transactions on Graphics (TOG), 40(1):
+     1–16, 2021. 1, 2
+[36] Aaron Van Den Oord, Oriol Vinyals, et al. Neural discrete
+      representation learning. Advances in neural information pro-
+     cessing systems, 30, 2017. 1, 2
+[37] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszko-
+       reit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia
+     Polosukhin. Attention is all you need. Advances in neural
+     information processing systems, 30, 2017. 5
+[38] Konstantinos Vougioukas, Stavros Petridis, and Maja Pantic.
+      Realistic speech-driven facial animation with gans. Interna-
+      tional Journal of Computer Vision, 128:1398–1413, 2020.
+    1
+[39] Siqi Yang, Zejun Yang, and Zhisheng Wang. Longdancediff:
+     Long-term dance generation with conditional diffusion model.
+     arXiv preprint arXiv:2308.11945, 2023. 3
+
+
+
+                                                       2424

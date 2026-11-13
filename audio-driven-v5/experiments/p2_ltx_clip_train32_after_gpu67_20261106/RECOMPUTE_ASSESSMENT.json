@@ -1,0 +1,41 @@
+{
+  "at": "2026-11-06T15:06:17.284631+00:00",
+  "recommendation": "candidate_only; retain all until current joint-loss GPU validation",
+  "current": {
+    "step": 120,
+    "world": 32,
+    "policy": "all",
+    "losses": [
+      "av",
+      "ltx_hidden_clip_event",
+      "video_feature",
+      "audio_feature",
+      "speaker_whisper"
+    ],
+    "warm_steps": 20,
+    "mean_seconds": 6.084479368908797,
+    "mean_wait_ms": 0.04597919178195298,
+    "rank0_peak_reserved_gib": 95.724609375
+  },
+  "reference": {
+    "policy": "three_quarters",
+    "world": 30,
+    "feature_loss_enabled": false,
+    "trial_speedup_percent": 6.44,
+    "trial_peak_reserved_gib": 128.1367,
+    "production_observed_rank0_peak_reserved_gib": 133.923828125,
+    "memory_cap_gib": 134,
+    "feature_variant_tested": false,
+    "complete_ABBA": false
+  },
+  "code_compatible_in_principle": true,
+  "current_hidden_forward_calls_same_configured_block_loop": true,
+  "current_joint_longest_sample_gpu_memory_tested_under_three_quarters": false,
+  "training_policy_changed": false,
+  "validation_needed": [
+    "11.95s longest sample two real forward/backward/Adam updates with both Feature and hidden Event enabled",
+    "all-rank peak reserved and nvidia-smi headroom",
+    "same-sample all vs three_quarters loss gradient and update comparison",
+    "matched-batch throughput benchmark"
+  ]
+}

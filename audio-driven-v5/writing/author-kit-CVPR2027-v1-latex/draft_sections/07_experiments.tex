@@ -1,0 +1,88 @@
+\section{Experiments}
+\label{sec:experiments}
+\cnnote{本节状态}{实验结构与五组消融已确认，正式结果尚未汇齐。下面把已确定的比较问题写成英文，将执行计划、版本核对和待做内容保留中文。表T1--T4为筹备编号；正式排版编号由LaTeX生成。所有结果表仅展示结构，不预填成绩。}
+
+% Paragraph role P01: 实验证据链——整体能力、组件作用和资源／评价可信度。
+The experimental design addresses three questions: how the model performs on audiovisual backchannels and shared visual-listening capabilities, what each component contributes, and how reliably the data and evaluation capture listening behavior.
+
+\subsection{Experimental Setup}
+\label{sec:setup}
+\paragraph{Training data and test settings.}
+% Paragraph role P02: 实际AV训练集与测试范围
+Generation training uses a separately selected set of 284,218 clips totaling approximately 500 hours. This selection includes source training data and part of the source development split; the latter is not an independent validation set. These are the AV training counts, distinct from the retained resource statistics in \cref{sec:data-statistics}.
+\cnnote{测试清单待冻结}{Seamless固定200作为同源AV评价候选，ResponseNet分层随机200作为跨来源候选，ViCo test43作为视觉补充。三者不自动构成新benchmark。需确定模型选择／阈值校准／最终测试清单，核查同源对话、时间重叠及人物身份；隔离结论按实际证据报告。D5的最终资源数量不等于本节正式benchmark规模。}
+\cnnote{抽样与泄漏}{早期“48条非零音频＋按模型表现选出的152条”只作探索，不作无偏主测试。多次用于选模型的诊断集需披露用途。测试保留有声／安静的自然分布，单独有声子集按预定义规则组织。}
+
+\paragraph{Implementation details.}
+% Paragraph role P03: 已确认模型版本与训练实现
+Generation training uses frozen Qwen2.5-Omni-3B without planning SFT, with hidden states from layers 8, 18, 28, and 35. The generator is LTX-2.3-22B, and the speaker encoder is Whisper-large-v3. Qwen3-Omni is used separately for data annotation. The connector has four fusion blocks of width 1,024 with 16 attention heads; its video and audio outputs have dimensions 4,096 and 2,048. The auxiliary feature decoders each use 16 AdaLN residual blocks of width 1,024 to predict 2,048-dimensional teacher features. LTX text-attention LoRA uses rank and scaling parameter 8. Precomputed conditions, target features, and labels refer to the same selected media.
+
+% Paragraph role P04: Event实现口径——训练词表、启用门槛与评测词表分开。
+The Event heads have 16 visual and 3 audio output slots. Eighteen classes meet the validity criteria and the minimum support of 5,000 positive examples; the mouth-closing slot is retained but excluded from the loss. This training vocabulary contains general visual behaviors and is separate from the communicative categories used in evaluation.
+\cnnote{引用与配置待补}{上述结构及维度已按当前配置和实际复用源码核对。Gemma的正式模型版本、LTX与Bernini的正式书目信息仍需补齐；源码定位见配套方法核对文档。生成训练中的Qwen未做规划SFT。}
+\cnnote{采样设置待冻结}{中文稿当前共享推理函数采用30步采样，视频／音频CFG为3／7。它们是可在实验中统一调整的参数，不是方法贡献。最终检查点、规划器及采样协议须共同确定后填写。}
+\cnnote{版本待冻结}{当前生成训练使用base Qwen hidden；最新LTX6000／6500＋SFT2752评测由SFT模型预测描述并重新提取H，属于“训练base H、推理SFT H”的配置。若最终主表采用该版本，须说明规划SFT及条件切换，并在所有对照中统一；本轮不把SFT自动并入AV＋Whisper＋Feature＋Event的四项设计。最终检查点、规划器和预算仍需冻结，不同batch／步数的终点不能直接当作等预算。}
+
+\paragraph{Baselines and common protocol.}
+\cnnote{完整AV候选}{优先安排本文A0／A1及Qwen2.5-Omni→OVI系统对照。后者需适配允许安静和短反馈，固定模型与prompt，不能使用真实caption、事件或listener音轨。OmniResponse、OmniPersona、SpeakerVid-5M目前尚未获得可执行原生成器，先保留文献比较，不复制原表分数到本文短pair表。}
+\cnnote{视觉与额外输入对照}{GLARE需重训并披露Tref及previous motion来源；DyStream将self audio置零，Avatar Forcing将self audio和user视觉置零。L2L、DualTalk等保留额外动作／音轨条件时单列表，纯动作结果只在同表示空间比较；未核验renderer前不纳入视频表。RLHG、DIM、ReactFace、ListenFormer、LFI为资源允许时的扩展，不全部列为必做。}
+\cnnote{共同协议}{统一片段范围、参考帧、分辨率／帧率、音量处理、采样预算和失败处理，不用GT挑best-of-N。OVI1.1单次上限10秒而本任务可达11.95秒，需选择全部方法的共同窗口或公开分段／拼接协议，不能只截短基线。}
+\cnnote{原论文数值}{原协议文献表与本地实测分开。BFM/L1、EMOCA／DECA距离和不同含义的FD不混排；各论文RealTalk划分不视为统一测试。官方权重迁移、本文重训、第三方重实现及引用分别标注；协议不一致不计算相对提升。FID/FVD使用统一特征汇总，不平均分片分数。}
+
+% Metrics are defined once here; results below refer back to this protocol.
+\input{draft_sections/06_evaluation}
+
+\subsection{Quantitative Comparisons}
+\label{sec:quantitative}
+\paragraph{Audiovisual backchannel generation.}
+% Paragraph role P05: 完整视听任务的比较范围
+The full-task comparison concerns listener audio, visual reactions, and their coordination (\cref{tab:av}). It uses current speaker audio and a listener first frame as inputs and does not treat supplied listener audio as generated audio.
+\cnnote{比较所能支持的结论}{已知listener音轨的动画对照只评价驱动画面；独立OVI的共享预测文本对照评价生成器，Qwen→OVI端到端对照评价系统，两者均不替代三组件消融。不同训练来源的迁移结果不能解释为共同训练下的架构因果优势。}
+\cnnote{定量结果待写}{完成同协议比较后，先写主表支持的最重要发现，再说明对应的媒体质量、反馈类别和声音诊断证据；如指标有取舍，明确写出。当前不预设本文优于基线。}
+\input{tables/T2a_av}
+
+\paragraph{Shared visual-listening capabilities.}
+% Paragraph role P06: 视觉对照与额外输入边界
+The visual comparison concerns capabilities shared with video-only listening methods (\cref{tab:visual}). Methods that require additional inputs or produce only motion are considered separately; their results do not establish performance on the full audiovisual task.
+\input{tables/T2b_visual}
+
+\subsection{Qualitative Results and Human Evaluation}
+\label{sec:qualitative}
+\paragraph{Qualitative comparisons.}
+\cnnote{样例计划}{图F5先放可替换布局。后续按预先说明的规则选择合理安静倾听、动作与短声共同表达、遗漏或不适当失败三类。每例保留speaker原音频、listener首帧、一个真实参考、各方法帧序列及各自音轨；同一时刻展示不代表必须与GT同时反应。动作标签说明人工／自动来源。完整视频待插入，不能只看波形判断类别与音质。}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{F5_results_layout.pdf}
+\caption{\figdraft{F5: Qualitative comparison layout only} Three planned cases cover quiet listening, audiovisual feedback, and failure analysis. Rows reserve space for a reference response and the five ablation configurations. Every frame and audio slot is empty: this figure contains no generated result or claimed performance difference.}
+\label{fig:qualitative}
+\end{figure*}
+
+\paragraph{Human evaluation.}
+\cnnote{人工评价计划}{在相同当前speaker音频与listener首帧条件下，匿名随机排序并由多位评分者判断适当性、参与感／自然度与声画协调（\cref{tab:human}）。画面／声音技术质量可分开评分。参考回应不是唯一正确答案，合理安静允许存在；无发声样本的相关协调项按协议记N/A并报告覆盖。人工仍需检查反应抢先、拖长或内部矛盾，不要求复现唯一GT时刻。}
+\cnnote{统计计划}{使用配对设计，按来源对话处理片段相关性，报告置信区间与有效样本。单次生成seed如实注明；样本bootstrap不替代训练多seed的不确定性。评分人数、量表／A-B形式及一致性统计待确定，不能预设自动指标与人评高度相关。}
+\input{tables/T4_human}
+
+\subsection{Ablation Studies}
+\label{sec:ablation}
+% Paragraph role P07: 五组消融定义
+\Cref{tab:ablation} defines five configurations: a base model, the full model, and three variants that each remove one component. W denotes the additional Whisper cross-attention path, F denotes the two feature-supervision objectives, and E denotes clip-level event supervision on LTX hidden states. All configurations retain Qwen/Gemma conditions and the AV objective. Thus, the base model still receives speaker information and is not an unadapted LTX model.
+
+% Paragraph role P08: 组件问题及五组结论边界
+The W comparison asks whether direct acoustic information helps beyond the original Qwen conditions. The F comparison concerns the quality of generated media under target-feature supervision. The E comparison concerns omitted feedback categories and inappropriate extra activations. These are questions for evaluation, not established gains. Five configurations assess each component's conditional contribution within the full system and the overall change from the base; they do not isolate all component interactions or establish additive gains.
+\input{tables/T3_ablation}
+\cnnote{受控条件与证据}{固定数据、标签、初始化、规划器、训练样本展示量和采样；可预生成同一预测描述供五组共用。训练仍用标注描述，测试用预测描述；GT描述对照另标oracle。W不能只用画质证明语义／韵律利用，F不能只用teacher重建损失证明最终媒体改善，E须同时看P/R/F1、误触发和合理安静倾听。}
+\cnnote{历史结果与扩展}{旧U-Event的6000／8000和新LTX6000＋SFT2752结果均不能代替这五组正式同条件结果。监督位置、整段／时序、两路Feature拆分和权重网格暂列可选；只有新增相应独立主张时再安排对照。}
+
+
+\subsection{Data and Evaluation Validation}
+\label{sec:validation}
+\paragraph{Data and annotation quality.}
+\cnnote{资源与媒体抽检计划}{统计来源、角色、音轨、片段长度、人脸质量、有声／安静比例、逐类支持与共现。代表性随机抽检覆盖边界完整性、角色对应、音轨污染／过度截除和脸部可用性；稀有层过采样需按真实分布加权。资源分支关系放附录，正文保持最终规模简洁。}
+\cnnote{配对标注核验计划}{固定同批片段、Qwen3-Omni版本、采样设置与输出要求，比较仅音视频与加入带时间线索的匿名描述（\cref{tab:annotation}）。独立人工核验遗漏、无依据添加、顺序与发声内容；同时报告正确性和完整性。已有24条有声试点只能说明观察来源。若要声称数据处理提升生成效果，另需固定模型、规模和预算的训练对照。}
+\input{tables/T_quality}
+
+\paragraph{Event-evaluator reliability.}
+\cnnote{事件评测器核验}{在真实和生成媒体上分别抽样核验外部检测器，覆盖有声／无声、常见／稀有类及失败例；报告逐类质量、支持数和覆盖。训练弱负例不直接当测试负真值，未知／失败不当正确安静；不能用训练Event头自评。}
+\cnnote{本小节作用}{这里核验数据与测量工具是否可信；生成效果由主对比和消融回答，用户感受由前述人工评价回答。完成核验后报告具体发现，详细错误清单和逐类结果可放补充材料。}
+\cnnote{可选扩展与范围}{Whisper置零／错配、GT描述oracle、多seed、时长／发声／脸部质量分层和完整推理开销仅为可选诊断。错配可能产生条件冲突，不能单独证明理解；多样性需同时看适当性，不选best-of-N。推理开销包括描述、重编码、各编码器、生成与解码，不将片段吞吐叫流式延迟。本阶段不增加多轮历史、persona保持、全身或实时流式主张。}
+\cnnote{已有证据状态，按中文稿快照}{ViCo43已完成历史联合8000、DyStream和Avatar Forcing自动比较，人工评分为0；双200 LTX6000＋SFT2752有视频与活动结果，UTMOSv2无有效窗口，SyncNet／GLARE未运行；基础AV训练已启动，不能称五组完成。上述记录仅作筹备依据，当前不填正式结果表。}

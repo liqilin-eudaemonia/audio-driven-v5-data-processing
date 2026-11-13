@@ -1,0 +1,196 @@
+{
+  "schema": "listen-benchmark-v1",
+  "media": {
+    "fps": 8,
+    "max_frames": 128,
+    "max_edge": 768,
+    "max_audio_seconds": 16
+  },
+  "generation": {
+    "max_new_tokens": 4096,
+    "context_limit": 65536,
+    "max_generation_seconds": 600,
+    "guided_json": true
+  },
+  "systems": [
+    {
+      "name": "joy_visual",
+      "backend": "joy",
+      "branch": "visual",
+      "model_path": "/private/ckpts/JoyAI-VL-Interaction",
+      "python": "/private/software/conda/envs/joyvl/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "main"
+    },
+    {
+      "name": "qwen3_visual",
+      "backend": "qwen3_omni",
+      "branch": "visual",
+      "model_path": "/private/ckpts/Qwen3-Omni/Instruct",
+      "python": "/private/software/conda/envs/qwenomni/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "main"
+    },
+    {
+      "name": "qwen3_audio",
+      "backend": "qwen3_omni",
+      "branch": "audio",
+      "model_path": "/private/ckpts/Qwen3-Omni/Instruct",
+      "python": "/private/software/conda/envs/qwenomni/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "main"
+    },
+    {
+      "name": "qwen3_omni_native",
+      "backend": "qwen3_omni",
+      "branch": "omni",
+      "model_path": "/private/ckpts/Qwen3-Omni/Instruct",
+      "python": "/private/software/conda/envs/qwenomni/bin/python",
+      "representation": "native",
+      "auxiliary": false,
+      "tier": "main"
+    },
+    {
+      "name": "minicpm_visual",
+      "backend": "minicpm",
+      "branch": "visual",
+      "model_path": "/private/codes/full-duplex/code/MiniCPM-o-Demo/models/MiniCPM-o-4_5",
+      "python": "/private/codes/full-duplex/code/MiniCPM-o-Demo/.venv/base/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "max_slice_nums": 1,
+      "tier": "main",
+      "dependency_path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_benchmark_deps/py310"
+    },
+    {
+      "name": "minicpm_audio",
+      "backend": "minicpm",
+      "branch": "audio",
+      "model_path": "/private/codes/full-duplex/code/MiniCPM-o-Demo/models/MiniCPM-o-4_5",
+      "python": "/private/codes/full-duplex/code/MiniCPM-o-Demo/.venv/base/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "max_slice_nums": 1,
+      "tier": "main",
+      "dependency_path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_benchmark_deps/py310"
+    },
+    {
+      "name": "minicpm_omni_native",
+      "backend": "minicpm",
+      "branch": "omni",
+      "model_path": "/private/codes/full-duplex/code/MiniCPM-o-Demo/models/MiniCPM-o-4_5",
+      "python": "/private/codes/full-duplex/code/MiniCPM-o-Demo/.venv/base/bin/python",
+      "representation": "native",
+      "auxiliary": false,
+      "max_slice_nums": 9,
+      "tier": "main",
+      "dependency_path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_benchmark_deps/py310"
+    },
+    {
+      "name": "qwen2_audio",
+      "backend": "qwen2_audio",
+      "branch": "audio",
+      "model_path": "/private/ckpts/Qwen2-Audio-7B-Instruct",
+      "python": "/private/software/conda/envs/qwenomni/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "main"
+    },
+    {
+      "name": "qwen3_vl_visual",
+      "backend": "qwen3_vl",
+      "branch": "visual",
+      "model_path": "/private/ckpts/Qwen3-VL-8B-Instruct",
+      "python": "/private/software/conda/envs/qwenomni/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "main"
+    },
+    {
+      "name": "captioner_audio",
+      "backend": "captioner",
+      "branch": "audio",
+      "model_path": "/public/2_CKPT/3_PreTRAINED",
+      "python": "/private/software/conda/envs/qwenomni/bin/python",
+      "representation": "separate",
+      "auxiliary": true,
+      "tier": "auxiliary"
+    },
+    {
+      "name": "qwen3_asr",
+      "backend": "asr",
+      "branch": "audio",
+      "model_path": "/private/ckpts/Qwen3-ASR-1.7B",
+      "python": "/private/software/conda/envs/ovi/bin/python",
+      "representation": "separate",
+      "auxiliary": true,
+      "tier": "auxiliary",
+      "dependency_path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_benchmark_deps/py310"
+    },
+    {
+      "name": "face_landmarker",
+      "backend": "mediapipe",
+      "branch": "visual",
+      "model_path": "/private/ckpts/mediapipe/face_landmarker.task",
+      "python": "/private/software/conda/envs/qwenomni/bin/python",
+      "representation": "separate",
+      "auxiliary": true,
+      "tier": "auxiliary",
+      "dependency_path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_benchmark_deps/py310"
+    },
+    {
+      "name": "qwen3_omni_separate",
+      "backend": "qwen3_omni",
+      "branch": "omni",
+      "model_path": "/private/ckpts/Qwen3-Omni/Instruct",
+      "python": "/private/software/conda/envs/qwenomni/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "control"
+    },
+    {
+      "name": "minicpm_omni_separate",
+      "backend": "minicpm",
+      "branch": "omni",
+      "model_path": "/private/codes/full-duplex/code/MiniCPM-o-Demo/models/MiniCPM-o-4_5",
+      "python": "/private/codes/full-duplex/code/MiniCPM-o-Demo/.venv/base/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "tier": "control",
+      "dependency_path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_benchmark_deps/py310"
+    },
+    {
+      "name": "minicpm_omni_native_1fps",
+      "backend": "minicpm",
+      "branch": "omni",
+      "model_path": "/private/codes/full-duplex/code/MiniCPM-o-Demo/models/MiniCPM-o-4_5",
+      "python": "/private/codes/full-duplex/code/MiniCPM-o-Demo/.venv/base/bin/python",
+      "representation": "native",
+      "auxiliary": false,
+      "media_override": {
+        "fps": 1
+      },
+      "max_slice_nums": 1,
+      "tier": "control",
+      "dependency_path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_benchmark_deps/py310"
+    },
+    {
+      "name": "minicpm_visual_1fps",
+      "backend": "minicpm",
+      "branch": "visual",
+      "model_path": "/private/codes/full-duplex/code/MiniCPM-o-Demo/models/MiniCPM-o-4_5",
+      "python": "/private/codes/full-duplex/code/MiniCPM-o-Demo/.venv/base/bin/python",
+      "representation": "separate",
+      "auxiliary": false,
+      "media_override": {
+        "fps": 1
+      },
+      "max_slice_nums": 1,
+      "tier": "control",
+      "dependency_path": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_benchmark_deps/py310"
+    }
+  ]
+}

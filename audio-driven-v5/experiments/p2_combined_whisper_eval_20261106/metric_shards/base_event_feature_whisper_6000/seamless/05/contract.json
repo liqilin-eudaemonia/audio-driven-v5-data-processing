@@ -1,0 +1,179 @@
+{
+  "schema": "omniresponse-paired-video-v1",
+  "implementation_revision": "2026-11-02-seamless-lazy-gt",
+  "datasets": [
+    "seamless"
+  ],
+  "arguments": {
+    "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_combined_whisper_eval_20261106/metric_manifests/base_event_feature_whisper_6000/seamless/05.jsonl",
+    "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_combined_whisper_eval_20261106/metric_shards/base_event_feature_whisper_6000/seamless/05",
+    "assets": "/private/liqi_workspace/project_code/OmniResponse/evaluation/video/paired_metrics/assets.local.json",
+    "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+    "device": "cuda:0",
+    "face_device": "cuda:0",
+    "emotion_device": "cuda:0",
+    "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_combined_whisper_eval_20261106/gt_cache",
+    "pixel_workers": 4,
+    "threads": 4,
+    "batch_size": 64,
+    "face_padding": 0,
+    "fid_frames": 32,
+    "fvd_frames": 32,
+    "fvd_stride": 1,
+    "whole_clip_listening": false,
+    "feature_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_combined_whisper_eval_20261106/metric_shards/base_event_feature_whisper_6000/seamless/05/features.npz",
+    "allow_partial": true
+  },
+  "manifest_sha256": "714a5499f62a1c05eab560d122b2a54e40c4e47a70f5f48405e56b05fc33846b",
+  "emotion_labels": [
+    "angry",
+    "disgust",
+    "fear",
+    "happy",
+    "sad",
+    "surprise",
+    "neutral"
+  ],
+  "alignment": "CFR frame-index, trim to shorter; GT resize only if explicitly declared in each row",
+  "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+  "fvd": "StyleGAN-V/TFHub I3D, legacy bilinear+round uint8 RGB 224, population covariance",
+  "delta_resp": "AnyTalker Eq4, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+  "assets": {
+    "alexnet": {
+      "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+      "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+    },
+    "fid_inception": {
+      "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+      "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+    },
+    "i3d": {
+      "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+      "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+    },
+    "emotion": {
+      "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+      "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+    },
+    "insightface_root": {
+      "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+      "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+    }
+  },
+  "versions": {
+    "numpy": "1.26.4",
+    "scipy": "1.15.3",
+    "torch": "2.6.0+cu126",
+    "torchvision": "0.21.0+cu126",
+    "opencv-python": "4.11.0.86",
+    "scikit-image": "0.25.2",
+    "lpips": "0.1.4",
+    "pytorch-fid": "0.3.0",
+    "deepface": "0.0.99",
+    "tensorflow": "2.21.0",
+    "insightface": "0.7.3",
+    "onnxruntime": null,
+    "onnxruntime-gpu": "1.22.0",
+    "av": "17.0.1"
+  },
+  "code": {
+    "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+    "audit_backends.py": "d40e7c2bbe6b32b9c319304b74f201adf4f9941e487220fd3c721624e9f02654",
+    "backends.py": "52e18fc911870d5661bbd414cca7584d9b64c1fcb61963311fcfa5afe2efa24a",
+    "cache.py": "8221634f288f5b8ff364c11eca1475655a4ff68a2b01dfd3fcf13dd4bda609f0",
+    "core.py": "005db264779740f01f84fd10d057aa8045fdcade518fe9fc3280c0d2c4928e33",
+    "media.py": "be28f104fbac68ed802851cae6f4899b9c00b804e339ac4c3012d0d6ec13a5fb",
+    "run.py": "747563623fb9b1b22d97661bb6fa26e93758885d65d986f4cb4ae14408c2b619",
+    "test_cache.py": "9f7b1163292fcb9b788ef1587f6c4db1ca448ccee3c35fe3ebb89cb5b069f4a1",
+    "test_core.py": "f5847a95f3082e22b12ff661627d43056c4611bab09e7ccf79b78e6aa1e32b70",
+    "test_reference.py": "382c78010891a01e7636d41c785a331769d5ff5d092aa9a9059b437a0375df1a",
+    "../fvd/frechet_video_distance.py": "718bedd6d08c43425b106790da62355413c45186518e3b4701fedbbba6a59ce6",
+    "../../seamless/reader.py": "f1babf898eaaa6c0bf551fa984b0bae5a0274a72e3bee81f016bc102de87bc39"
+  },
+  "execution": {
+    "face_device": "cuda:0",
+    "emotion_device": "cuda:0",
+    "pixel_workers": 4,
+    "gt_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_combined_whisper_eval_20261106/gt_cache",
+    "face_backend": {
+      "face_device": "cuda:0",
+      "emotion_device": "cuda:0",
+      "detector_providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "landmark_providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    "decoded_gt_cache": {
+      "identity": {
+        "schema": "seamless-decoded-rgb-cache-v1",
+        "wrapper_sha256": "87f8e9391b6589f49847e2ee7ed33ad638715976f0a0d4008210ba50f27258a6",
+        "reader_sha256": "f1babf898eaaa6c0bf551fa984b0bae5a0274a72e3bee81f016bc102de87bc39",
+        "versions": {
+          "av": "17.0.1",
+          "numpy": "1.26.4",
+          "Pillow": "10.4.0"
+        }
+      },
+      "root": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_seamless200_tenway_24gpu_20261105/decoded_gt_cache",
+      "hits": 7,
+      "misses": 0,
+      "events": [
+        {
+          "id": "naturalistic_V00_S0350_I00000488_local_f54b5d0048a5",
+          "hit": true,
+          "seconds": 0.1410712240030989,
+          "key": "b12b3e6e2ca22496f7f72b36a52e3ba7bd3505d4952fdfffd9ea5219a301f11c",
+          "rgb_sha256": "c282afcc01a9be0150b1f2a84732d1c11b291153a6cedc3612f112194a5921a6"
+        },
+        {
+          "id": "naturalistic_V03_S0870_I00000062_local_bef20d90fca3",
+          "hit": true,
+          "seconds": 0.08013780799228698,
+          "key": "954f9e774948867cf766c49dc5e8bb49ba2fc850b2394b3f016b1329bb6c3107",
+          "rgb_sha256": "c25f254657ffd27dfb65f56fe5f0ca9a979a3e92e5a63d843d4c5038fe89163f"
+        },
+        {
+          "id": "naturalistic_V03_S1417_I00000319_local_253c885c446b",
+          "hit": true,
+          "seconds": 0.1120635459665209,
+          "key": "24643aaf80bf5affae1c22d8648014e2d78ea39edcebf44439f9da08fd14d254",
+          "rgb_sha256": "33e8e5fd8215bbb5b04c3ff7f1cbe3fdffd613bbaba1ccdc60f01afb43827dbf"
+        },
+        {
+          "id": "naturalistic_V01_S0163_I00000128_local_ed7243ea91a6",
+          "hit": true,
+          "seconds": 0.2834772520000115,
+          "key": "27e305dcaf7480196b708dd2777d6a02b5b12341401bbb123eb84481a10999fb",
+          "rgb_sha256": "56a316ff5c1e9007bc736edb72fad57d99019a32e521ed3c9264023f7f8796fe"
+        },
+        {
+          "id": "improvised_V01_S0223_I00000130_local_2bc1ad32236c",
+          "hit": true,
+          "seconds": 0.1623331808950752,
+          "key": "42de0597f718185a333a4ab6f192fe77550733d62699b90b0ccb433cce24fddb",
+          "rgb_sha256": "c22d7a798c62deafc78580b67189a0ee884563130cf1c3ad968a6866859a4770"
+        },
+        {
+          "id": "naturalistic_V03_S0225_I00000375_local_61f25c693a58",
+          "hit": true,
+          "seconds": 0.15509482100605965,
+          "key": "bf639b94922c33e93f0dddb02ae72d261d62735ce0524745e93c7764cf5413fd",
+          "rgb_sha256": "5f9a49f47d14ff9de8c297552395f4fcc6e61d40c0f633a8bae1de9807572f92"
+        },
+        {
+          "id": "naturalistic_V03_S1870_I00000196_local_003d72179d40",
+          "hit": true,
+          "seconds": 0.19639029307290912,
+          "key": "6a93f041679f9154c2cf1504c9a82120127b9d8760d65f581bfded33acf5e386",
+          "rgb_sha256": "91d9d3f7400214a0425149e08a7bcf0e0c78b1d8073e4d37ddd9fc66d3b00aca"
+        }
+      ],
+      "original_reader_unchanged": true,
+      "pixel_checksum_checked_each_read": true
+    }
+  }
+}

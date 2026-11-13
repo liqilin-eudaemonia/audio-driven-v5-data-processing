@@ -1,0 +1,665 @@
+     Learning to Listen: Modeling Non-Deterministic Dyadic Facial Motion
+
+
+        Evonne Ng1    Hanbyul Joo2     Liwen Hu3    Hao Li3     Trevor Darrell1
+                           Angjoo Kanazawa1     Shiry Ginosar1
+
+              1UC Berkeley     2Seoul National University     3Pinscreen
+
+
+
+
+
+                   Input: Speaker                                                 Output: Listener
+
+
+
+
+                                                    Learning
+                                                              to Listen
+
+
+
+                             Speaker Motion & Audio                      Generated Samples                Visualization
+
+Figure 1. Synthesizing listeners. Given a speaker video, we extract the audio and motion of the speaker. From these multimodal speaker
+inputs, our method synthesizes multiple realistic listener 3D motion sequences (top and bottom) in an autoregessive fashion. The output of
+our approach can be optionally rendered as photorealistic video.
+
+                 Abstract                          1. Introduction
+
+                                                                  “Thus the body of the speaker dances in time with his
+                                                                               speech. Further, the body of the listener dances in
+                                                                      rhythm with that of the speaker!”
+
+                                          — CONDON AND OGSTON, 1966
+
+
+                                             When we speak, it is rarely in a void — rather, there is
+                                                              often a listener at the other end of the conversation. As a  We present a framework for modeling interactional com-
+munication in dyadic conversations: given multimodal inputs     speaker, we are acutely aware of what the listener is doing.
+of a speaker, we autoregressively output multiple possibili-   A slight off-sync motion or a diverted look may throw us
+ties of corresponding listener motion. We combine the mo-      off, suggesting the listener is bored or otherwise preoccu-
+tion and speech audio of the speaker using a motion-audio      pied, leaving us feeling misunderstood [36]. Indeed, success-
+cross attention transformer. Furthermore, we enable non-      ful conversations rely on a coordinated dance between the
+deterministic prediction by learning a discrete latent repre-     speaker and the listener in which the two signal to each other
+sentation of realistic listener motion with a novel motion-                                                                     that they are communicating with one another and not with
+encoding VQ-VAE. Our method organically captures the mul-                                                     anyone else [36]. This chameleon effect [12] of nonverbal
+timodal and non-deterministic nature of nonverbal dyadic
+                                                       mimicry during conversation results in smoother interactions,
+interactions. Moreover, it produces realistic 3D listener fa-
+                                                                 increases the liking between interaction partners, establishescial motion synchronous with the speaker (see video). We
+                                                                rapport [38], and may even predict the long term outcome ofdemonstrate that our method outperforms baselines quali-
+tatively and quantitatively via a rich suite of experiments.     psychotherapy [49]. Interestingly, nonverbal feedback from
+To facilitate this line of research, we introduce a novel and     a listener, such as head movement is more central to keep-
+large in-the-wild dataset of dyadic conversations. Code, data,     ing a conversation flowing than content-based replies [11].
+and videos available at https://evonneng.github.io/     In this work, we propose a computational framework that
+learning2listen/.                                    can similarly provide nonverbal feedback in response to a
+                                                           speaker in a contextual and timely manner. Such an ability
+
+
+
+                                                      20395is critical for virtual agents to meaningfully interact with     Ogston in 1966 [15], current studies still mostly rely on in-
+humans, for whom nonverbal communication is central from     lab footage [13, 19, 24, 29] or small-scale motion-capture
+infancy [54].                                                    datasets [7, 33]. Notable exceptions are [17, 44], yet the
+   Modeling nonverbal feedback during dyadic interaction is     footage has not been made publicly available. We collect a
+a difficult problem, as listener responses are nondeterminis-     large-scale source of data in the form of split-screen recorded
+tic in nature. Moreover, speakers are inherently multimodal,     online interviews where the speaker and listener are captured
+as they communicate both verbally via speech, and nonver-     in frontal view. Our dataset, which consists of 72 hours of in-
+bally via face and body motion. Capturing interaction in its     the-wild conversations, enables the investigation of dyadic
+natural setting requires addressing both challenges. The task     communication using the latest machine learning methods.
+of modeling human conversations has a long history. How-     We evaluate the synthesized listener motion compared to
+ever, unlike traditional rule-based methods [5,10,22,29] or     ground truth as well as baseline methods and ablations via
+methods that rely on modeling hand-defined simple motion     an extensive quantitative study. We employ a wide array of
+characteristics such as smiles [51] or head nods [22,29], we     metrics to test the realism and diversity of the synthesized
+wish to model the true complexity of the interaction. This is     motion, and the synchronization of the listener’s motion
+hard to achieve and generalize using conventional database     with that of the speaker. While measuring realism and di-
+methods that generate motion via a lookup into a database      versity centers on the generated motion of the listener in
+of ground truth motion [35,52,58]. We, therefore, learn to      isolation, synchrony captures aspects of the dyad as a whole.
+model these dyadic conversational dynamics implicitly in a   We further corroborate our qualitative findings by inviting
+data-driven way by directly observing human conversations    human observers to evaluate our results. While we assess
+in in-the-wild videos.                                       our method using the raw 3D mesh output, we additionally
+                                                                         illustrate our results by translating the 3D output to pixels   Given a video of a speaker, we extract their speech audio,
+                                                                  for viewing purposes only, as synthesized video provides aand facial motion (Figure 1(left)). We combine information
+                                                                   richer perceptual context. Under both quantitative and qual-from both modalities using a motion-audio cross-attention
+                                                                         itative measures, our method significantly outperforms alltransformer. From this multimodal speaker input, we learn
+                                                                  baselines. Our synthesized listeners were deemed plausibleto autoregressively synthesize multiple modes of motion
+                                                     by human observers when compared to ground-truth motion.representing different possible responses of a listener who
+                                                         This highlights our method’s ability to produce realistic-moves synchronously with the speaker (Figure 1(right)).
+                                                            looking motion that is synchronous with a given speaker.
+  Modeling the nondeterminism in listener responses is a
+                                                    Our main contribution is in our learning-based approach
+key element in capturing conversational dynamics. Previous
+                                                          towards understanding human interactional communication
+attempts to tackle this problem applied various techniques
+                                                                   in conversation. We combine multimodal speaker inputs via
+but fell short of achieving realistic outputs [33]. We propose
+                                                         motion-audio cross-attention. We extend vector quantiza-
+to learn a realistic manifold of listener motion by quantizing
+                                                                  tion to the domain of motion synthesis and learn a quan-
+the space of listener motion with a novel sequence-encoding
+                                                                  tized space of motion in which we autoregressively predict
+VQ-VAE [56], which efficiently captures a wide range of
+                                                              multiple modes of perceptually realistic listener motion. To
+motion in a discrete format that is well-suited for learning.
+                                                           support future endeavors in this direction we publicly re-
+To the best of our knowledge, we are the first to extend VQ-
+                                                               lease a novel dataset of 72 hours of in-the-wild dyadic con-
+VAE models to the domain of motion synthesis. The learned
+                                                                versational videos with detailed 3D annotations capturing
+discrete codebook of listener motion allows us to predict a
+                                                                     subtleties in expression and fine-grain head motion.
+multinomial distribution of future motion. From this distribu-
+tion we can sample a wide range of possible modes of motion                                                          2. Related Work
+representing different perceptually-plausible listeners, cap-
+turing their inherent non-deterministic nature. Furthermore,     We discuss related works concerned with conversational
+we demonstrate our learned discrete latent codes can stay     agents and motion synthesis. For a review of interactional
+on the manifold of realistic motion ensuring no motion drift     motion in human communication, see supplementary.
+occurs even in long-horizon predictions. Meanwhile, the     Interactional Motion in Conversational Agents. Prior
+autoregressive nature of our method allows us to consider    works on conversational avatars manually incorporated dif-
+speaker sequences of any length.                                  ferent aspects of interactional motion [5,10,22,29,53]. These
+  To support our data-driven approach to modeling hu-     approaches designed rule-based methods to generate agents
+man conversation, data is needed in the form of video-      that can interact via appropriate facial gestures [22,29,53],
+taped dyadic interactions where both parties are ideally     speech [10], or a combination of modalities [5]. All these
+filmed from a head-on frontal view. This kind of data is     methods use lab-recorded motion capture sequences. These
+hard to come by. While the first investigation of interac-     either limit the variety of captured gestures, or rely on sim-
+tional synchrony in conversation dates back to Condon and      plifying assumptions for motion generation which do not
+
+
+
+                                                      20396                                                                                     past motion
+hold for in-the-wild data.
+                                                                                                                                                       s1:τ
+   Prior data-driven methods predict the 2D motion of one                  E     32 12 87                   sτ+1                                                                                                                                                           listener                                                                                                                                                                  t                                                                                                           sample   1  lookupperson in a conversation as a function of the other’s mo-                   listener 1                                                                                                                                                         future                                                                                                                                     motion
+tion [17,44]. These require a pre-defined dictionary achieved                                                1
+by clustering motion frequencies or 2D facial keypoints           motion                      Pred.          D                                                                                           K      z1from the training set. Rather, we reason in 3D and learn a                                                                        t+1   t+1+w
+                                                                                          Cross-modaldiscretized latent space that captures the manifold of facial           1      t+w
+                                                                                   audio      Transformermotion. Other methods using 3D investigate interactional                  speaker
+                                                                                    1      t+wdynamics while focusing on full 3D body motion and turn
+taking [2,34]. Others tackle the problem of facial gestures      Figure 2. Overview: We predict a distribution over future listener
+in conversation by simplifying the task to predicting head     motion conditioned on multimodal inputs from a speaker. We use
+nods [2], estimating head pose [23], or generating a sin-     cross-modal attention to fuse the speaker audio and motion input,
+gle image of a facial expression that summarizes the entire     and a novel sequence-encoding VQ-VAE to discretize past listener
+speaker sequence [30,44]. In contrast, our method captures      motion. Our autoregressive Predictor outputs a distribution over the
+                                 K discrete codebook indices, from which we sample a code for thethe natural complexity of interactions by considering the full
+                                                                   next timestep. We obtain the continuous future listener motion by
+range of facial expressions and head rotations.
+                                                               decoding the sampled codebook index.
+   Recent methods began generating 3D facial motion with
+additional inputs from the listener such as text [14] or
+speech [32, 33]. Most similar to our approach is that of    and audio of the speaker, we autoregressively predict the
+Jonel et al. [33], who propose a Glow-based method [25,37].     corresponding facial motion of the listener.
+However, their method takes as input the full temporal con-      To represent the ongoing flow of conversation, we define
+text of listener audio and is reported to perform better with-     a transformer-based predictor, P, that learns to model tem-
+out any audio input. In contrast, our method does not use      porally long-range patterns in the input sequence (Sec. 3.4).
+any listener audio as additional input. Additionally, we quan-    The predictor takes two inputs: one corresponding to the
+titatively demonstrate that each of the input modalities is     speaker and the other to the listener (Figure 2). To model the
+essential to its performance.                                   speaker’s audio and facial motion, we introduce a motion-
+Conditional Motion Synthesis. Gestural motion synthesis     audio cross-modal transformer that learns to fuse the two
+has previously relied on convolutional auto-encoders to learn     modalities (Sec. 3.3). To represent the manifold of realistic
+a representation of human motion [17,20,33,34,43]. Some      listener facial motion, we extend VQ-VAE [56] to the domain
+methods incorporated an adversarial loss [20,43] or exper-     of motion synthesis and learn a codebook of a discrete latent
+imented with flow models [33] and other sampling-based     space (Sec. 3.2). This discrete representation enables us to
+methods [17] to generate more diverse and realistic motion.     predict a multinomial distribution over the next timestep of
+Recent works demonstrated the success of using transform-     motion. Thus, the output of the autoregressive predictor is a
+ers in generating diverse motion with long-range dependen-     distribution over possible synchronous and realistic listener
+cies [9,39,40,48]. These generate possible motion segments     responses, from which we can sample multiple trajectories.
+conditioned on action [48], 3D human motion trajectory in                                                               3.1. Problem Definition
+a scene conditioned on a goal [9], or dance motion from
+audio [39, 40]. Similarly, we employ a transformer-based        Let F = {fi}Ti=1 be a temporal sequence of facial motions
+predictor for conditional motion synthesis. Additionally, to       fi. We use FS and FL to denote the motion of the speaker
+the best of our knowledge, we are the first to demonstrate     and listener respectively. For each timestep t ∈[1, T], we
+the benefits of using vector quantization (VQ-VAE [56]) to     take as input a speaker’s facial motion FS1:t = (f 1S , · · · , f tS )
+achieve improved motion synthesis results. In essence, rather     and their corresponding speaker audio sequence AS1:t, along
+than relying on the addition of Perlin noise [47] for improved     with any previously predicted past listener motion ˆFL1:t−1, if
+realism, we learn the fine details of realistic motion in a data-     available. Our predictor, P, then autoregressively predicts
+driven way.                                                   the corresponding listener facial motion one time-step at a
+                                                               time:
+                                                                                                               ˆftL = P(FS1:t, AS1:t, ˆFL1:t−1),             (1)3. Method
+  Our goal is to model the conversational dynamics between    where P learns to model the distribution over the next
+a speaker and a listener. To test whether our model captures     timestep of listener motion
+the subtleties of face-to-face communication, we synthesize                          p(ˆft                                                              L |FS1:t, AS1:t, FL1:t−1).               (2)
+the interactional motion responses of the listener, which are
+known to be essential to the flow of conversation [12,36,38].      To obtain speaker-only audio, we filter out all listener
+We define the following task: given the 3D facial motion     audio back-channels using sound source separation [45]. To
+
+
+
+                                                      20397represent the motion, we estimate the 3D facial expressions      static expressions/rotations independently, the latent embed-
+and orientations from video frames of human conversations     ding covers multiple frames, allowing it to learn motion dy-
+using a 3D Morphable Face Model (3DMM) [4,8, 41,46].     namics. The latent embedding represents motion segments
+3DMMs are parametric facial models that allow us to directly     of temporal window size w ≪T from a discrete codebook
+regress disentangled coefficients corresponding to facial ex-   Z = {zk}Kk=1, where zk ∈Rdz, that we jointly learn with
+pression, head orientation, and identity-specific shape from   E and D. Z maps each of the K codebook entries to a dis-
+a single image [60]. This process results in facial expres-     crete code element of dimension dz. As shown in Figure 3,
+sion coefficients βt ∈Rdm, where dm is the dimension    we can then approximate any raw listener motion segment
+of the expression coefficient, a normalized 3D head pose    x = FL1:T ∈RT ×(dm+3) of length T in three steps. First,
+Rt ∈SO(3), and shape coefficents that we discard to obtain    we encode the sequence ˆz = E(x) ∈Rτ×dz, where τ = wT
+an identity-agnostic representation. Our facial representation       is the length of the patch-wise encoded sequence. Second,
+at time t, ft ∈Rdm+3, is a concatenation of expression and    we obtain the quantized sequence, zq, via an element-wise
+orientation (in Euler angles):                                  quantization function q(·) that maps each element of the
+                                                       encoded sequence ˆz to its closest codebook entry:
+                            ft = [βt, Rt].                     (3)
+                                                                     zq = q(ˆz) :=  arg min∥ˆzt −zk∥  ∈Rτ×dz.    (4)
+We normalize facial orientation by computing the mean                         zk∈Z
+frontal face direction per video (i.e., orientation at rest pose)
+                                                                     Finally, the reconstruction ˆx ≈x is given by:and align all head poses in the sequence with respect to this
+rest pose. This allows us to achieve a camera-view agnostic                                                                                                                 ˆx = D(zq) = D(q(E(x))).             (5)
+representation. In contrast to the 2D representations used in
+some prior works [17,44], our 3D representation is invariant   We train E, D and the codebook with the loss function [56],
+to changes in facial shape, scale, and camera pose, allowing
+us to generalize across new faces and camera viewpoints.               LVQ(E, D, Z) = ∥x −ˆx∥
+                                               + ∥sg[E(x)] −zq∥          (6)
+3.2. Quantized Listener Motion Codebooks
+                                               + ∥sg[zq] −E(x)∥,
+  We extend the use of VQ-VAE [56] to produce multiple
+realistic modes of different listener responses. VQ-VAE was    where ∥x −ˆx∥2 is a reconstruction loss, sg[·] is a stop-
+originally proposed as a method to learn a quantized code-     gradient operation, and ∥sg[zq] −E(x)∥22 is a “commitment
+book of image elements from which images could be syn-     loss” [56]. After learning the codebook of listener motion,
+thesized autoregressively. Convolutional architectures were    we use the pretrained encoder to quantize the listener motion
+used both for learning the codebook and for recombining the     input to the predictor (Figure 2).
+discrete elements into images [56]. While the synthesis step
+                                                               3.3. Cross-Modal Attention for Speaker Input
+was later replaced by transformer architectures that can learn
+long-range connections [16], image-generation approaches      From the speaker, we take as input both audio a =
+employ a convolutional encoder-decoder pair. This is well-   AS1:t+w, and facial motion m = FS1:t+w. Here, w is the
+suited for images but not for temporal sequences where con-    amount of additional future context we see from the speaker.
+volving over the temporal domain may lose high-frequency     This context acts as a feedback delay that is beneficial in
+information. We design a novel sequence-encoding VQ-VAE     improving learned synchrony for robotics [57]. In contrast
+where we utilize transformers for the encoder-decoder pair.     to the listener motion, we do not quantize the speaker inputs.
+To the best of our knowledge, we are the first to apply a    While we experimented with both options, we found that
+VQ-VAE to the domain of motion generation.                 speaker motion quantization did not improve results, and
+  The advantages of this method are three-fold: (1) it allows     quantizing the audio deteriorated the results significantly.
+us to predict a multinomial distribution over future motion   We conclude that while quantization is beneficial for pre-
+from which we can sample many possible output modes, (2)     dicted motion, for the quality of results as well as sampling
+using the learned discrete latent codes allows us to stay on      capabilities, it is not advantageous for input modalities.
+the manifold of realistic motion ensuring no drift occurs (a     We learn to fuse the audio and motion modalities together
+problem for methods that directly regress continuous out-     using cross-modal attention. Cross-model attention of text
+puts [3]), and (3) it produces realistic motion that captures     and audio [1] or language and vision [31,42,55] has been
+high-frequency movements.                            shown to outperform early or late fusion. We extend its use
+   Specifically, we train a VQ-VAE transformer encoder E      to successfully fuse information from motion and audio, a
+and decoder D. To handle the temporal nature of the input,     task that proved difficult to previous approaches [33]. We
+we learn to model longer listener motion sequences in terms      additionally experimented with a naive method of concate-
+of shorter temporal components. Rather than considering     nating audio and motion, but this resulted in empirically
+
+
+
+                                                      20398                                        z ∈ℝτ×dẑ                         zq∈ℝτ×dz
+                                                      quantization
+                    E                                  D
+                                                  argminzk∈풵||̂zt zk||̂        z8 z1 z3
+                                          z                                    zq
+   x ∈ℝT×(dm+ 3)                                                                            x ∈ℝT×(dm+ 3)
+                               codebook                     풵                                                                         :   …                       indices s                           ŵ
+                                             1 2    K                   8 1 3
+Figure 3. Motion VQ-VAE that learns a discrete listener motion codebook. The input is a T length sequence of raw listener facial motion
+(expression coefficients and 3D head rotations). The transformer sequence-encoder E compresses the input into an embedding that gets
+mapped to its closest quantized codebook element in Z. The transformer decoder D decodes the quantized embedding into an approximate
+reconstruction of the input. We train on a reconstruction loss and commitment loss (Eq. 6). Not only does the VQ-VAE allow us to learn a
+representation robust to drift from autoregressive inference, it also enables non-deterministic motion synthesis.
+
+worse results due to overly-long conditioning sequences.    x = FL1:t by encoding it via the pre-trained encoder E and
+Applying cross-modal attention along a temporal sequence     quantization q (Section 3.2). We then obtain the sequence
+also allows different modalities to discover some tempo-     of indices of the nearest codebook entry per element, via
+ral re-alignment [1]. This is especially helpful for encoding      I(·), an element-wise inverse-lookup function that returns
+speaker inputs since a speaker’s motion may not always align      the index of a given codebook element
+with their speech (e.g. delay for dramatic effect).
+  We compute the Queries Qa for the cross-modal attention                             s1:τ = I(q(E(x))).                (8)
+operation from the audio input, and the Keys Km and Values
+                                                       Given speaker input m′ and listener input s1:τ, the pre-Vm from the motion. We then apply a series of cross-modal
+                                                                  dictor outputs p(sτ+1) ∈RK, the multinomial distributionattention blocks on the motion modality, where the audio
+                                                              of the next listener codebook index across the K entries:queries are always computed from the raw audio:
+                     QaK⊤m                                 p(sτ+1) = P(m′, s1:τ).               (9)
+         attentionm→a = softmax  √dk  Vm.       (7)                                         We can then sample from p(sτ+1) to obtain an index
+Here, dk is the transformer hidden dimension. The cross-    k into the codebook Z. We perform a codebook lookup
+modal transformer outputs an intermediate embedding that      to retrieve the corresponding quantized element zk of lis-
+incorporates information from both the audio and motion      tener motion, which we pass through the decoder D. The
+of the speaker. Additional convolutional layers temporally     output is the predicted continuous future listener motion
+downsample the sequence to match the size of the quantized        ˆy = ˆFLt+1:t+1+w of length w. We train our network with a
+listener sequence. The final speaker encoding is an embed-     cross entropy loss on the codebook index sτ+1:
+ding m′ ∈R(τ+1)×dk. We experimentally verify that this
+method of fusion outperforms others (Table. 1).                   LP = Ey∼p(y)[−log(p(sτ+1)],         (10)
+
+3.4. Listener Motion Predictor                        where the target codebook index at τ + 1 is computed from
+                                                       ground truth future facial motion y = FLt+1:t+1+w.
+  We design a transformer-based predictor module, P, to
+                                                      At train time, we follow teacher-forcing and use ground
+capture long-range correlations in the input data. Building                                                                   truth listener motion y as past listener input. We randomly
+off [40], we employ full-attention masking on the inputs,                                                mask prior timesteps ∈[1, τ] to facilitate autoregressive
+which has shown promising results in generating long-range
+                                                                 learning. At test time we input zeros for timesteps without
+motion in an auto-regressive manner. However, with our                                                                  prior listener predictions, and adjust the masking to ignore
+discrete latent code representation, our model is additionally
+                                                              these timesteps. This allows us to autoregressively predict
+able to capture multiple modes of outputs by predicting                                                                 future listener motion for arbitrary length input. No ground
+the distribution of possible next motions. Furthermore, we                                                                    truth past listener motion is seen by the network at test time.
+enable multi-modal inputs by means of cross-attention.
+  P takes as input the multimodal speaker embedding m′                                                          4. In-the-wild Conversational Dataset
+as well as the sequence of previously predicted listener mo-
+tion. Rather than representing the listener quantized motion      Due to the recent COVID-19 pandemic, videotaped inter-
+as a sequence of codebook vectors zq, for the purpose of     views have migrated towards teleconferencing platforms that
+prediction we use the parallel representation of a sequence      feature a split-screen panel with the host on one side of the
+of corresponding codebook indices, s = s1:τ ∈{1, ..., K}τ.     screen and interviewee on the other. This setup is especially
+Specifically, we discretize past continuous listener motion     advantageous for studying face-to-face communication since
+
+
+
+                                                      20399            (a)                                 (b)
+                        Ours                                                                     a + m
+ r               GT                                                GT
+
+                                                                                                                                                                                            (a)    Pearson
+
+
+
+                NN                                        m
+                 GT                                                GT
+
+
+ r
+
+                                                                                                                                                                                   (b)    Pearson
+
+
+
+
+                                Frame                                                       Frame
+
+Figure 4. Synchrony of expressions between speaker and listener measured by PCC across a sequence. We convert the expression sequence
+to a 1D lip curvature time-series according to [21]. Ours best matches the synchrony seen in ground truth. NN produces sequences that are
+too synchronous with the speaker. a+m and m fail to follow the major trends seen in ground truth, such as periods of (a) high synchrony
+when both the listener and speaker are laughing, and (b) low/no synchrony when the speaker speaks and the listener continues smiling.
+
+
+both individuals directly face the camera. To cover a broad      to directly translate 3DMM predictions to a picture of the
+range of expressions from diverse settings and people, we      listener (Figure 1). See Supp. and video. However, since
+extract the facial motion and audio for 72 hours of videos      photorealistic generation is not the main focus of our work,
+from 6 YouTube channels. Each channel features a plethora       all evaluations are done on the 3D mesh reconstructions,
+of interviewees and hosts from a variety of backgrounds.       which are the direct outputs of our model.
+  We leverage a state-of-the-art facial expression extraction
+                                                               5.1. Experimental Setupmethod, DECA [18], to recover the 3D head pose and expres-
+sion coefficients from in-the-wild videos. DECA estimates     Evaluation Metrics. Quantifying motion realism is a diffi-
+the pose, expression, and shape parameters according to the      cult problem that cannot be reduced to a single metric. We
+FLAME 3DMM [41]. The 3DMM defines 50 expression     thus evaluate our predictions along multiple axes based on
+coefficients along with a 3D jaw rotation (dm = 53), and     a composition of metrics from prior work. Our evaluation
+3D head rotation in Euler angles as described in Sec. 3.1.      suite is based on the notion that good listeners should display
+For audio, we use sound-source separation [45] to isolate      (1) realistic and (2) diverse motion that is (3) synchronous
+the speaker’s voice. We use these expressions, poses, and     with the motion of the speaker. We assess expression and
+speaker-only audio as pseudo ground-truth to train our code-     rotation separately according to these three pillars:
+book (Eq. 6) and prediction model (Eq. 10). See Supp. for         • L2: Distance to ground truth expression coefficients/pose.
+details. We release this large-scale, novel dataset.
+                                                                                                        • Frechet distance for realism: Motion realism measured by
+5. Experiments                                               distribution distance between generated and ground-truth
+                                                       motion sequences following [40]. We directly calculate the
+  We evaluate our model’s ability to effectively translate
+                                                            Frechet distance (FD) [27] in the expression space RT ×dm
+the speaker’s audio and motion into corresponding listener
+                                                              or the head pose space RT ×3 on the full motion sequence.
+motion. We employ an extensive set of quantitative metrics
+to measure the realism, diversity, and synchrony of the lis-        • Variation for diversity: Variance in motion across a se-
+tener’s facial motion. Further, we perform a perceptual study     quence. We calculate the variance across the time series
+to corroborate quantitative results. All evaluations are done     sequence of expression coefficents or 3D rotations.
+against the raw ground truth listener motion y. We discuss         • SI for diversity: Diverseness of predictions. As in [59],
+person-agnostic listener models in Supp.                we empirically run k-means to cluster all listener expres-
+                                                                  sions/rotations from training set. We compute avg. entropy
+Implementation Details. We use w = 8, T = 64, K = 200,
+                                                     (Shannon index) of the cluster id histogram of predicted
+dz = 256, t = 32. We add random masking of input past lis-
+                                                            sequences. k = 15, 9 for expression, rotation, respectively.
+tener motion. While we train on many different input speaker
+identities, each codebook and predictor model is trained on         • Paired FD for synchrony: Quality of listener-speaker
+a specific listener (e.g. person-specific listener behavior for     dynamics measured by distribution distances on listener-
+any speaker input). For all, we use a train/val/test split of     speaker pairs (P-FD). Calculated FD [27] on concatenated
+70%/20%/10%. Quantitative results are aggregated over all      listener-speaker expression RT ×(dm+dm)/ pose RT ×(3+3).
+listener models. At test-time, we use nucleus sampling [28].        • PCC for synchrony: Pearson correlation coefficient (PCC),
+  To improve the visual perceptibility of our results, we also     popular metric used to quantify global synchrony in psychol-
+train a person-specific mesh-to-pixel visualization module     ogy [6,50]. Measures how a listener covaries with a speaker
+
+
+
+                                                      20400                                             Expression                                                    Rotation
+
+                     L2 ↓   FD ↓    variation     SI   P-FD ↓  PCC       L2 ↓   FD ↓    variation     SI   P-FD ↓   PCC
+                                  (103)                       (103)                                 ( 102)                       (102)
+
+  GT                                          2.90   2.61              0.09                              0.81   1.96             0.008
+ NN motion            45.76    20.66       2.79   2.36     21.94    0.02         6.44      2.78       0.90   1.91      4.06   0.006
+ NN audio              52.67    31.98       2.70   2.41     33.81    0.02         7.61      5.54       0.93   2.01      6.87   0.007
+  Random               54.58    43.53       2.76   2.49     45.25    0.01         8.14      6.51       0.90   1.94      7.83   0.005
+  Median                43.18    64.48       0.00   0.00     64.77         -         6.35    15.50       0.00   0.00     15.50          -
+  Mirror                53.90    43.56       3.73   2.99     75.30    1.00         7.80      6.01       1.22   1.99     16.88   1.000
+  Delayed Mirror         53.95    43.79       3.78   2.88     76.72    0.98         7.82      5.99       1.31   1.93     16.96   0.999
+  LFI [33]               50.07    43.63       1.15   1.33     54.34    0.89         9.00      9.80       0.17   1.07     12.36   0.034
+  Random Expression   129.34   524.69      62.23   1.17    526.46    0.00        27.67   257.06      62.39   1.06    257.16   0.002
+  Ours Random Walk     52.68    40.45       1.99   2.26     42.55    0.01         7.14      5.74       0.60   1.37      7.79   0.001
+  Ours                  33.16      3.55       2.01   2.48      5.15    0.07         4.75      0.81       0.62   1.82      0.87   0.008
+
+Table 1. Baselines. Comparison against ground truth annotations (GT) on in-the-wild data. ↓indicates lower is better; for no arrow, closer to
+GT is better. We bold best performances that are statistically significant. For FD and P-FD, results shown in units indicated above.
+
+
+over a 1D time series. We calculate lip curvature [21] to     5.2. Quantitative Results
+measure smile synchrony (Fig. 4). For rotation, we measure
+                                                               Table 1 shows our proposed method outperforms all othersynchrony in up/down head motion (nods).
+                                                      competing methods across a variety of metrics. Overall,
+• TLCC for synchrony: We further analyze the leader-                                               Ours achieves the best balance of performance across the
+follower relationship between our generated listeners and                                                              various metrics. Rather than evaluating on L2 performance
+the input speakers by calculating the time lagged cross corre-                                                                  alone, our full suite of metrics provides a well-rounded view
+lation (TLCC) [6]. For x ∈[0, 60] frames (up to 2s) we shift                                                             of the qualities of good listeners. For instance, while Me-
+the speaker forward by x frames and calculate the correla-                                                       dian performs competitively against Ours on L2, it suffers
+tion on the delayed speaker and corresponding listener. The                                                                   in terms of motion diversity (variation, SI). As a result, this
+peak correlation indicates when the two time series are most                                                              baseline produces less realistic listeners, as noted by our
+synchronized. We also use this analysis to find the optimal                                                              realism metrics (FD, P-FD). However, more variation in the
+delay for Mirror Delay baseline below.                                                                     facial gestures is not necessarily better. While NN motion,
+Baselines. We compare to the following baselines:        NN audio, and Random produce diversity similar to real
+• NN motion: A segment-search method commonly used for     motion, the expression synchrony (PCC) for these baselines
+synthesis in graphics. Given an input speaker motion, we       is severely lacking. The incongruous listeners hinder the re-
+find its nearest neighbor from the training set and use its     alism of the dyad as a whole (P-FD). That said, a mime that
+corresponding listener segment as the prediction. We found     mirrors the speaker like Mirror and Mirror Delay looks
+NN on the full 64-frame sequence to work better than NN     uncanny due to excessive variation and synchrony. Ours
+on smaller subsequences that are then interpolated together.      delicately balances realism, diversity, and synchrony.
+                                                   The weaker performance of LFI [33] demonstrates the• NN audio: Same as above, but we find NN via audio
+                                                          advantages of our approach. LFI [33] was far less robustembeddings obtained from a pretrained VGGish [26] model.
+                                               when re-trained on our in-the-wild data. Unable to learn
+• Random: Return a randomly-chosen 64-frame motion se-                                                                        realistic listener motion, LFI [33] defaulted to mirroring
+quence of a listener from the training set.                                                               the speaker, resulting in excessively high synchrony (PCC)
+• Median: Simple yet strong baseline exploiting prior that     and worse realism (FD, P-FD). Even when evaluated on the
+listener is often still. Median expression/pose from train set.    LFI [33] dataset, ours outperforms. These results and visual
+• Mirror: Return the speaker’s motion smoothed.              comparisons in Supp.
+                                                                  Additionally, we quantitatively demonstrate a major ad-• Delayed Mirror: Here we mirror the speaker’s smoothed
+                                                          vantage of our method’s VQ-VAE in learning a robust andmotion delayed by 17 frames (≈0.5 s). While [17] delayed
+                                                                         realistic manifold of listener motion. Ours Random Walkby 90 frames, we analytically found the optimal lag accord-
+                                                                            is competitive against Random, where we sample full se-ing to time lagged cross correlation as discussed above.
+                                                          quences of real motion. It significantly outperforms Random
+• Let’s Face It (LFI) [33]: SOTA interlocutor-aware 3D                                                         Expression, where we randomly sample static expressions
+avatar generation re-trained on our data. Details in Supp.                                                     and rotations at each timestep. This demonstrates that ran-
+• Random Expression: Walk over 3DMM space; returns a    dom walks along the codebook still produce realistic motion,
+random face at each timestep.                              though it may not be in sync with the speaker.
+• Ours Random Walk: Walk over codebook indices.                Finally, the average TLCC calculated for GT and Ours
+
+
+
+                                                      20401                                                              Expression                                         Rotation
+
+                  audio  motion VQ CA    L2 ↓  FD ↓  variation    SI  P-FD ↓ PCC    L2 ↓  FD ↓  variation    SI  P-FD ↓  PCC
+                                                     (103)                   (103)                       ( 102)                   (102)
+
+  GT                                                           2.90  2.61           0.09                       0.81  1.96          0.008
+    .
+  NoVQ a + m   ✓    ✓   ✗  ✓    36.06  16.60      0.55  1.69   18.49  0.05     4.99    3.64      0.17  1.21     3.78  0.006
+  m             ✗    ✓  ✓       -    38.32   4.10      1.91  2.46     5.69  0.12     5.47    0.96      0.57  1.80     1.02  0.009
+   a          ✓     ✗  ✓       -    39.37   4.11      1.93  2.47     5.86  0.06     5.80    0.91      0.61  1.78     0.98  0.007
+   a + m       ✓    ✓  ✓   ✗    38.05   4.01      1.93  2.45     5.67  0.11     5.50    0.87      0.58  1.84     0.93  0.009
+    Full         ✓    ✓  ✓  ✓    33.16   3.55      2.01  2.48     5.15  0.07     4.75    0.81      0.62  1.82     0.87  0.008
+
+Table 2. Ablations. Effect of ablating key components of our method. ↓indicates lower is better; for no arrow, closer to GT is better. CA
+denotes cross-attention. We bold best performances that are statistically significant. For FD and P-FD, results shown in units indicated above.
+
+
+were both ≈17 frames, both reflecting an average listener     sequence, each A/B comparison was made by 3 evaluators.
+response time of ≈0.5s. As mentioned above, we use this re-     We compared our strongest baseline NN motion and abla-
+sponse time as the optimal delay for Mirror Delay baseline.     tion a+m to our proposed model and recorded the percentage
+See Supp. for full analysis.                                    of times our method was preferred over the baseline mod-
+                                                                     els or vice versa. Ours significantly outperformed. 75.3%Model Ablations. Table 2 quantifies the contributions of
+                                                             of the total 150 evaluators preferred Ours over NN, andeach component of our method. In NoVQ a+m, we remove
+                                                  71.1% preferred Ours over a+m. These statistics reflect thethe VQ-VAE and use raw listener motion as the input and
+                                                                   quantitative trends in Table 2. Furthermore, in a comparisonoutput representations. NoVQ a+m produces unrealistic,
+                                                                 against avatars rendered from ground truth listeners, evalua-overly smoothed sequences. Adding the VQ-VAE gives a
+                                                                    tors preferred Ours 50.1% of the time. This highlights thesignificant performance boost, which further confirms the
+                                                             perceptual realism of our predicted listener motion.importance of the codebook in generating realistic motion.
+Furthermore, we demonstrate that utilizing both audio and
+motion as input a+m via concatenation slightly improves     6. Discussion
+performance over using just one or the other (a and m).
+However, Ours achieves a more substantial improvement        In this work, we explored the synchronicity of motion
+when combining both modalities via cross-attention (CA).    between a speaker and a listener. To this end, we employ a
+See Supp. for details of ablation architectures.                 motion-audio cross-attention transformer to handle the mul-
+                                                                        tiple modalities of speaker inputs. Furthermore, we enable
+5.3. Qualitative Results                                     non-deterministic motion synthesis with a VQ-VAE. Trained
+                                                    on a novel, in-the-wild dataset of dyadic conversations, our  To corroborate our quantitative results and gain insight
+                                                   method autoregressively outputs convincing 3D listener fa-into how our synthesized listeners perceptually compare to
+                                                                        cial motion that correlate with a given speaker.real motion, we conducted an A/B test on Amazon Mechani-
+cal Turk. Since all quantitative trends were consistent across       While videotaped teleconferencing data lends itself to
+all listener identities, we randomly chose a single identity for     data collection, it has inherent limitations (e.g. no eye con-
+the evaluation. We visualized listener motion using videos       tact, time delays introduced by remote connections, etc.). A
+of grayscale 3D facial meshes.                                  future direction would be to apply this study to in-person
+   Participants watched a series of video pairs. In each pair,     conversations, which would allow us to incorporate gaze.
+one video was generated from our model; the other was     Furthermore, as we only model listener motion in response
+produced by an ablation or a baseline. Participants were      to a speaker, modeling the full dyadic cycle of back-and-
+then asked to identify the video containing the listener that      forth effect remains for future work. While our goal is to
+looks like they are listening and paying more attention to the     understand conversational dynamics, we discuss concerns
+speaker. Videos of 8 seconds each of resolution 849 × 450      for misuse of this technology in Supp. Please see Supp. for
+(downsampled from 1132 × 600 in order to fit two videos      result video, per-listener results, implementation details, ab-
+vertically stacked on different screen sizes) were shown,      lation architectures, multiple mode output evaluation, etc.
+and after each pair, participants were given unlimited time to
+                                                                Acknowledgements. The authors thank the Facebook FRL team, Justine
+respond. Since the most tell-tale moments for when a listener
+                                                                                    Cassell, Alyosha Efros, Alison Gopnik, Jitendra Malik, Dave Epstein, Kart-
+is truly listening are during defining moments (speaker tells
+                                                                                  tikeya Mangalam, Ruilong Li and Ethan Weber for insightful conversations
+a joke, shares a sad story, etc.) that illicit strong responses,                                                                     and support. The work of Ng and Darrell is supported by BAIR’s industrial
+we manually curated such notable moment sequences from       alliance programs, and the DoD DARPA’s Machine Common Sense and/or
+our held-out test data. We then randomly sampled 50 from      SemaFor programs which also supports Hu and Li. Ginosar’s work is funded
+these sequences and predicted a corresponding listener 3D      by NSF under Grant # 2030859 to the Computing Research Association for
+facial motion sequence using each method. For every test      CIFellows Project.
+
+
+
+                                                      20402References                                                      [12] Tanya L Chartrand and John A Bargh. The chameleon effect:
+                                                                            the perception–behavior link and social interaction. Journal
+ [1] Chaitanya Ahuja, Dong Won Lee, Ryo Ishii, and Louis-            of personality and social psychology, 76(6):893, 1999. 1, 3
+     Philippe Morency. No gestures left behind: Learning rela-                                                                     [13] Jin Hyun Cheong, Zainab Molani, Sushmita Sadhukha, and
+      tionships between spoken language and freeform gestures. In                                                            Luke J Chang. Synchronized affect in shared experiences
+     Proceedings of the 2020 Conference on Empirical Methods in                                                                           strengthens social connection, Jan 2020. 2
+     Natural Language Processing: Findings, pages 1884–1895,
+                                                                     [14] Hang Chu, Daiqing Li, and Sanja Fidler. A face-to-face neural
+     2020. 4, 5
+                                                                          conversation model. In Proceedings of the IEEE Conference
+ [2] Chaitanya Ahuja, Shugao Ma, Louis-Philippe Morency, and                                                             on Computer Vision and Pattern Recognition, pages 7113–
+     Yaser Sheikh. To react or not to react: End-to-end visual                                                                     7121, 2018. 3
+     pose forecasting for personalized avatar during dyadic con-
+                                                                     [15] W. S. Condon and W. D. Ogston. Sound film analysis of
+      versations. In 2019 International Conference on Multimodal                                                                 normal and pathological behavior patterns. The Journal of
+      Interaction, pages 74–84, 2019. 3
+                                                                 Nervous and Mental Disease, 143(4), 1966. 2
+ [3] Emre Aksan, Manuel Kaufmann, and Otmar Hilliges. Struc-                                                                     [16] Patrick Esser, Robin Rombach, and Bjorn Ommer. Taming
+     tured prediction helps 3d human motion modelling. In Pro-                                                                           transformers for high-resolution image synthesis. In Proceed-
+     ceedings of the IEEE/CVF International Conference on Com-                                                                         ings of the IEEE/CVF Conference on Computer Vision and
+     puter Vision, pages 7144–7153, 2019. 4                                                                          Pattern Recognition, pages 12873–12883, 2021. 4
+ [4] Volker Blanz and Thomas Vetter. A morphable model for                                                                     [17] Will Feng, Anitha Kannan, Georgia Gkioxari, and Larry Zit-
+     the synthesis of 3d faces. In Proceedings of the 26th annual                                                                              nick. Learn2smile: Learning non-verbal interaction through
+     conference on Computer graphics and interactive techniques,                                                                            observation. IROS, 2017. 2, 3, 4, 7
+     pages 187–194, 1999. 4                                                                     [18] Yao Feng, Haiwen Feng, Michael J. Black, and Timo Bolkart.
+ [5] Dan Bohus and Eric Horvitz.  Facilitating multiparty dia-          Learning an animatable detailed 3D face model from in-the-
+     log with gaze, gesture, and speech. In International Confer-          wild images. volume 40, 2021. 6
+     ence on Multimodal Interfaces and the Workshop on Machine                                                                     [19] Guy Gaziv, Lior Noy, Yuvalal Liron, and Uri Alon. A reduced-
+     Learning for Multimodal Interaction, ICMI-MLMI ’10, New                                                                           dimensionality approach to uncovering dyadic modes of body
+     York, NY, USA, 2010. Association for Computing Machinery.                                                                  motion in conversations. PloS one, 12(1):e0170786, 2017. 2
+    2
+                                                                     [20] Shiry Ginosar, Amir Bar, Gefen Kohavi, Caroline Chan, An-
+ [6] Steven Boker, Minquan Xu, Jennifer Rotondo, and Kadijah          drew Owens, and Jitendra Malik. Learning individual styles
+     King. Windowed cross-correlation and peak picking for the           of conversational gesture. In Proceedings of the IEEE/CVF
+     analysis of variability in the association between behavioral          Conference on Computer Vision and Pattern Recognition,
+     time series. Psychological methods, 7:338–55, 10 2002. 6, 7          pages 3497–3506, 2019. 3
+ [7] Carlos  Busso,  Murtaza  Bulut,  Chi-Chun  Lee,  Abe      [21] Shiry Ginosar, Kate Rakelly, Sarah Sachs, Brian Yin, and
+     Kazemzadeh, Emily Mower, Samuel Kim, Jeannette N Chang,          Alexei A Efros. A century of portraits: A visual historical
+    Sungbok Lee, and Shrikanth S Narayanan. Iemocap: Inter-           record of american high school yearbooks. In Proceedings
+      active emotional dyadic motion capture database. Language            of the IEEE International Conference on Computer Vision
+     resources and evaluation, 42(4):335–359, 2008. 2                   Workshops, pages 1–7, 2015. 6, 7
+ [8] Chen Cao, Yanlin Weng, Shun Zhou, Yiying Tong, and Kun      [22] Jonathan Gratch, Anna Okhmatovskaia, Francois Lamothe,
+     Zhou. Facewarehouse: A 3d facial expression database for          Stacy Marsella, Mathieu Morales, Rick J van der Werf, and
+     visual computing. IEEE Transactions on Visualization and           Louis-Philippe Morency. Virtual rapport. In International
+    Computer Graphics, 2013. 4                                    Workshop on Intelligent Virtual Agents, pages 14–27. Springer,
+ [9] Zhe Cao, Hang Gao, Karttikeya Mangalam, Qi-Zhi Cai, Minh           2006. 2
+     Vo, and Jitendra Malik. Long-term human motion prediction      [23] David Greenwood, Stephen Laycock, and Iain Matthews. Pre-
+     with scene context. In European Conference on Computer            dicting head pose in dyadic conversation. In International
+      Vision, pages 387–404. Springer, 2020. 3                          Conference on Intelligent Virtual Agents, pages 160–169.
+[10] Justine Cassell, Catherine Pelachaud, Norman Badler, Mark            Springer, 2017. 3
+     Steedman, Brett Achorn, Tripp Becket, Brett Douville, Scott      [24] Yuval Hart, Efrat Czerniak, Orit Karnieli-Miller, Avraham E.
+     Prevost, and Matthew Stone. Animated conversation: Rule-         Mayo, Amitai Ziv, Anat Biegon, Atay Citron, and Uri Alon.
+     based generation of facial expression, gesture and spoken          Automated video analysis of non-verbal communication in a
+      intonation for multiple conversational agents. In Proceedings          medical setting. Frontiers in Psychology, 7:1130, 2016. 2
+      of the 21st Annual Conference on Computer Graphics and      [25] Gustav Eje Henter, Simon Alexanderson, and Jonas Beskow.
+      Interactive Techniques, SIGGRAPH ’94, page 413–420, New         Moglow: Probabilistic and controllable motion synthesis us-
+     York, NY, USA, 1994. Association for Computing Machinery.           ing normalising flows. ACM Transactions on Graphics (TOG),
+    2                                                                  39(6):1–14, 2020. 3
+[11] Justine Cassell and Kristinn R. Thorisson. The power of a nod      [26] Shawn Hershey, Sourish Chaudhuri, Daniel PW Ellis, Jort F
+     and a glance: Envelope vs. emotional feedback in animated         Gemmeke, Aren Jansen, R Channing Moore, Manoj Plakal,
+     conversational agents. Applied Artificial Intelligence, 13(4-         Devin Platt, Rif A Saurous, Bryan Seybold, et al. Cnn ar-
+     5):519–538, 1999. 1                                                    chitectures for large-scale audio classification. In 2017 ieee
+
+
+
+                                                      20403      international conference on acoustics, speech and signal pro-      [41] Tianye Li, Timo Bolkart, Michael. J. Black, Hao Li, and
+     cessing (icassp), pages 131–135. IEEE, 2017. 7                         Javier Romero. Learning a model of facial shape and expres-
+[27] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bern-           sion from 4D scans. ACM Transactions on Graphics, (Proc.
+     hard Nessler, and Sepp Hochreiter. Gans trained by a two        SIGGRAPH Asia), 36(6), 2017. 4, 6
+     time-scale update rule converge to a local nash equilibrium.      [42] Jiasen Lu, Dhruv Batra, Devi Parikh, and Stefan Lee. Vilbert:
+     arXiv preprint arXiv:1706.08500, 2017. 6                             Pretraining task-agnostic visiolinguistic representations for
+[28] Ari Holtzman, Jan Buys, Li Du, Maxwell Forbes, and Yejin           vision-and-language tasks. arXiv preprint arXiv:1908.02265,
+     Choi. The curious case of neural text degeneration. arXiv           2019. 4
+     preprint arXiv:1904.09751, 2019. 6                             [43] Evonne Ng, Shiry Ginosar, Trevor Darrell, and Hanbyul Joo.
+[29] Lixing Huang, Louis-Philippe Morency, and Jonathan Gratch.          Body2hands: Learning to infer 3d hands from conversational
+     Virtual rapport 2.0. In International workshop on intelligent           gesture body dynamics. In Proceedings of the IEEE/CVF
+      virtual agents, pages 68–79. Springer, 2011. 2                      Conference on Computer Vision and Pattern Recognition,
+[30] Yuchi Huang and Saad M Khan. Dyadgan: Generating fa-          pages 11865–11874, 2021. 3
+      cial expressions in dyadic interactions. In Proceedings of the      [44] Behnaz Nojavanasghari, Yuchi Huang, and Saad Khan. In-
+    IEEE Conference on Computer Vision and Pattern Recogni-            teractive generative adversarial networks for facial expres-
+      tion Workshops, pages 11–18, 2017. 3                                sion generation in dyadic interactions.   arXiv preprint
+[31] Andrew Jaegle, Sebastian Borgeaud, Jean-Baptiste Alayrac,          arXiv:1801.09092, 2018. 2, 3, 4
+     Carl Doersch, Catalin Ionescu, David Ding, Skanda Kop-      [45] Andrew Owens and Alexei A Efros. Audio-visual scene anal-
+      pula, Daniel Zoran, Andrew Brock, Evan Shelhamer, et al.            ysis with self-supervised multisensory features. In European
+     Perceiver io: A general architecture for structured inputs &          Conference on Computer Vision, 2018. 3, 6
+      outputs. arXiv preprint arXiv:2107.14795, 2021. 4               [46] Pascal Paysan, Reinhard Knothe, Brian Amberg, Sami Romd-
+[32] Patrik Jonell, Taras Kucherenko, Erik Ekstedt, and Jonas            hani, and Thomas Vetter. A 3d face model for pose and
+     Beskow.  Learning non-verbal behavior for a social robot            illumination invariant face recognition. In 2009 Sixth IEEE In-
+    from youtube videos. In ICDL-EpiRob Workshop on Natu-           ternational Conference on Advanced Video and Signal Based
+      ralistic Non-Verbal and Affective Human-Robot Interactions,           Surveillance, pages 296–301. Ieee, 2009. 4
+     Oslo, Norway, August 19, 2019, 2019. 3                         [47] Ken Perlin and Athomas Goldberg. Improv: A system for
+[33] Patrik Jonell, Taras Kucherenko, Gustav Eje Henter, and Jonas            scripting interactive actors in virtual worlds. In Proceedings
+     Beskow. Let’s face it: Probabilistic multi-modal interlocutor-            of the 23rd annual conference on Computer graphics and
+     aware generation of facial gestures in dyadic settings.  In            interactive techniques, pages 205–216, 1996. 3
+     Proceedings of the 20th ACM International Conference on      [48] Mathis Petrovich, Michael J Black, and G¨ul Varol. Action-
+      Intelligent Virtual Agents, pages 1–8, 2020. 2, 3, 4, 7                  conditioned 3d human motion synthesis with transformer
+[34] Hanbyul Joo, Tomas Simon, Mina Cikara, and Yaser Sheikh.           vae. In Proceedings of the IEEE International Conference on
+    Towards social artificial intelligence: Nonverbal social sig-         Computer Vision, 2021. 3
+     nal prediction in a triadic interaction.  In Proceedings of      [49] Fabian Ramseyer and Wolfgang Tschacher. Nonverbal syn-
+     the IEEE/CVF Conference on Computer Vision and Pattern          chrony of head- and body-movement in psychotherapy: dif-
+     Recognition, pages 10873–10883, 2019. 3                               ferent signals have different associations with outcome. Fron-
+[35] Yvonne Jung, Arjan Kuijper, Dieter W Fellner, Michael Kipp,             tiers in Psychology, 5:979, 2014. 1
+     Jan Miksatko, Jonathan Gratch, and Daniel Thalmann. Be-      [50] Marcel Riehle, J¨urgen Kempkensteffen, and Tania M. Lin-
+      lievable virtual characters in human-computer dialogs.  In            coln. Quantifying facial expression synchrony in face-to-face
+     Eurographics (State of the Art Reports), pages 75–100, 2011.          dyadic interactions: Temporal dynamics of simultaneously
+    2                                                                 recorded facial emg signals. Journal of Nonverbal Behavior,
+[36] Adam Kendon. Movement coordination in social interaction:          41(2):85–102, Jun 2017. 6
+    Some examples described. Acta psychologica, 32:101–125,      [51] Paul Ruvolo, Daniel Messinger, and Javier Movellan. Infants
+     1970. 1, 3                                                       time their smiles to make their moms smile. PLOS ONE,
+[37] Diederik P Kingma and Prafulla Dhariwal. Glow: Genera-           10(9):1–10, 09 2015. 2
+      tive flow with invertible 1x1 convolutions. arXiv preprint      [52]  Jos´e Serra, Ver´onica Orvalho, and Darren Cosker.  Be-
+     arXiv:1807.03039, 2018. 3                                          havioural facial animation using motion graphs and mind
+[38] Marianne LaFrance. Nonverbal synchrony and rapport: Anal-          maps. In Proceedings of the 9th International Conference on
+      ysis by the cross-lag panel technique.  Social Psychology          Motion in Games, pages 161–166, 2016. 2
+     Quarterly, 42(1):66–70, 1979. 1, 3                              [53] Sinan Sonlu, U˘gur G¨ud¨ukbay, and Funda Durupinar. A con-
+[39] Jiaman Li, Yihang Yin, Hang Chu, Yi Zhou, Tingwu Wang,           versational agent framework with multi-modal personality
+     Sanja Fidler, and Hao Li. Learning to generate diverse dance            expression. ACM Transactions on Graphics (TOG), 40(1):1–
+     motions with transformer. arXiv preprint arXiv:2008.08171,           16, 2021. 2
+     2020. 3                                                        [54] Colwyn Trevarthen and M. Bullowa. Communication and
+[40] Ruilong Li, Shan Yang, David A Ross, and Angjoo Kanazawa.          cooperation in early infancy: A description of primary inter-
+     Learn to dance with aist++: Music conditioned 3d dance             subjectivity. Before Speech (Cambridge), pages 321–347, 01
+     generation. arXiv preprint arXiv:2101.08779, 2021. 3, 5, 6           1979. 2
+
+
+
+                                                      20404[55] Yao-Hung Hubert Tsai, Shaojie Bai, Paul Pu Liang, J Zico
+      Kolter, Louis-Philippe Morency, and Ruslan Salakhutdinov.
+     Multimodal transformer for unaligned multimodal language
+     sequences.  In Proceedings of the conference. Association
+      for Computational Linguistics. Meeting, volume 2019, page
+     6558. NIH Public Access, 2019. 4
+[56] Aaron van den Oord, Oriol Vinyals, and Koray Kavukcuoglu.
+     Neural discrete representation learning. In Proceedings of
+      the 31st International Conference on Neural Information Pro-
+     cessing Systems, pages 6309–6318, 2017. 2, 3, 4
+[57] Auriel Washburn, Rachel W Kallen, Maurice Lamb, Nigel
+     Stepp, Kevin Shockley, and Michael J Richardson. Feedback
+     delays can enhance anticipatory synchronization in human-
+     machine interaction. PloS one, 14(8):e0221275, 2019. 4
+[58] Li Zhang, Noah Snavely, Brian Curless, and Steven M Seitz.
+     Spacetime faces: High-resolution capture for˜ modeling and
+     animation. In Data-Driven 3D Facial Animation, pages 248–
+     276. Springer, 2008. 2
+[59] Yan Zhang, Mohamed Hassan, Heiko Neumann, Michael J
+     Black, and Siyu Tang. Generating 3d people in scenes without
+     people.  In Proceedings of the IEEE/CVF Conference on
+    Computer Vision and Pattern Recognition, pages 6194–6204,
+     2020. 6
+[60] Michael  Zollh¨ofer, Justus Thies, Pablo Garrido, Derek
+     Bradley, Thabo Beeler, Patrick P´erez, Marc Stamminger,
+     Matthias Nießner, and Christian Theobalt. State of the art on
+     monocular 3d face reconstruction, tracking, and applications.
+     In Computer Graphics Forum, 2018. 4
+
+
+
+
+
+                                                      20405

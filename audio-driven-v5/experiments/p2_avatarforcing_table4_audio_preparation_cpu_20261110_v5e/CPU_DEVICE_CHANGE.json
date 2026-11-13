@@ -1,0 +1,45 @@
+{
+  "created_unix": 1794313405.9574022,
+  "parent": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_avatarforcing_table4_audio_preparation_cpu_frontend_20261110_v5d",
+  "reason": "GPU7 memory too low for later guarded shards; use CPU for entire86 rather than mix backends",
+  "replacements": [
+    [
+      "Official IIANet target speech extraction with audited ViCo I/O adaptation.",
+      "Official IIANet target speech extraction on CPU; same ViCo source and weights."
+    ],
+    [
+      "p=prepare();device=guard(.05,32768);torch.use_deterministic_algorithms(True)",
+      "p=prepare();device=cpu_guard();torch.use_deterministic_algorithms(True)"
+    ],
+    [
+      ".cuda()",
+      ".cpu()"
+    ],
+    [
+      "torch.set_num_threads(2)",
+      "torch.set_num_threads(8)"
+    ],
+    [
+      "official-IIANet-Vox2-CPU-face-frontend-GPU-separator-v4",
+      "official-IIANet-Vox2-all-CPU-separator-v5"
+    ],
+    [
+      "audio/video separation networks remain on GPU7",
+      "audio/video separation networks also run on CPU"
+    ],
+    [
+      "peak_allocated_mib=torch.cuda.max_memory_allocated()/2**20",
+      "peak_allocated_mib=0.,execution_device=\"cpu\",cuda_initialized=torch.cuda.is_initialized()"
+    ],
+    [
+      "precision='CUBLAS_WORKSPACE_CONFIG=:4096:8;",
+      "precision='CPU FP32,8torch threads,MKLDNN deterministicTrue; CUBLAS_WORKSPACE_CONFIG=:4096:8 retained unused;"
+    ]
+  ],
+  "CPU_threads_per_worker": 8,
+  "planned_workers": 8,
+  "unchanged": "Same official source functions/weights/sampleIDs/mix/ROI/FP32/fullclip; no AF generation or scoring",
+  "preflight": "Four independent CPU native processes must produce exact ROI and waveform max_abs<=1e-6",
+  "device_query_adaptation": "Only detectface device assignment replaced with torch.device(cpu), avoiding unused get_device_name CUDA initialization. MTCNN/SFD/FAN factories already forcedCPU.",
+  "startup_corrections": "Protocol bootstrap created before shard prepare; preserve native virtualenv executable path without resolving its symlink; original CUDA-name query removed for CPU. Terminal failed attempts retained."
+}

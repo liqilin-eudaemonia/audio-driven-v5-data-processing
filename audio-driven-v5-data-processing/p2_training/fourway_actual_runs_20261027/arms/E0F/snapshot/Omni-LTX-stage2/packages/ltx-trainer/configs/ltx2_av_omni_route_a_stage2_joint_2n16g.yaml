@@ -1,0 +1,179 @@
+model:
+  model_path: /public/2_CKPT/2_AVATAR/LTX23/LTX_23/ltx-2.3-22b-dev.safetensors
+  text_encoder_path: /public/2_CKPT/0_WM/LTX2.0_TEXT_ENCODER
+  training_mode: lora
+  load_checkpoint: /public/2_CKPT/0_WM/llq/omni_route_a_stage1_train_4n32g_20260920/training/checkpoints/lora_weights_step_01700.safetensors
+lora:
+  rank: 8
+  alpha: 8
+  dropout: 0.0
+  target_modules:
+  - to_k
+  - to_q
+  - to_v
+  - to_out.0
+  exclude_modules: (?:^|.*\.)(?:omni_attn2|audio_omni_attn2|audio_ff_attn2)(?:\..*)?
+  modules_to_save:
+  - omni_attn2
+  - audio_omni_attn2
+  - video_omni_layer_adapter
+  - audio_omni_layer_adapter
+  - audio_ff_attn2
+training_strategy:
+  name: text_to_video
+  i2av_only: true
+  first_frame_conditioning_p: 1.0
+  with_audio: true
+  audio_latents_dir: audio_latents
+  online_conditioning: false
+  online_text_conditioning: true
+  online_qwen_conditioning: false
+  use_qwen_cond: false
+  qwen_image_width: 1248
+  qwen_image_height: 704
+  use_omni_cond: true
+  omni_conditions_dir: /private/liqi_workspace/data/seamless/subset_300h_pure/omni_conditions_route_a_raw_v2_train_30fps_qualified_20260920
+  omni_expected_route: route_a_no_context
+  omni_cond_for_audio: true
+  omni_cross_attention_dim: 1024
+  audio_omni_cross_attention_dim: 1024
+  use_omni_layer_adapters: true
+  omni_layer_adapter_num_layers: 4
+  omni_layer_adapter_input_dim: 1024
+  use_omni_field_resampler: true
+  omni_field_resampler_input_dim: 2048
+  omni_field_resampler_num_heads: 8
+  omni_dropout: 0.1
+  omni_monitor_interval: 20
+  omni_residual_monitor_blocks:
+  - 0
+  - 15
+  - 31
+  - 47
+  use_listener_timbre_cond: false
+  use_first_frame_audio_cond: true
+  first_frame_dropout: 0.0
+optimization:
+  learning_rate: 1.0e-05
+  steps: 1000
+  batch_size: 1
+  gradient_accumulation_steps: 4
+  max_grad_norm: 1.0
+  optimizer_type: adamw8bit
+  weight_decay: 0.01
+  scheduler_type: linear
+  scheduler_params:
+    warmup_steps: 100
+    start_factor: 1.0
+    end_factor: 0.1
+  enable_gradient_checkpointing: true
+acceleration:
+  mixed_precision_mode: bf16
+  context_parallel_size: 1
+  ddp_gradient_as_bucket_view: true
+  quantization: null
+  load_text_encoder_in_8bit: true
+  offload_optimizer_during_validation: true
+  ddp_find_unused_parameters: true
+data:
+  preprocessed_data_root: /private/liqi_workspace/data/seamless/subset_300h_pure/ltx23_precomputed_720p_area_qualified_20260920
+  metadata_jsonls:
+  - /private/liqi_workspace/data/seamless/subset_300h_pure/ltx23_precomputed_720p_area_qualified_20260920/metadata_train.jsonl
+  num_dataloader_workers: 0
+  caption_field: sd_text
+  video_field: video
+  path_remap: {}
+  max_training_frames: null
+  length_bucket:
+    enabled: false
+    sync_bucket_across_ranks: false
+    max_batches_per_epoch: null
+    allowed_frames: null
+validation:
+  metadata_jsonl: /private/liqi_workspace/data/seamless/subset_300h_pure/ltx23_precomputed_720p_area_qualified_20260920/stage1_evaluation/oracle_dev.jsonl
+  jsonl_caption_field: sd_text
+  jsonl_video_field: video
+  jsonl_max_samples: 16
+  video_dims:
+  - 1248
+  - 704
+  - 121
+  frame_rate: 30.0
+  inference_steps: 30
+  interval: 100
+  skip_initial_validation: false
+  generate_audio: true
+  metrics:
+  - id_similarity
+  - fid
+  - fvd
+  - sync_c
+  metric_prefix: oracle_stage2_dev_current_omni
+  plain_prompt_is_transcript: true
+  id_python: /private/software/conda/envs/ovi/bin/python
+  id_model_root: /private/codes/exp/boxian_workspace/models/benchmark/insightface
+  id_model_name: buffalo_l
+  id_sample_frames: 8
+  id_cpu: true
+  benchmark_root: /private/codes/exp/boxian_workspace/codes/benchmark
+  avbench_python: /private/software/conda/envs/avbench/bin/python
+  vocal_sync_python: /private/software/conda/envs/vocal_sync/bin/python
+  syncnet_root: /private/codes/joint_gen/complex_motion_train/syncnet_python
+  metric_device: cuda:0
+  syncnet_gpus: '0'
+  fid_frames: 4
+  fvd_frames: 16
+  metric_timeout_seconds: 7200
+  metric_failure_policy: error
+checkpoints:
+  interval: 100
+  keep_last_n: -1
+  precision: float32
+  no_resume: true
+  save_training_state: full
+flow_matching:
+  timestep_sampling_mode: shifted_logit_normal
+  timestep_sampling_params: {}
+hub:
+  push_to_hub: false
+  hub_model_id: null
+wandb:
+  enabled: false
+# Stage 1 formal training used 43; Stage 2 uses an independent random stream.
+seed: 44
+output_dir: /private/liqi_workspace/project_code/Omni-LTX-stage2/outputs/route_a_joint_v2_s1step1700_2n16g
+omni_joint:
+  validation_conditions_dir: /private/liqi_workspace/data/seamless/subset_300h_pure/omni_conditions_route_a_raw_v2_gt_qualified_20260920
+  model_path: /private/ckpts/Qwen3-Omni/Instruct
+  manifests:
+  - /private/liqi_workspace/data/seamless/subset_300h_pure/train_gt_qualified_20260920/train_part0_manifest.json
+  - /private/liqi_workspace/data/seamless/subset_300h_pure/train_gt_qualified_20260920/train_part1_manifest.json
+  - /private/liqi_workspace/data/seamless/subset_300h_pure/manifests_gt_qualified_20260920/dev_manifest.json
+  - /private/liqi_workspace/data/seamless/subset_300h_pure/manifests_gt_qualified_20260920/test_manifest.json
+  attention_rank: 32
+  attention_alpha: 64
+  expert_rank: 2
+  expert_alpha: 4
+  lora_dropout: 0.0
+  learning_rate: 2.0e-06
+  resampler_rank: 32
+  resampler_alpha: 32
+  resampler_learning_rate: 2.0e-05
+  token_loss_weight: 1.0
+  gradient_checkpointing: true
+  max_tokens: 32768
+  audio_tail_ms: 200
+cluster:
+  master_port: 29862
+  nproc_per_node: 8
+  nodes:
+  - name: js-public
+    host: 172.29.252.24
+    ssh_user: root
+    ssh_port: 22
+    role: master
+  - name: avgen-1
+    host: 172.29.112.43
+    ssh_user: root
+    ssh_port: 22
+    role: slave

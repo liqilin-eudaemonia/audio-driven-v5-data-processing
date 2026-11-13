@@ -1,0 +1,182 @@
+Supplementary materials for DIM: Dyadic
+Interaction Modeling for Social Behavior
+Generation
+Minh Tran∗
+, Di Chang∗
+, Maksim Siniukov, and Mohammad Soleymani
+University of Southern California, Institute for Creative Technologies
+soleymani@ict.usc.edu
+A
+Metrics for evaluation
+In this section, we further define our metrics in detail as a supplement to the
+main text.
+– Frechet Distance (FD): Motion realism is evaluated through the distribu-
+tional discrepancy between the generated and actual ground-truth motions.
+This is quantified by calculating the Fréchet Distance (FD) [3] within the
+domains of facial expressions and head poses across the entire motion se-
+quence.
+– Paired FD for synchrony (P-FD): Listener-speaker dynamics quality is based
+on the distances between distributions of listener-speaker pairs. We con-
+catenate the generated listener motions with speaker motions and calculate
+Fréchet Distance (FD) [3].
+– Mean Squared Error (MSE): MSE between generated and ground-truth mo-
+tions.
+– SI for Diversity (SID): In L2L [6], the diversity of predictions of facial and
+head motions is assessed using k-means clustering. This approach facilitates
+the evaluation of variation within predicted results by calculating the entropy
+of the histogram of cluster ids within each sequence.
+– Variance (Var): Following L2L [6], this metric measures the variance of the
+listener motions on time series.
+– Residual Pearson Correlation Coefficient (rPCC): The Pearson Correlation
+Coefficient (PCC) [5, 9], evaluates the motion of the face and head on a
+frame-by-frame basis, indicating how the listener’s movements correlate with
+those of the speaking individuals. The L1 distance is utilized to quantify the
+discrepancy between the generated PCC and the ground truth PCC.
+B
+Modality Ablation & Online Behavior Generation
+We present the results of our modality ablation and online behavior generation
+experiments for DIM-Listener on ViCo in Table 1. In the modality ablation
+* equal contribution
+
+2
+M. Tran et al.
+Table 1: Modality contribution & online gen. experiment on ViCo.
+V
+A
+A+V
+Online Gen.
+Exp Pose Exp Pose Exp Pose Exp
+Pose
+MSE 0.85 0.01 0.97 0.02 0.7 0.01 0.79
+0.01
+FD
+32.8 0.07 46.9 0.08 23.9 0.06 28.4
+0.06
+experiments, we mask all inputs of a modality to zeros. For the online generation
+experiments, we add causal masks during the fine-tuning phase and reuse the
+pre-trained weights. The online generation results (which are slightly worse but
+still superior to prior work) are also reported in Table 1 for ViCo.
+C
+Generated Listener Motions User Study
+We asked 50 participants from Prolific, a crowdsourcing platform, to rate the
+quality of eight generated listeners in the test set of ViCo [12] from L2L [6],
+RLHG [12], ELP [10], and our method on a scale of 0(low) to 5(high). The
+methods were anonymized and randomly ordered for each question. The result
+is available in Table 2. The average duration of the videos is 14 seconds. Criteria
+for judgment: 1) The response from the listener provides correct feedback to the
+speaker. 2) The head motions and facial expressions are diverse and smooth.
+Table 2: User Study Results. Scale: 0-5; the higher, the better.
+Method
+Video-1 Video-2 Video-3 Video-4 Video-5 Video-6 Video-7 Video-8 Average
+ELP [62]
+2.12
+2.16
+1.98
+2.02
+2.00
+1.88
+1.80
+1.88
+1.98
+RLHG [77]
+2.45
+2.67
+2.80
+2.75
+2.74
+2.18
+2.43
+2.12
+2.51
+L2L [47]
+2.92
+2.78
+2.76
+3.20
+3.69
+2.14
+2.96
+2.63
+2.89
+Ours
+3.90
+3.72
+3.98
+3.47
+3.98
+2.94
+3.75
+3.31
+3.64
+D
+Limitations and Future Works
+D.1
+Rendering Network
+In our framework, we observed that the image quality produced by PIRen-
+derer [7] does not always meet our expectations. Specifically, the rendered images
+exhibit distortions for certain individuals. Moreover, we identified a crucial need
+for individualized fine-tuning of the rendering network for each subject. This ne-
+cessity stems from the model’s inability to effectively generalize across different
+identities, even after training. Consequently, we have adopted the strategy of
+training a distinct PIRenderer [7] model for every individual in our test set. Fu-
+ture research could explore the integration of a more adaptable rendering model
+into the framework, to enhance the photorealism of the generated video.
+
+Dyadic Interaction Modeling
+3
+D.2
+EMOCA/FLAME Representation
+As mentioned in the paper, we adopt EMOCA [1] to represent facial expres-
+sions and head pose motions, encapsulated in a compact output dimensionality
+of [56, ], specifically [50, ] for facial expressions and [6, ] for head poses. In the
+context of our speaker generation task, we demonstrate the flexibility of our
+model by converting this prediction into a FLAME [4] point cloud representa-
+tion, comprising 5023 vertices. This approach contrasts with prior models that
+employ a more detailed 3D face geometry with 23370 vertices [2, 8, 11]. While
+EMOCA 3DMMs offer a streamlined representation, they inherently sacrifice
+some details in capturing facial expressions and head movements. To enhance
+the fidelity of listener and speaker generation tasks in future research, we sug-
+gest exploring more nuanced and expressive representations that more accurately
+reflect facial behaviors.
+References
+1. Danecek, R., Black, M.J., Bolkart, T.: EMOCA: Emotion driven monocular face
+capture and animation. In: Conference on Computer Vision and Pattern Recogni-
+tion (CVPR). pp. 20311–20322 (2022) 3
+2. Fan, Y., Lin, Z., Saito, J., Wang, W., Komura, T.: Faceformer: Speech-driven 3d
+facial animation with transformers. In: Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition. pp. 18770–18780 (2022) 3
+3. Heusel, M., Ramsauer, H., Unterthiner, T., Nessler, B., Hochreiter, S.: Gans trained
+by a two time-scale update rule converge to a local nash equilibrium. arXiv preprint
+arXiv:1706.08500 (2017) 1
+4. Li, T., Bolkart, T., Black, M.J., Li, H., Romero, J.: Learning a model of facial shape
+and expression from 4D scans. ACM Transactions on Graphics, (Proc. SIGGRAPH
+Asia) 36(6) (2017), https://doi.org/10.1145/3130800.3130813 3
+5. Messinger, D.S., Mahoor, M.H., Chow, S.M., Cohn, J.F.: Automated measurement
+of facial expression in infant–mother interaction: A pilot study. Infancy 14(3), 285–
+305 (2009) 1
+6. Ng, E., Joo, H., Hu, L., Li, H., Darrell, T., Kanazawa, A., Ginosar, S.: Learning
+to listen: Modeling non-deterministic dyadic facial motion. In: Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 20395–
+20405 (2022) 1, 2
+7. Ren, Y., Li, G., Chen, Y., Li, T.H., Liu, S.: Pirenderer: Controllable portrait im-
+age generation via semantic neural rendering. In: Proceedings of the IEEE/CVF
+International Conference on Computer Vision. pp. 13759–13768 (2021) 2
+8. Richard, A., Zollhöfer, M., Wen, Y., de la Torre, F., Sheikh, Y.: Meshtalk: 3d face
+animation from speech using cross-modality disentanglement. In: Proceedings of
+the IEEE International Conference on Computer Vision. pp. 1173–1182 (2021) 3
+9. Riehle, M., Kempkensteffen, J., Lincoln, T.M.: Quantifying facial expression syn-
+chrony in face-to-face dyadic interactions: Temporal dynamics of simultaneously
+recorded facial emg signals. Journal of Nonverbal Behavior 41, 85–102 (2017) 1
+10. Song, L., Yin, G., Jin, Z., Dong, X., Xu, C.: Emotional listener portrait: Realis-
+tic listener motion simulation in conversation. In: 2023 IEEE/CVF International
+Conference on Computer Vision (ICCV). pp. 20782–20792. IEEE (2023) 2
+
+4
+M. Tran et al.
+11. Xing, J., Xia, M., Zhang, Y., Cun, X., Wang, J., Wong, T.T.: Codetalker: Speech-
+driven 3d facial animation with discrete motion prior. In: Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 12780–
+12790 (2023) 3
+12. Zhou, M., Bai, Y., Zhang, W., Yao, T., Zhao, T., Mei, T.: Responsive listening
+head generation: a benchmark dataset and baseline. In: European Conference on
+Computer Vision. pp. 124–142. Springer (2022) 2

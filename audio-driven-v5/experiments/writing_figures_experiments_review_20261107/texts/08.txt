@@ -1,0 +1,722 @@
+
+=== PDF PAGE 1 ===
+                        This ICCV paper is the Open Access version, provided by the Computer Vision Foundation.
+                                   Except for this watermark, it is identical to the accepted version;
+                                  the final published version of the proceedings is available on IEEE Xplore.
+
+
+
+
+
+Emotional Listener Portrait: Realistic Listener Motion Simulation in Conversation
+
+
+       Luchuan Song1   Guojun Yin2   Zhenchao Jin3   Xiaoyi Dong4   Chenliang Xu1
+             1University of Rochester    2University of Science and Technology of China
+                       3University of Hong Kong   4Shanghai AI Laboratory
+             {lsong11@ur., chenliang.xu@}rochester.edu, gjyin@mail.ustc.edu.cn,
+
+                       blwx96@connect.hku.hk, dongxiaoyi@pjlab.org.cn
+
+
+
+
+
+Figure 1: Illustration of our method on listener motion synthesis with the ternary emotional value as an example. Given
+different emotional speakers (e.g. neutral, positive, and negative), our approach generates corresponding listeners under the
+different emotional latent spaces.
+
+                 Abstract                            In contrast to speaker head generation (SHG) [10, 44, 21,
+                                                              13, 35, 47, 9, 53, 45], which focuses on generating lip-
+   Listener head generation centers on generating non-     speech synchronized portrait videos, LHG analyzes the talk-
+verbal behaviors (e.g., smile) of a listener in reference to the     ing semantics of the speaker automatically, without explicit
+information delivered by a speaker. A significant challenge     guidance, to synthesize corresponding interactive motions
+when generating such responses is the non-deterministic na-     of the listener. As shown in Figure 1, the listener reacts
+ture of fine-grained facial expressions during a conversation,     positively when the speaker shares happy, and vice versa.
+which varies depending on the emotions and attitudes of   LHG can be employed in many applications, e.g. human-
+both the speaker and the listener. To tackle this problem, we     computer interaction [57, 25, 60], virtual reality [22, 24],
+propose the Emotional Listener Portrait (ELP), which treats     metaverse [8, 7, 46] and media forensics [42, 37, 43, 17] etc.
+each fine-grained facial motion as a composition of several       The distinct nature of LHG, which necessitates a compre-
+discrete motion-codewords and explicitly models the proba-     hensive modeling of the speaker’s motion [32], presents a
+bility distribution of the motions under different emotion in      significant hurdle in yielding realistic listener head. In the
+conversation. Benefiting from the “explicit” and “discrete”    absence of audio-to-mouth matching evaluation, audiences
+design, our ELP model can not only automatically generate      are more inclined to discern subtle changes in facial expres-
+natural and diverse responses toward a given speaker via     sions and head movements. However, the existing meth-
+sampling from the learned distribution but also generate     ods Responsive Listening Head Generation (RLHG) [61]
+controllable responses with a predetermined attitude. Under     and Learning2Listen [31] have ignored these key compo-
+several quantitative metrics, our ELP exhibits significant      nents. Specifically, RLHG [61] has replicated the regres-
+improvements compared to previous methods.                  sion experience from SHG [10], which weakens the non-
+                                                               deterministic properties and smoothes the listener motion.
+1. Introduction                                                        Meanwhile, although the motion categories in codebook pro-
+   Listener Head Generation (LHG) technology aims to syn-    posed by Learning2Listen [31] alleviate this problem, the
+thesize the motion of the listener in response to the speaker.     one-dimensional codebook from VQ-VAE [29] limits the
+
+
+
+                                                      20839
+
+=== PDF PAGE 2 ===
+diversity of motion and emotional representation. Conse-           tional listener head generation in dynamic conversion,
+quently, different emotional states are intricately intertwined         which can improve the fidelity of the fine-grained gen-
+within a single codebook, and the generated listener emotion          erated listener with facial expression, head pose and
+tends to be the biased emotion in the training set. More-          blink etc.
+over, neither method can simulate fine-grained facial motion       – We introduce the Adaptive Space Encoder (ASE) to
+under different emotions, such as minute alterations in the          rearrange the latent space based on emotional priors to
+motion surrounding the eyes and movements of the mouth.          obtain more explicit emotional representation.
+To explore the solution toward superior LHG results, we       – Extensive experiments demonstrate that our method
+focus on the two unresolved hurdles: (1) how to simulate          outperforms most existing methods in quantitative and
+finer-grained listener movements, including the head motion           qualitative results.
+and expression details of the face, and (2) how to explicitly
+model emotions in the discrete space.                        2. Related Work
+   In  this  paper, we propose a novel method  called
+                                                          Blink-Controlled Facial Animation. There are some exist-Emotional Listener Portrait (ELP) for vivid listener head
+                                                            ing methods [58, 41] for blink control on facial animation.video generation. The visual and audio information from the
+                                            FACIAL [58] first employs an eye attention map to locatespeaker is combined together for the listener motion synthe-
+                                                               the eye region, then uses constraints between the renderedsis (the right part of Figure 1). (1) To overcome the limita-
+                                                                pixels and the synthetic result to realize the realistic eyetion imposed by one codeword search, we have expanded the
+                                                                    blinks. Sinha et al. [41] adopt the random one-hot encodingclassification dimensions to facilitate the mapping of listener
+                                                                   for blink control. They use blink one-hot encoding of inputmotion onto a higher-dimensional discrete space. The fine-
+                                                                   into landmark generator. The landmark then guides the gen-grained listener movements correspond in high-dimensional
+                                                                eration of the face images. However, these are specificallydiscrete space, which offers greater capacity for the precise
+                                                         designed for SHG. Regarding LHG, the methods used todepiction of the listener’s facial expression and head pose
+                                                                  predict blinks through speech are unsuitable as they rely onthan a single codeword.  (2) Despite the expanded latent
+                                                                regression techniques that ultimately lead to a low blink fre-space on the codeword, explicit emotional representation
+                                                           quency. That can lead to artifacts if the listener keeps theirremains unattainable. As such, building upon the increased
+                                                               blink frequency extremely strange during a conversation.space, we leverage emotion priors to split and rearrange the
+                                                       Audio-Visual Emotion Representation. There are numer-discrete space. More specifically, different emotions are rear-
+                                                         ous approaches for extracting emotions from speaker videos.ranged into corresponding spaces, with the distance between
+                                                       These include Automatic Speech Emotion Recognition [29],these spaces being determined by the value range of code-
+                                                   Advanced LSTM [48], and Cross-Reconstructed Emotionword, shown in the middle of Figure 1 (it takes the ternary
+                                                         Disentanglement [21], which aim to decode emotions fromemotion as an example). The listener features (blink, facial
+                                                        speech alone. However, relying solely on speech featureand head motion) from the spaces with emotion are decoded
+                                                                extraction may overlook the visual modality, resulting ininto different emotional listeners, shown in the right part of
+                                                                    insufficient accuracy of the extracted features [33]. Schon-Figure 1. It indicates that the distance between listeners with
+                                                              eveld et al. [38] employed a joint model of facial and speechdifferent emotions is widened, such as listeners in positive
+                                                                  features to extract more representative emotional features.respone by smiling, while listeners in negative tend to frown.
+                                                     Face motion simulation via speech. It include two parts of   There are two modules in the ELP, the Adaptive Space
+                                                         work: speaker head generation (SHG) and listener head gen-Encoder (ASE) and Mesh-to-Video Renderer. In ASE, the
+                                                                 eration (LHG). Over the past few years, SHG has emergeddiscrete latent space obtained by the one-hot vectors argu-
+                                                             as a burgeoning field. Chung et al. [11] and Shi et al. [39]ment maximum is concatenated and weighted according to
+                                                                     extract speech features to simulate the corresponding face orthe position with the prior emotion. Employing this approach
+                                                  mouth movement. Wu et al. [56] imitates arbitrary talkingleads to a further enlarge in the probability distribution dis-
+                                                                   style with speaker speech and head motion features, thistance, and the listener motion coefficients are learned from
+                                                   method of feature design is also introduced into our work.that. The Mesh-to-Video Renderer renders the photorealistic
+                                                 The LHG is different from the SHG, which pays more at-face from the mesh corresponding to the predicted coeffi-
+                                                                  tention to the feedback of the listener motion to the speaker.cients with only a single portrait image of the listener.
+                                                     Ahuja et al. [3] focuses on the non-verbal behaviours gener-  We demonstrate the ability of our method through quan-
+                                                                 ation in human body, Bohus et al. [4] and Gratch et al. [15]titative and qualitative experiments on two popular con-
+                                                           study synchronized conversations agent motion in dyadicversation portraits datasets, the ViCo [61] and the large-
+                                                             conversation adapt speech. More recently, Ng et al. [31]scale in the wild conversation videos collected by the Learn-
+                                                                regress the discrete listener head motion with VQVAE [51]ing2Listen [31]. Our contributions are summarized:
+                                                      and Geng et al. [14] retrieve possible videos of listener face
+  – We propose a novel framework called ELP for emo-     with large language model. In our work, we also learn the
+
+
+
+                                                      20840
+
+=== PDF PAGE 3 ===
+                                                                                                                                                        Static Listener
+
+                                             Expression                                              Expression                     Head                               1 0 1 0    1
+                                           ExpressionRotation
+                                               Rotation
+                                             Rotation                                                  Translation      + Enc   Latent Space                                         𝜙                                                                                                                                                                                                                                                                                                                                          Decoder-𝒟%     …                                                                                                      Time                                                       positive                                                Translation           ⨀                                              Translation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Sequence                                                                                                         Blink Sequence: 𝜙                           3D Tracker                                                                                                                               Classification                                                                                                              to
+  Speaker Video                                                                                                                                                                                                                                                                                             Blink                                                                                    𝑝𝑠(𝑡)                                                                                                                                            Rearrange                                                                                   Mesh                                                                                                   6                                                           Render
+                                                            s_sty1                                 and            4                                                                                 neutral
+                                                                                                                                                Mesh-to-Video
+                                                                                             2                                                           𝛽𝑠𝑡,      s_sty2                                                                                                                                                     Renderer                                                                                                                                                                            Split           3                                                                                               1                                         𝑎(𝑡)                 …                  ⨁                                     …                                             TDNN                                                                                                Time          Decoder-𝒟&                                                                       Audio Encoder                                                                                       e                                                           s_styT                                                                 Encoder  Speaker Speech
+                                                                                        Top-T Value                 T                                                      Style Feature
+                                                                       Emotion Vector               MFCC                                                                                                                                   𝛽!"#$ and 𝑝!"#$                            ListenernegativeVideos
+      Feature Extraction from Speaker Video and Speech           Stage I: Listener Head Coefficients Synthesis              Stage II: One-shot Photorealistic Render
+
+Figure 2: The overview of ELP. We take the static listener face, speaker video and the corresponding speaker speech as input.
+In the stage I, the Adaptive Space Encoder maps the discretized features combined with emotion to the the listener motion
+parameters, then Mesh-to-Video Renderer generates the emotional listener videos from the obtained parameters in the stage II.
+
+
+non-verbal listener motion in the dynamic communication.      speaker and listener, it is necessary to study the stylistic
+                                                                  features inherent in the speaker. We expect to employ these
+3. Method                                                    features in order to retrieve the emotional underpinnings of
+                                                               the conversation, as well as the listener’s response move-
+3.1. Overview                                            ments. Therefore, we define a computational rule, which
+                                                                   extracts speaker style-related features:  We propose a two-stage listener portrait synthesis frame-
+work (ELP) which synthesizes emotional listener videos
+                                                                                                              \swith three inputs: one static portrait of the listener (Static Lis-          s\_st y (t) =  a(t) \ o plus   m a  (\beta t))\oplus\sigma(\frac{\partial\beta(t)}{\partialt})\oplus\sigma(\frac{\partialp(t)}{\partialt}),\label{form_xxx} (1)
+                                                                                     ig             (
+tener), speaker video (Speaker Video) and the corresponding
+speech (Speaker Speech). The overview pipeline is shown     the a(t) is the feature of MFCC via Audio Encoder, the
+in Figure 2. We formalize the two stages as follows.         ⊕is the concatenation, the σ(·) is the standard deviation.
+Stage I: Listener Coefficients Synthesis.  In this stage,    The β(t), σ( ∂β(t)∂t  ), σ( ∂p(t)∂t  ) represent the fluctuation of the
+given the speaker video and corresponding speech, the fa-     speaker’s movements relative to time, which can reflect
+cial and head pose motion (βs(t), ps(t)) are tracked from     the speaker’s visual movement style [56]. For speech fea-
+the video.  It aims to generate the response listener facial      tures, some methods [12, 49] attempt to extract semantic
+head pose movement and blink coefficient sequence from      features from pretrained speech-to-text models such as Deep-
+the speech and βs(t), ps(t). The ground truth facial and     Speech [16]. However, it is not applicable to our method,
+head parameters are captured from the monocular video     as speech emotion and intonation within is important for
+with Gauss-Newton optimization [50], they are resulting in      listener, but are not included in purely semantic feature.
+β ∈R100T (facial expression), p ∈R6T (head rotation).    Emotion Vector. The emotion vector e is a one-hot embed-
+And the blink coefficients sequence is a binary list on time     ding, which is used to determine which registered emotion
+series (ϕ ∈R1T ). T is the length of video.                   codebooks are selected.
+Stage II: One-shot Photorealistic Render. In this second     Blink Coefficients. We leverage the geometric ratio of eye
+stage, our objective is to generate dynamic and photorealistic     landmarks to represent eyelid movement. When the ratio [6]
+videos of the listener by utilizing the predicted results from     exceeds a predefined threshold value, the current frame is
+the first stage and a single static portrait image of the listener.     classified as exhibiting blinking behavior, which is repre-
+  To streamline the problem, we will introduce parameter     sented by the binary value 1, otherwise 0.
+definitions within our pipeline in Section 3.2, and go through
+the details of the two stages in Section 3.3 and Section 3.4,     3.3. Listener Head Coefficients Synthesis.
+respectively.                                                                In this stage, we present the Adaptive Space Encoder
+                                                   (ASE) for generating emotional listener coefficients. Specif-3.2. Parameter Definitions
+                                                                          ically, the ASE takes the s sty1:T as input. We consider
+  To begin this section, we define the initialization input     s sty to be a cross-modal feature from the speaker, contain-
+cross-modal data: the MFCC feature [26] from speech and     ing various information required by the listener, including
+the facial/head motion parameters βs(t), ps(t).                emotional value, utterance semantics, and response guid-
+Speaker Style Features. Given the interplay between the     ance. The latent speech feature a(t) are obtained from the
+
+
+
+                                                      20841
+
+=== PDF PAGE 4 ===
+backbone of ResNet-50 and Dropout from the input MFCC                                                                                                                                                                                𝛽!"#$                                                                          𝛽𝑡, 𝑝(𝑡)                                 𝓓𝟏feature, shown in the right part of Figure 2.                                    +                      𝑝!"#$
+                                                                                                                Enc        ⨀ 𝕌  The     ASE                is shown                        in                         the                          middle                                    of Figure 2                                          and                                                    Fig-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             Log-Softmax                                           +                                                                                                                            𝓓𝟐   𝜙!"#$                                                            ⨁      s_styTs_sty2s_sty1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         Gumbel-Softmax                                                                                                                                                           MFCC                                                                                                                                                𝑒                                                                                       TDNN                                                                                                                                                                                                                                                                                                                        Dropouture    3(a),        which                 reveals                          that                  ASE                                         is composed                                              of                                         two                                                    en-                                                                                                                                                                                                                                                                                                                                                                                         ResNet-50
+coders and decoders. We assume that in a clip of input                                     Style Features                                                       (a)
+speaker video (2 seconds), the emotion is constant. For                             1:V         Product 1    Product 0                   1:2V      𝑣′!,# ∈{1, … , 2𝑉}
+                                                                                                                                                                                                       8                                                                                                                                                                                                          9                                                                                                                                                                           8                                                                                                                                                                                1:H                                                                                                                                                                                     0                                                                                                                                                                                        0                                                                                                                                                                                              0                                                                                                                                                                                                0                                                                                                                       1:H                                                                                                                                                                  0                                                                                                                                                                     0                                                                                                                                                                       0                                                                                                                                                                          0                                                                                                                             1                                                                                                                                0                                                                                                                                   0                                                                                                                                      0                                                                                                                                                   1                                                                                                                                                     0                                                                                                                                                        0                                                                                                                                                           0the   emotion             classification                         branch,                                  the TDNN                                            [34]                                          Encoder                                                                                                                                                                                                       9                                                                                                                                                                                                          2                                                                                                                                                                                    0                                                                                                                                                                                       0                                                                                                                                                                                            0                                                                                                                                                                                               0                                                                                                                                                                           1                                                                                                                            0                                                                                                                               0                                                                                                                                 1                                                                                                                                    0                                                                                                                                                                0                                                                                                                                                                   0                                                                                                                                                                      0                                                                                                                                                                        0                                                                                                                                                 0                                                                                                                                                    0                                                                                                                                                       1                                                                                                                                                         0                                                                                                                                                                                     0                                                                                                                                                                                        0                                                                                                                                                                                              0                                                                                                                                                                                                0                                                                                                                                                                  0                                                                                                                                                                     0                                                                                                                                                                       0                                                                                                                                                                          0                                                                                                                             0                                                                                                                                0                                                                                                                                   0                                                                                                                                      1                                                                                                                                                   0                                                                                                                                                     0                                                                                                                                                        0                                                                                                                                                           1                                                                                                                          0                                                                                                                             0                                                                                                                                0                                                                                                                                   1                                                                                                                                                               0                                                                                                                                                                 0                                                                                                                                                                    0                                                                                                                                                                       0                                                                                                                                               0                                                                                                                                                  0                                                                                                                                                     0                                                                                                                                                        1                                                                                                                                                                                  0                                                                                                                                                                                     0                                                                                                                                                                                           0                                                                                                                                                                                              0                                                                                                                                                                                                       7                                                                                                                                                                                                          3                         ×Ds                                                                                                                                                                                    0                                                                                                                                                                                       0                                                                                                                                                                                            0                                                                                                                                                                                               0                                                                                                                                                                           2                                                                                                                            0                                                                                                                               0                                                                                                                                 0                                                                                                                                    0                                                                                                                                                                0                                                                                                                                                                   0                                                                                                                                                                      0                                                                                                                                                                        0                                                                                                                                                 0                                                                                                                                                    0                                                                                                                                                       0                                                                                                                                                         0                                                                                                                                                                                     0                                                                                                                                                                                        0                                                                                                                                                                                              0                                                                                                                                                                                                0                                                                                                                                                                  0                                                                                                                                                                     0                                                                                                                                                                       0                                                                                                                                                                          0                                                                                                                             0                                                                                                                                0                                                                                                                                   0                                                                                                                                      0                                                                                                                                                   0                                                                                                                                                     0                                                                                                                                                        0                                                                                                                                                           0                  ∈R25Ttakes     a series                                (T                                                 is                                         length                                                of                                               video                                                   …             of s sty1:T                                                                                                                          0                                                                                                                             0                                                                                                                                0                                                                                                                                   0                                                                                                                                                               0                                                                                                                                                                 0                                                                                                                                                                    0                                                                                                                                                                       0                                                                                                                                               0                                                                                                                                                  0                                                                                                                                                     0                                                                                                                                                        0                                                                                                                                                                                  0                                                                                                                                                                                     0                                                                                                                                                                                           0                                                                                                                                                                                              0                                                                                                                                                                                                       6                                                                       ⨀                                                                                                                                                                                                          1                                                                                                                                                                                    0                                                                                                                                                                                       0                                                                                                                                                                                            0                                                                                                                                                                                               0                                                                                                                                                                           1                                                                                                                               0                                                                                                                            0                                                                                                                                 0                                                                                                                                    1                                                                                                                                                                0                                                                                                                                                                   0                                                                                                                                                                      0                                                                                                                                                                        0                                                                                                                                                 0                                                                                                                                                    0                                                                                                                                                       0                                                                                                                                                         1                                                                                                                                                                                     0                                                                                                                                                                                        0                                                                                                                                                                                              0                                                                                                                                                                                                0                                                                                                                                                                       0                                                                                                                                                                          0                                                                                                                                                                  0                                                                                                                                                                     1                                                                                                                             0                                                                                                                                1                                                                                                                                   0                                                                                                                                      0                                                                                                                                                   0                                                                                                                                                     1                                                                                                                                                        0                                                                                                                                                           0                                                                                                                          0                                                                                                                             0                                                                                                                                0                                                                                                                                   0                                                                                                                                                                 0                                                                                                                                                               0                                                                                                                                                                    0                                                                                                                                                                       0                                                                                                                                               0                                                                                                                                                  0                                                                                                                                                     0                                                                                                                                                        0                                                                                                                                                                                  0                                                                                                                                                                                     0                                                                                                                                                                                           0                                                                                                                                                                                              0                                                                                                                                                                                                       5                                                                                                                                                                                                          9                                                                                                                                                                                    0                                                                                                                                                                                       1                                                                                                                                                                                            0                                                                                                                                                                                               0                                                                                                                                                                           0                                                                                                                            0                                                                                                                               1                                                                                                                                 0                                                                                                                                    1                                                                                                                                                                0                                                                                                                                                                   1                                                                                                                                                                      0                                                                                                                                                                        0                                                                                                                                                 0                                                                                                                                                    1                                                                                                                                                       0                                                                                                                                                         1    25with        framerate,                         dimension                                      of                                     each                                         s sty(t))                                                       as             Ds is the                                                                                                                          0                                                                                                                             1                                                                                                                                0                                                                                                                                   0                                                                                                                                                               0                                                                                                                                                                 0                                                                                                                                                                    0                                                                                                                                                                       0                                                                                                                                               0                                                                                                                                                  1                                                                                                                                                     0                                                                                                                                                        0                                                                                                                                                                                  0                                                                                                                                                                                     1                                                                                                                                                                                           0                                                                                                                                                                                              0                                                                                                                                                                                                       3                                                                                                                                                                                                          9                                                                                                                                                                           7                                                            ⨁                                                                                                                                                                                        ..                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             Gumbel-Softmax
+input and encodes them into the predicted emotion vector                1:T                  1 0                                      1:T                    1:T           1:H
+epred. For the motion prediction branch, the ASE model             Base Space    𝑒        Split and Rearrange      Transformed Space    𝕌      (b)
+leverages a multi-classification head mechanism to encode
+                                                           Figure 3: The structure and details of Adaptive Space En-
+the continuous-valued stylized features to a discrete latent
+                                                                  coder. (a) The Adaptive Space Encoder takes speaker speech
+space, which is a classification probability distribution and
+                                     MFCC [26] feature, speaker facial (β(t)) and head motion
+then the predicted motions are sampled from this distribution.
+                                                                   (p(t)) coefficients as input, and outputs the listener’s facial
+Through this mechanism, we obtain a motion space with dis-
+                                                      and head motion. (b) The details of split and rearrangement
+crete manifold. We achieve discretization of this categorical
+                                                                  for latent space U (N=2 as an example), the Base Space is
+representation with gumbel-softmax [20, 35], which can be
+                                                         weighted and concatenated (⊕) by the element values of e.
+formalized by:
+
+     \rm { v_{t;  h; 1} = [Gumbel \text {-}Softmax(\textbf{enc}(s\_sty)_{t,1:V})]_{1:H;\label{form_gumbel} (2)                                                   two different decoders D1, D2 act on the U to obtain the
+                                                                 facial/head movements coefficients and blink sequences.where the enc(s sty)t,h,1:V means the multi-modality fea-
+                                                          For the training of ASE model, we adopt the parameterture s sty encoded to T × H × V-dimensional latent, which
+                                                                     series β′(t), p′(t) reconstructed from the monocular listeneris still in continuous-value space. Then, the operation of
+                                                            video as ground truth, and calculate s sty(t) frame by frame.Gumbel-Softmax [20] takes the enc(s sty)t,h,1:V into the
+                                                              Afterwards, we feed s sty(t) to the ASE model, yielding themaximum probability in V dimension, which represents the
+                                                                predicted listener parameter βpred(t), ppred(t) from D1 andcorresponding discrete motion code in the space be mapped
+                                                              blink sequence ϕpred(t) from D2. Based on the predictedby Equation 2, shown in Figure 3(b). The vt;h;1 means each
+                                                              βpred(t) and ppred(t), we apply the L2 loss as follows:codeword value in the discrete space, the H is the number
+of latent classification heads and V is the number of cate-             a
+gories. For the sake of simplicity, we refer to this space as                                                                                 \ m t l {L}_{L_{2}} = \su m _{t=1}^{T}||\beta      _{pred}(t)\beta'(t)||p_{pred}(t)p'(t)\label{form_1}(3)
+the Base Space throughout the remainder of this paper, the             hca
+Base Space is composed of one-hot vectors. However, emo-
+                                       We take the blink sequence as a decision at each time in-tions are still implicit in the Base Space. To capture these
+                                                                stance t, and employ the cross-entropy loss for binary classi-emotional responses explicitly, it is necessary to distinguish
+                                                                        fication, the ϕ(t) is the ground truth blink state:different emotion spaces.
+   Specifically, we split and rearrange the Base Space based               h
+on the emotion prior. The emotion vector e perform dot                                                              \m a t c {L}_{\rm {CE}_1} =  -\sum _{t=1}^{T} \phi(t)log\phi_{pred}(t)+[1-\phi(t)]log[1-\phi_{pred}(t)],\label{form_2}
+production with Base Space, and the results are concate-               al
+nated. The e ∈R1×N is a one-hot vector, N is the num-                                                                (4)
+ber of emotion types. Then the Base Space is expanded to    we introduce regularization loss to suppress noises and en-
+T × H × NV from T × H × V. We call the expanded result     courage a more concentrated density distribution (a blinking
+the Transformed Space. Finally, by computing the argument      action comprises several consecutive 1 value):
+maximum on Transformed Space, we obtain the final dis-                                                                      t
+crete latent space U. The codeword value v′ in the U is                                                                                 \m a h {L}_{\rm { reg}} =   \sum     _{t=2}^{T}\phi_{pred}(t)\phi_{pred}(t-1)\label{form_3}     (5)
+in the range of {v′1:T,1:H|v′i,j ∈[1, 2, ..., NV]}. It should be                     cal
+noted that the values within different emotional intervals are
+unique and non-overlapping. As an example, let us consider     Additionally, for emotional constraints, TDNN encoder en-
+the two different emotion values for e. The U corresponding     codes s sty into vector e′, we also apply cross entropy on it,
+to the first emotions will only take values in the range of      the e is the groundtruth one-hot emotion vector:
+[1, ..., V ], and the other in [V + 1, ..., 2V ]. And it can be                h
+found that our method obtains U space without additional di-                                                                     \m a t c {L}_{\rm   {C E }_2} = - \ sum   _{i=1}^{N}e_iloge'_i+[1-e_i]log[1-e'_i],\label{form_4}   (6)
+mensional overhead after splitting and rearrangement. Then,                                                                           al
+
+
+
+                                                      20842
+
+=== PDF PAGE 5 ===
+which is used for N classification of emotions, N is the type      for a(t), 100T for σ(β(t)) and σ( ∂β(t)∂t  ), 6T for σ( ∂p(t)∂t  ))
+of emotion. The final loss function is then defined as:           speaker style feature. The Classification Head Encoder con-
+                                                                            sists of 8 layers conv1d and 3 layers of LSTM with MLP, it
+          \ma t hcal  { L }=  \ma t hcal   {L}_{L_{2}}\lambda\mathcal{L}_{\rm\lambda\mathcal{L}_{\rm\lambda\mathcal{L}_{\rm{reg}},\label{form_5}     (7)     takes the style feature as input, the dimension of output is
+                                    T × H × 3C. The decoder D1 has two conv2d layers and thethe λ1, λ2 and λ3 are three weight to balance these terms.
+                                                          decoder D2 has four layers conv2d with three layers LSTM,
+3.4. One-shot Photorealistic Render                         their role is to recover the motion from latent space. The
+                                                                     structure of one-shot photorealistic renderer (Mesh-to-Video
+   To improve the visual generalization in our method, we
+                                                         Render) is from the First Order Motion Model [40].
+also train a one-shot Mesh-to-Video translation network.
+                                                    Implementation details. For the convenience of training,
+Usually,  it is very difficult to collect long-term person-
+                                            we randomly clip the input to 2 second video (50 frames),
+specific portrait videos to train high-quality person-specific
+                                                      and clip the output corresponding to 50 frames. The λ1, λ2
+video, so we tend to use one-shot rendering method, which
+                                                     and λ3 are 5, 5, 0.01. We set V and H to 64, 128 for the
+is resource free. Inspired by Siarohin et al. [40], we first
+                                                                      latent space. When optimizing, we adopt the AdamW opti-
+train the motion capture module [40] on face mesh videos,
+                                                        mizer [27] to train the ASE model with the initial learning
+and then use the face mesh videos to drive the motion of                                                                       rate of 1 × 10−3. We train 10000 iterations with a batch size
+one-shot portrait image to synthesis the photorealistic video,
+                                                             of 32 samples for ViCo [61] dataset and 50000 iterations
+we call it as Mesh-to-Video Renderer, shown in the right part
+                                                           with 128 batch size for Learning2Listen dataset [31].
+in Figure 2. To control the blinking, we obtain the length
+                                                               Baselines. We compare with the state-of-the-art methods and
+L of each eye blink motion group on ϕ (each consecutive
+                                                               the hand-craft methods. For the listener’s head generation,
+1 is counted as one group), and the expression blendshape
+                                                                the hand-craft baseline is usually strong enough.
+β1, β2 at the beginning and end of the motion group (the
+eye closure blendshape is marked as βc). We interpolate       – Learning2Listen (L2L) [31]: It maps the motion pat-
+β1 →βc and βc →β2 respectively on the interval of L/2.           terns to realistic movements through the VQ-VAE [51]
+The blendshape for eye blink is linearly weighted, simulating          without the consideration of emotions and blinks.
+the eyelid position at each timestamp for physical blink or      – Responsive Listening Head Generation (RLHG) [61]:
+emotional events around eyes.                                                   It regresses the listener motion from the speaker and
+                                                                    audio. We use the official code for fairness.
+4. Experiments                                      – Perceptual Conversational Head (PCH) [19]: It wins
+                                                                    the 1st in the ViCo challenge.  Since only part of
+4.1. Experimental Settings                                                                    the code has been released, we reproduce it based on
+Datasets. We evaluate our method on two of the most pop-      RLHG [61].
+ular conversation portrait datasets, the ViCo [61] dataset       – NN-motion/NN-audio: For arbitrary input speaker mo-
+and the dataset proposed by Learning2Listen [31]. The           tion or audio input, we find its nearest neighbor from the
+ViCo dataset contains rich samples of 483 video clips with           training set and use its corresponding listener motion
+50 different listener identity and three emotion annotations          as output. We follow it from the L2L [31].
+(we set N = 3 for emotion for this dataset). The Learn-      – Random: We random select the facial and head motion
+ing2Listen [31] is a 72 hours versus 95 minutes dataset col-          parameters in the training data, and inject random small
+lected in the wild, which comes from Youtube with six iden-          perturbations into the normal distribution.
+tities but no emotion annotations. We adopt the pretrained       – Discrete-Latent-Space Random (DLS-Random): Ran-
+speech emotion analyzer model [2] to extract emotions. We        domly generate v′t;1:H value, and use the pretrained
+set the [“happy”] to positive and [“calm”, “fearful”, “sad”,        D1, D2 to generate motion sequences.
+“angry”] to unpositive (we set N = 2). To maintain the
+                                                          Metrics. We choose the following metrics to evaluate the
+balance in this dataset, we assign more labels to unpositive
+                                                            generated facial/head motion coefficients.
+emotions (the positive videos more than other emotions in
+this dataset). The one-shot photorealistic renderer is trained       – Frechet Distance (FD) [18]: The L1 distance to measure
+on the TalkingHead-1KH [55] datasets with 256 × 256 reso-          the difference between the generated facial/head motion
+lution.                                                     and the ground truth.
+Network Architectures. We apply the first 16 layers of       – Variation for Diversity (V-D): Proposed by the L2L [31],
+ResNet-50 as the backbone to encode the input MFCC from          the variance of the facial/head motion on time series.
+29T-dimension to 128T-dimension. The TDNN Encoder      – SI for Diversity (SI-D) [59]: From the L2L [31], it
+is composed of five hidden layer TDNN and three-layer         measures diverseness of predictions with k-means to fa-
+MLP, which is used for the classification of N-dimension           cial/head motion, we report the average entropy (Shan-
+emotional one-hot vector from the 334T-dimension (128T        non index).
+
+
+
+                                                       20843
+
+=== PDF PAGE 6 ===
+                                      Facial Coeff. (β)                                   Head Coeff.(p)                        Blink (ϕ)
+    Methods     FD↓    V-D   SI-D  RPCC↓  WTLCC   STS↓     FD ↓   V-D   SI-D  RPCC↓  WTLCC   STS↓    WTLCC↑
+              (×103)                    (→GT)   (×103)    (×103)                    (→GT)   (×103)
+  NN-motion    12.17    2.88    2.70     0.16     0.092     8.89        6.65     1.79    1.16     0.20     0.083     5.59         0.12
+   NN-audio     19.05    3.70    2.99     0.18     0.077     11.36       14.05    2.51    2.54     0.15     0.123     7.10         0.13
+   Random      56.21    4.57    3.92     0.28     0.047     40.26       35.10    2.54    2.29     0.15     0.043     25.08         0.11
+ DLS-Random   38.10    4.01    3.47     0.21     0.075     22.51       26.17    3.99    1.33     0.12     0.105     15.50         0.11
+  RLHG [61]    150.0∗    3.72    0.41     0.20     0.011     29.00      143.1∗    0.28    0.24     0.16     0.010     25.64         0.04
+  PCH∗∗[19]    18.10    1.14    0.37     0.18     0.011     27.22       20.35    0.24    0.22     0.10     0.003     17.44      1e−2
+   L2L [31]      4.20     3.02    2.79     0.11     0.094     5.44        1.93     0.97    2.45     0.04     0.017     3.38       1e−2
+    GT         –      4.89    4.27     –       0.177      –          –      1.90    1.96     –       0.192      –           –
+    ELP        1.14     5.26    4.00     0.02     0.166     2.93        0.60     2.04    1.55     0.01     0.199     1.34         0.39
+  NN-motion    15.80    2.14    2.37     0.12     0.155     9.33        7.97     1.55    1.92     0.13     0.061     7.94         0.12
+   NN-audio     22.03    1.87    1.61     0.09     0.114     8.90       13.37    1.39    1.20     0.11     0.077     7.15         0.09
+   Random      47.02    2.26    2.51     0.58     0.044     20.41       24.70    1.84    1.91     0.19     0.075     13.80         0.11
+ DLS-Random   33.61    2.23    2.14     0.12     0.071     8.04       19.97    1.37    1.54     0.09     0.088     6.29         0.13
+  RLHG [61]    21.28    0.59    1.06     0.39     0.070     14.11       18.54    0.14    1.10    0.292     0.026     12.31         0.02
+   L2L [31]      3.55∗   2.01∗   2.48∗    0.02∗     0.130     7.39       0.81∗   0.62∗   1.82∗    0.00∗     0.004     6.01       1e−2
+    GT         –      2.47    2.20     –       0.202      –          –      0.55    1.54     –       0.127      –           –
+    ELP        1.37     2.70    2.15    0.014     0.182     4.49        0.36     0.59    1.60    0.077     0.130     2.51         0.42
+
+
+Table 1: Quantitative results on two different datasets. The above is the performance evaluation on the ViCo dataset [61],
+whereas the bottom is on the L2L dataset [31]. The ↓indicates lower is better, and →GT means closer to GT is better. The ∗
+indicates that we directly follow the office report results and ∗∗means we reproduce the PCH [19] on our system (no source
+code is provided). The best performances are highlighted in bold.
+
+
+  – Residual Pearson Correlation Coefficient (RPCC): The      the metrics presented in Table 1, it is clear that our proposed
+     Pearson Correlation Coefficient (PCC) [28, 36] measure    ELP method outperforms other existing methods by a signif-
+     facial/head motion frame-by-frame, it is for listener      icant margin. Our method is about 400 times better than the
+     covaries with the input speakers. We calculate the L1     current state-of-the-art method L2L [31] in terms of facial
+     distance between generated PCC and PCC of ground      blink indicators (WTLCC in Blink ϕ), the L2L [31] struggles
+      truth.                                                         to synthesize realistic eye movements, our proposed ELP is
+  – Windowed  Time   Lagged   Cross   Correlation     capable of generating blinking movements that accurately
+   (WTLCC)  [5]:   It  is the correlation between the      reflect the conversation. In the realm of measuring motion
+     generated motion and the input speaker’s motion in the      diversity (V-D, SI-D), L2L [31] rely on the distance from
+      set time window. We calculate the L1 distance between     ground truth as a performance metric, but we opt for a more
+     generated TLCC and ground truth with the window     comprehensive perspective. Our expectation is that listen-
+     size as 4 seconds.                                            ers’ movements will showcase a greater range of diversity
+  – Short Time Series distance (STS) [30]: The STS can    when the FD and STS metric (feature distance) are kept to
+    measure the similarity on sampled data. We calculate     a minimum. As demonstrated in Table 1, it is evident that
+     the STS between generated listener motion and ground     even when FD and STS are kept to a minimum, our ELP
+     truth listener motion.                                 approach remains highly effective in both the V-D and SI-
+                                                     D, which benefits from our latent space split and rearrangeWe report head and facial metrics separately.  For blink
+                                                         method. The RPCC and WTLCC (in Facial and Head Coeff.)sequence evaluation, we adopt the WTLCC, which has a
+                                                       measures the motion synchronization between the speakergood performance on handling the noise by the time shifting,
+                                                       and the listener, and it can be found that our method achievesespecially for the binary sequences. It is worth noting that
+                                                       an effect close to GT (the RPCC of GT is 0).for the blink WTLCC we compute the correlation between
+the generated blink sequence and the real blink sequence. It       The weaker performance of regression-based meth-
+is different from the WTLCC calculated on the facial and     ods [61, 19] demonstrates the regression methods are not
+head motion. Please refer to the Appendix for the details      suitable for the listener head synthesis, due to the inherent
+about each metric.                                        randomness involved in listener. This fact is made especially
+                                                                   clear when evaluating key indicators such as FD, STS, V-D
+4.2. Comparison Results
+                                                     and SI-D etc. Despite L2L’s [31] impressive performance,
+Quantitative Results. We retrain PCH [19] and L2L [31]        it still falls behind our proposed method. This is primarily
+on the ViCo datasets [61], retrain PCH [19] and RLHG [61]      attributed to the fact that the codebook space of VQ-VAE
+on L2L [31] datasets. Table 1 shows the quantitative compar-      is equivalent to an encoding head with H=1, while our ap-
+ison of listener head generation in the first stage. Based on     proach not only considers emotional rearrangement but also
+
+
+
+                                                      20844
+
+=== PDF PAGE 7 ===
+                                Coeff. (β + p)                Blink (ϕ)
+   Methods    FD↓  V-D SI-D RPCC↓WTLCC STS↓  WTLCC↑
+             (×103)              (→GT) (×103)                                                                      Speaker
+ NN-motion+V  18.30  3.52 3.77   0.59    0.104   19.91     0.12
+ NN-motion+U  12.82  4.67 3.86   0.36    0.175   14.48     0.12
+ NN-audio+V  34.49  4.13 4.24   0.51    0.128   16.67     0.05                 PCH
+ NN-audio+U  33.10  6.21 5.53   0.33    0.200   18.46     0.09
+ DLS-Rand.+V  68.02  6.94 5.99   0.31    0.120   39.07     0.14
+ DLS-Rand.+U  64.27  8.00 4.80   0.33    0.180   38.01     0.11                      ViCo
+    GT        –    6.79 6.23   –     0.369     –        –
+   Our+V      4.27  3.64 3.31   0.09    0.190    6.12      0.31
+   Our+U      1.74  7.31 5.55   0.03    0.366    4.27      0.39           GT
+ NN-motion+V  26.43  3.77 3.91   0.26    0.207   14.33     0.15
+ NN-motion+U  23.77  3.69 4.29   0.25    0.216   18.27     0.12
+                                                                                                                           ELP NN-audio+V  49.18  5.12 4.77   0.34    0.292   27.43     0.05
+ NN-audio+U  35.40  3.26 2.81   0.20    0.191   16.05     0.09
+ DLS-Rand.+V  62.38  7.83 6.06   0.35    0.107   27.04     0.07
+ DLS-Rand.+U  53.58  3.60 3.68   0.21    0.159   14.33     0.11        Figure 4: Comparisons with RLHG [61] and PCH [19]. Our
+    GT        –    3.02 3.74   –     0.329     –        –        method synthesizes more diverse facial and head movements,
+   Our+V      5.12  2.11 1.79  0.122   0.297    8.38      0.36        the blinking frames are highlighted with red arrow. The input
+   Our+U      1.73  3.29 3.75  0.091   0.312    7.02      0.42                                                                          static listener image from the same one, the speaker videos
+                                                come the test set of ViCo datasets [61].
+Table 2: Ablation study results for latent space U (with emo-
+tional representation) and V (without emotional representa-
+tion) on two different datasets. The above is on the ViCo                                                             (Face)
+dataset [61], the bottom is on the L2L dataset [31]. The
+                                                                                                                                             L2L
+“DLS-Rand.” is the baseline method Discrete-Latent-Space
+Random. The best results in each group are underlined.                                                                            (Mesh)
+                                                                                                                                             L2L
+
+utilizes a larger discrete coding space (H=128). The NN-                                                            (Face)
+motion/audio and Random/DLS-Random are some hard-to-                              ELP
+beat baselines in terms of variance (V-D, SI-D), but they fall
+short in simulating motion correlation. In other words, their                                                             (Mesh)
+diversity is primarily based on random generation. As men-                              ELP
+tioned above, our method outperforms the baseline method            Speaker             Generated Faces and Coefficients (mesh visualization)        Details
+in both diversity and motion correlation simulation.
+                                                            Figure 5: Comparisons with L2L [31]. The L2L [31] works
+Qualitative Results. We first compare with the photorealis-    on the facial and head coefficients level, we visualize the
+tic results of PCH [19] and RLHG [61] in Figure 4, for fair-      coefficients to mesh for fair comparison. The details of mesh
+ness, we manually align and compare the results displayed     and face are highlighted on the right part.
+on the office website [1]. The listener head synthesized by
+RLHG [61] and PCH [19] exhibit two significant shortcom-
+ings compared to ours, 1) the facial movements are limited                                                               4.3. Ablation Studies
+and lack variation, 2) the videos generated do not incorpo-
+rate any background information, the ELP overcomes these     Analysis on the Latent Space Rearrangemet. We conduct
+issues. The visualization results compared with L2L [31]     experiments to demonstrate the implications and importance
+are shown in Figure 5, we capture the speaker videos and     of our latent space decomposition based on emotion priors.
+generate the photorealistic results with Vid2Vid [54], which      Specifically, as a comparison, we do not calculate the dis-
+is a person-specific trained renderer. Since there is no guid-     crete latent space U through the emotional one-hot vector,
+ance and source code on the settings of renderer in the L2L     but directly obtain the discrete latent space through the argu-
+report [31], we follow the guidance of Vid2Vid [54] office    ment maximum on the Base Space, which is called as V in
+code for training and generation. We also compare the facial     the following part. The baseline methods NN-motion, NN-
+expression and head pose details through mesh visualization     audio and DLS-Random are also repeated in U and V spaces,
+in Figure 5, which excludes the background and facial tex-     respectively. For a more intuitive understanding, we eval
+ture interference. It can be found that the results synthesized      the facial coefficient (β) and head coefficient (p) in together.
+by our method have more diversity than L2L [31] in terms of    The ablation study results are shown in Table 2 (we add
+parameters (face mesh) and photorealistic generated listener.     the metrics value corresponding to β and p for comparison),
+
+
+
+                                                       20845
+
+=== PDF PAGE 8 ===
+               +𝕍
+                       Our
+
+
+               +𝕌                                                                                                                                   positive                                            positive
+                       Our                                                                                                                                  neutral                                             neutral
+                                                                                                                                              negative                                         negative
+                                                                                                                  (a) Our +𝕍                                  (b) Our +𝕌
+                                                           Figure 7: Visualization of the features from two different
+               +𝕍
+                                                                      latent space. We use the ViCo dataset [61] for visualization.                       Our
+                                                       Three emotion are recorded in three different colors, there
+                                                                are 970 video clips of 2 seconds are collected.
+               +𝕌
+                       Our
+                                                                                    Facial Expression Head Pose    Blink    All Aspect
+                                                         Method
+    Speaker                         Generated Faces in 𝕌and 𝕍space                          Details                   Real   Mesh    Real Mesh Real Mesh Real Mesh
+                                           RLHG [61] 1.4      1.2       1.5   1.2   1.6   1.0   1.5   1.1
+Figure 6: The visualization results of ablation study on the     PCH [19]  1.4      1.1       1.4   1.2   1.1   1.1   1.3   1.1
+latent space rearrangement (U and V). The upper and lower     L2L [31]   3.7      2.3       3.1   2.3   1.0   1.0   3.3   2.9
+parts correspond to positive and negative respectively. The      GT     4.6      4.9       3.2   3.9   4.7   4.5   4.9   4.6
+details of generated face are on the right part.                    Our     3.9      4.2       4.7   4.9   4.3   4.5   3.7   4.1
+
+                                                          Table 4: User study of our method with others. We calcu-
+                             Coeff. (β + p)                Blink (ϕ)
+          FD↓  V-D SI-D RPCC↓WTLCC STS↓  WTLCC↑         late the average of the 5-scale scores for users. The “Real”
+          (×103)              (→GT) (×103)              means the photorealistic videos and “Mesh” means the mesh
+  GT        –    3.02 3.74    –     0.329     –        –          rendered videos. The facial and head movements can be
+  L2L [31]  4.36  2.63 4.30   0.02    0.134   13.40    1e−2                                                              evaluated more intuitively from the mesh videos.
+  H=1       7.93  1.92 1.12   0.14    0.122   18.27     0.37
+  H=4       7.42  3.15 2.38   0.14    0.171   11.34     0.35
+  H=16     4.14  2.27 2.55   0.11    0.193   10.81     0.38
+  H=64     3.67  3.70 3.52   0.12    0.228    9.72      0.41         Analysis on the size of Classification Head. We discuss
+  H=128    1.73  3.29 3.75   0.09    0.312    7.02      0.42          the impact from the size of the discrete space U. With the
+  H=256    1.35  1.49 1.26   0.11    0.370    7.35      0.42
+                                                                   definition of U, it is evident that the size of configurations
+                                                                              is NVH, which allows a vast motion space with a relativelyTable 3: Ablation study results on the size of latent space
+                                                           small number of categories V. We set the default value ofare revealed by gradually increasing the value of H from 1
+                                   V to 64 and varied the size of H to evaluate the effect onto 256. The L2L [31] in this table is to compare with the
+                                                          performance. It is worth noting that when we set H=1, ourresults of H=1. We perform this experiment on the L2L [31]
+                                        ASE is equivalent to the VQ-VAE [29] used in L2L [31],datasets.
+                                                            with the codebook size of V. The results are shown in Table 3,
+                                                when H=1, our method exhibits slightly lower performance
+                                                     compared to L2L [31], as L2L [31] utilizes a larger number
+we can find that U space has a stable improvement in each
+                                                              of codewords than our default number of categories V. And
+metric compared to V space, some outcomes are affected
+                                                                the listener motion diversity and synchronicity increased (H
+by randomness (RPCC on DLS-Rand.+V or U). Then we
+                                                    from 1 to 128) with increasing latent space size. However,
+visualize the results with V space and U space separately in
+                                               when H is excessively large (256), the performance of the
+Figure 6. From the Figure 6 above, we can observe that in
+                                                   model may be adversely affected, since the resulting latent
+the U space, the positive listener exhibits a more pronounced
+                                                           space may be too large and hard to learn, ultimately leading
+grining, while the listener in V space only smiles slightly.
+                                                                  to the difficulties in achieving an appropriate fit. Based on
+On the other hand, from the below of Figure 6, the negative
+                                                                the aforementioned considerations, we set H to 128.
+listener in U space tends to show a more serious expres-
+sion with more obvious frown. Furthermore, we adopt the                                                               4.4. User Studies
+t-SNE [52] to visualize the features decoded from the U and
+V spaces and take the corresponding emotion value as label.     We conduct user studies to compare the generated results
+The emotional features in the V space (in Figure 7(a)) appear     from the human perspective evaluation. We collected ques-
+to be poorly decomposed, with the feature corresponding      tionnaires from 42 users through an online platform. The
+to different emotions being coupled together. While the U      questionnaire includes the generated videos and ground truth
+space (in Figure 7(b)) provides better feature distinction, as     under different emotion communication situations. To elimi-
+the value ranges of different emotions vary.                    nate any facial texture interference caused by the renderer,
+
+
+
+                                                      20846
+
+=== PDF PAGE 9 ===
+                                                               challenges. Two of the most tricky obstacles are (1) the
+                                                         emotional labels of listener in the dataset are unbalanced,
+                                                     and (2) the distance between emotions is unclear, that are
+                                                               visualized in Figure 8. In the Learning2Listen [31] dataset,
+                                                                the videos with positive emotion are about eight times more
+                                                           than the the negative ones, the source of the videos makes
+                                                                       this unbalanced (the entertainment interview videos from
+                                                            Youtube). The distance between negative emotions and neu-
+                                                                                tral emotions in the ViCo dataset [61] is not obvious, and it is
+                                                         even difficult to distinguish manually. We hope an extensive
+                                                      and sufficient listener dataset can be explored in the future.
+
+                                               References
+
+                                                                            [1] Leaderboard. https://vico.solutions/.
+                                                                            [2] Speech-emotion-analyzer.    https://github.com/
+                                                    MiteshPuthran/Speech-Emotion-Analyzer.
+                                                                            [3] Chaitanya Ahuja, Shugao Ma, Louis-Philippe Morency, and
+Figure 8: The visualization of unbalance emotions and con-                                                                    Yaser Sheikh. To react or not to react: End-to-end visual
+fusion annotation. The above shows the different emotion          pose forecasting for personalized avatar during dyadic con-
+distributions in the RLHG [61] and Learning2Listen [31]            versations. In 2019 International conference on multimodal
+datasets. For both datasets, the positive emotion is much            interaction, pages 74–84, 2019.
+higher than the other. We select the neutral and negative emo-       [4] Dan Bohus and Eric Horvitz. Facilitating multiparty dialog
+tion from the ViCo [61] dataset1, and visualize two different          with gaze, gesture, and speech.  In International Confer-
+videos (each video represents one emotion). The emotions           ence on Multimodal Interfaces and the Workshop on Machine
+are not obvious.                                                    Learning for Multimodal Interaction, pages 1–8, 2010.
+                                                                            [5] Steven M Boker, Jennifer L Rotondo, Minquan Xu, and Kadi-
+                                                                           jah King. Windowed cross-correlation and peak picking for
+we also used the corresponding mesh video to evaluate the           the analysis of variability in the association between behav-
+user perception of the synthesized listeners. Each user was             ioral time series. Psychological methods, 7(3):338, 2002.
+asked to answer a Likert-type scale with the following op-       [6] Jan Cech and Tereza Soukupova. Real-time eye blink detec-
+tions for all videos [23], “Do you think the [×] in video is            tion using facial landmarks. Cent. Mach. Perception, Dep.
+like a listener?” (1-disagree, 2-weakly disagree, 3-normal,          Cybern. Fac. Electr. Eng. Czech Tech. Univ. Prague, pages
+                                                                       1–8, 2016.4-weakly agree,5-agree), where the “[×]” is for four criteria
+                                                                            [7] Aleksandra Cerekovic, Oya Aran, and Daniel Gatica-Perez.evaluated: 1) facial expression, 2) head pose movements, 3)
+                                                                  Rapport with virtual agents: What do human social cues
+blink and 4) all aspects. We record the average score for
+                                                               and personality explain?  IEEE Transactions on Affective
+each type. Usually, in the experiment of 5-scale score, we                                                                  Computing, 8(3):382–395, 2016.
+think that more than 4 points are close to the real perfor-                                                                            [8] Lele Chen, Chen Cao, Fernando De la Torre, Jason Saragih,
+mance. From the Table 4, it can be found that our method                                                                    Chenliang Xu, and Yaser Sheikh. High-fidelity face tracking
+has made great progress compared to the state-of-the-art            for ar/vr via deep lighting adaptation.  In Proceedings of
+methods, especially for the evaluation of mesh video and           the IEEE/CVF conference on computer vision and pattern
+blink criteria. However, there is still a gap between our syn-           recognition, pages 13059–13069, 2021.
+thesized videos and ground truth videos, which is mainly        [9] Lele Chen, Guofeng Cui, Celong Liu, Zhong Li, Ziyi Kou,
+due to the limitations of the resource-free renderer.                 Yi Xu, and Chenliang Xu.  Talking-head generation with
+                                                                      rhythmic head motion. In Computer Vision–ECCV 2020: 16th
+5. Discussion and Reflections                              European Conference, Glasgow, UK, August 23–28, 2020,
+                                                                        Proceedings, Part IX, pages 35–51. Springer, 2020.
+   In this work, we present a novel listener motion synthesis      [10] Lele Chen, Ross K Maddox, Zhiyao Duan, and Chenliang
+method that takes into account the emotion in the dynamic         Xu. Hierarchical cross-modal talking face generation with
+conversation videos. To our best knowledge, our approach is         dynamic pixel-wise loss. In Proceedings of the IEEE/CVF
+the first exploration of emotion space representation for the           conference on computer vision and pattern recognition, pages
+                                                                 7832–7841, 2019.listener. Although our method has proven to be remarkably
+                                                                     [11] Soo-Whan Chung, Hong Goo Kang, and Joon Son Chung.efficacious under the current conditions, there are still some
+                                                                      Seeing voices and hearing voices: learning discriminative em-
+   1The neutral video id is @JohCZ6VlC70 000350 000358 in ViCo, the          beddings using cross-modal self-supervision. arXiv preprint
+negative video id is @JohCZ6VlC70 000309 000324 in ViCo.                    arXiv:2004.14326, 2020.
+
+
+
+                                                      20847
+
+=== PDF PAGE 10 ===
+[12] Daniel Cudeiro, Timo Bolkart, Cassidy Laidlaw, Anurag Ran-      [25] Xian Liu, Qianyi Wu, Hang Zhou, Yuanqi Du, Wayne Wu,
+      jan, and Michael J Black. Capture, learning, and synthesis         Dahua Lin, and Ziwei Liu. Audio-driven co-speech gesture
+     of 3d speaking styles. In Proceedings of the IEEE/CVF Con-          video generation. arXiv preprint arXiv:2212.02350, 2022.
+     ference on Computer Vision and Pattern Recognition, pages      [26] Beth Logan et al. Mel frequency cepstral coefficients for
+    10101–10111, 2019.                                          music modeling. In Ismir, volume 270, page 11. Plymouth,
+[13] Sefik Emre Eskimez, You Zhang, and Zhiyao Duan. Speech        MA, 2000.
+     driven talking face generation from a single image and an      [27] Ilya Loshchilov and Frank Hutter. Decoupled weight decay
+     emotion condition. IEEE Transactions on Multimedia, 2021.            regularization. arXiv preprint arXiv:1711.05101, 2017.
+[14] Scott Geng, Revant Teotia, Purva Tendulkar, Sachit Menon,      [28] Daniel S Messinger, Mohammad H Mahoor, Sy-Miin Chow,
+     and Carl Vondrick. Affective faces for goal-driven dyadic          and Jeffrey F Cohn. Automated measurement of facial ex-
+     communication. arXiv preprint arXiv:2301.10939, 2023.               pression in infant–mother interaction: A pilot study. Infancy,
+[15] David Greenwood, Stephen Laycock, and Iain Matthews.          14(3):285–305, 2009.
+     Predicting head pose in dyadic conversation. In Intelligent      [29] Seyedmahdad Mirsamadi, Emad Barsoum, and Cha Zhang.
+     Virtual Agents: 17th International Conference, IVA 2017,          Automatic speech emotion recognition using recurrent neural
+     Stockholm, Sweden, August 27-30, 2017, Proceedings 17,          networks with local attention. In 2017 IEEE International con-
+     pages 160–169. Springer, 2017.                                        ference on acoustics, speech and signal processing (ICASSP),
+                                                                    pages 2227–2231. IEEE, 2017.[16] Awni Hannun, Carl Case, Jared Casper, Bryan Catanzaro,
+                                                                     [30] Carla S M¨oller-Levet, Frank Klawonn, Kwang-Hyun Cho,    Greg Diamos, Erich Elsen, Ryan Prenger, Sanjeev Satheesh,
+                                                                 and Olaf Wolkenhauer. Fuzzy clustering of short time-series    Shubho Sengupta, Adam Coates,  et  al.  Deep speech:
+                                                               and unevenly distributed sampling points. In Advances in     Scaling up end-to-end speech recognition. arXiv preprint
+                                                                                    Intelligent Data Analysis V: 5th International Symposium on     arXiv:1412.5567, 2014.
+                                                                                     Intelligent Data Analysis, IDA 2003, Berlin, Germany, August
+[17] Yinan He, Bei Gan, Siyu Chen, Yichun Zhou, Guojun
+                                                                        28-30, 2003. Proceedings 5, pages 330–340. Springer, 2003.
+     Yin, Luchuan Song, Lu Sheng, Jing Shao, and Ziwei Liu.
+                                                                     [31] Evonne Ng, Hanbyul Joo, Liwen Hu, Hao Li, Trevor Darrell,     Forgerynet: A versatile benchmark for comprehensive forgery
+                                                             Angjoo Kanazawa, and Shiry Ginosar. Learning to listen:      analysis. In Proceedings of the IEEE/CVF conference on com-
+                                                                 Modeling non-deterministic dyadic facial motion. In Proceed-     puter vision and pattern recognition, pages 4360–4369, 2021.
+                                                                         ings of the IEEE/CVF Conference on Computer Vision and
+[18] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bern-
+                                                                          Pattern Recognition, pages 20395–20405, 2022.
+     hard Nessler, and Sepp Hochreiter. Gans trained by a two
+                                                                     [32] Behnaz Nojavanasghari, Yuchi Huang, and Saad Khan. In-
+     time-scale update rule converge to a local nash equilibrium.
+                                                                                 teractive generative adversarial networks for facial expres-
+     Advances in neural information processing systems, 30, 2017.
+                                                                         sion generation in dyadic interactions.   arXiv preprint
+[19] Ailin Huang, Zhewei Huang, and Shuchang Zhou. Percep-                                                                      arXiv:1801.09092, 2018.
+      tual conversational head generation with regularized driver
+                                                                     [33] Andrew Owens and Alexei A Efros.  Audio-visual scene
+     and enhanced renderer.  In Proceedings of the 30th ACM
+                                                                            analysis with self-supervised multisensory features. In Pro-
+     International Conference on Multimedia, pages 7050–7054,
+                                                                      ceedings of the European Conference on Computer Vision
+     2022.
+                                                               (ECCV), pages 631–648, 2018.
+[20] Eric Jang, Shixiang Gu, and Ben Poole.   Categorical                                                                     [34] Vijayaditya Peddinti, Daniel Povey, and Sanjeev Khudanpur.
+     reparameterization with gumbel-softmax.  arXiv preprint                                           A time delay neural network architecture for efficient model-
+     arXiv:1611.01144, 2016.                                                                          ing of long temporal contexts. In Sixteenth annual conference
+[21] Xinya  Ji, Hang Zhou,  Kaisiyuan Wang, Wayne Wu,            of the international speech communication association, 2015.
+    Chen Change Loy, Xun Cao, and Feng Xu. Audio-driven      [35] Alexander Richard, Michael Zollh¨ofer, Yandong Wen, Fer-
+     emotional video portraits. In Proceedings of the IEEE/CVF         nando De la Torre, and Yaser Sheikh. Meshtalk: 3d face
+     conference on computer vision and pattern recognition, pages           animation from speech using cross-modality disentanglement.
+    14080–14089, 2021.                                                 In Proceedings of the IEEE/CVF International Conference
+[22] Patrik Jonell, Taras Kucherenko, Gustav Eje Henter, and Jonas         on Computer Vision, pages 1173–1182, 2021.
+     Beskow. Let’s face it: Probabilistic multi-modal interlocutor-      [36] Marcel Riehle, J¨urgen Kempkensteffen, and Tania M Lin-
+     aware generation of facial gestures in dyadic settings.  In            coln. Quantifying facial expression synchrony in face-to-face
+     Proceedings of the 20th ACM International Conference on          dyadic interactions: Temporal dynamics of simultaneously
+      Intelligent Virtual Agents, pages 1–8, 2020.                          recorded facial emg signals. Journal of Nonverbal Behavior,
+[23] Hyeongwoo Kim, Pablo Garrido, Ayush Tewari, Weipeng          41:85–102, 2017.
+    Xu, Justus Thies, Matthias Niessner, Patrick P´erez, Chris-      [37] Andreas R¨ossler, Davide Cozzolino, Luisa Verdoliva, Chris-
+      tian Richardt, Michael Zollh¨ofer, and Christian Theobalt.            tian Riess, Justus Thies, and Matthias Nießner. Faceforensics:
+    Deep video portraits. ACM Transactions on Graphics (TOG),      A large-scale video dataset for forgery detection in human
+     37(4):1–14, 2018.                                                         faces. arXiv preprint arXiv:1803.09179, 2018.
+[24] Ruilong Li, Shan Yang, David A Ross, and Angjoo Kanazawa.      [38] Liam Schoneveld, Alice Othmani, and Hazem Abdelkawy.
+    Ai choreographer: Music conditioned 3d dance generation           Leveraging recent advances in deep learning for audio-visual
+     with aist++. In Proceedings of the IEEE/CVF International          emotion recognition. Pattern Recognition Letters, 146:1–7,
+     Conference on Computer Vision, pages 13401–13412, 2021.           2021.
+
+
+
+                                                      20848
+
+=== PDF PAGE 11 ===
+[39] Bowen Shi, Wei-Ning Hsu, Kushal Lakhotia, and Abdelrah-      [53] Konstantinos Vougioukas, Stavros Petridis, and Maja Pantic.
+    man Mohamed. Learning audio-visual speech representation            Realistic speech-driven facial animation with gans. Interna-
+    by masked multimodal cluster prediction.  arXiv preprint            tional Journal of Computer Vision, 128:1398–1413, 2020.
+     arXiv:2201.02184, 2022.                                        [54] Ting-Chun Wang, Ming-Yu Liu, Jun-Yan Zhu, Guilin Liu,
+[40] Aliaksandr Siarohin, St´ephane Lathuili`ere, Sergey Tulyakov,         Andrew Tao, Jan Kautz, and Bryan Catanzaro. Video-to-video
+     Elisa Ricci, and Nicu Sebe.  First order motion model for            synthesis. arXiv preprint arXiv:1808.06601, 2018.
+     image animation. Advances in Neural Information Processing      [55] Ting-Chun Wang, Arun Mallya, and Ming-Yu Liu. One-shot
+     Systems, 32, 2019.                                                  free-view neural talking-head synthesis for video conferenc-
+[41] Sanjana Sinha, Sandika Biswas, Ravindra Yadav, and Bro-            ing. In Proceedings of the IEEE/CVF conference on computer
+     jeshwar Bhowmick. Emotion-controllable generalized talking            vision and pattern recognition, pages 10039–10049, 2021.
+     face generation. arXiv preprint arXiv:2205.01155, 2022.         [56] Haozhe Wu, Jia Jia, Haoyu Wang, Yishun Dou, Chao Duan,
+[42] Luchuan Song, Zheng Fang, Xiaodan Li, Xiaoyi Dong, Zhen-         and Qingshan Deng.  Imitating arbitrary talking style for
+     chao Jin, Yuefeng Chen, and Siwei Lyu. Adaptive face forgery             realistic audio-driven talking face synthesis. In Proceedings
+     detection in cross domain (supplementary material).                    of the 29th ACM International Conference on Multimedia,
+[43] Luchuan Song, Xiaodan Li, Zheng Fang, Zhenchao Jin, Yue-          pages 1478–1486, 2021.
+    Feng Chen, and Chenliang Xu. Face forgery detection via      [57] Jun Yu and Chang Wen Chen. From talking head to singing
+     symmetric transformer.  In Proceedings of the 30th ACM           head: a significant enhancement for more natural human com-
+     International Conference on Multimedia, pages 4102–4111,           puter interaction. In 2017 IEEE International Conference on
+     2022.                                                          Multimedia and Expo (ICME), pages 511–516. IEEE, 2017.
+[44] Luchuan Song, Bin Liu, Guojun Yin, Xiaoyi Dong, Yufei      [58] Chenxu Zhang, Yifan Zhao, Yifei Huang, Ming Zeng, Saifeng
+     Zhang, and Jia-Xuan Bai. Tacr-net: Editing on deep video and           Ni, Madhukar Budagavi, and Xiaohu Guo. Facial: Synthe-
+     voice portraits. In Proceedings of the 29th ACM International            sizing dynamic talking face with implicit attribute learning.
+     Conference on Multimedia, pages 478–486, 2021.                      In Proceedings of the IEEE/CVF international conference on
+[45] Luchuan Song, Bin Liu, and Nenghai Yu. Talking face video          computer vision, pages 3867–3876, 2021.
+     generation with editable expression. In Image and Graphics:      [59] Yan Zhang, Mohamed Hassan, Heiko Neumann, Michael J
+     11th International Conference, ICIG 2021, Haikou, China,          Black, and Siyu Tang. Generating 3d people in scenes with-
+     August 6–8, 2021, Proceedings, Part III 11, pages 753–764.           out people. In Proceedings of the IEEE/CVF conference on
+     Springer, 2021.                                               computer vision and pattern recognition, pages 6194–6204,
+[46] Luchuan Song, Guojun Yin, Bin Liu, Yuhui Zhang, and Neng-          2020.
+      hai Yu. Fsft-net: face transfer video generation with few-shot      [60] Zhimeng Zhang, Lincheng Li, Yu Ding, and Changjie
+     views.  In 2021 IEEE International Conference on Image           Fan.  Flow-guided one-shot talking face generation with
+     Processing (ICIP), pages 3582–3586. IEEE, 2021.                   a high-resolution audio-visual dataset.  In Proceedings of
+[47] Supasorn  Suwajanakorn,  Steven M  Seitz,  and  Ira           the IEEE/CVF Conference on Computer Vision and Pattern
+     Kemelmacher-Shlizerman.  Synthesizing obama: learning           Recognition, pages 3661–3670, 2021.
+      lip sync from audio. ACM Transactions on Graphics (ToG),      [61] Mohan Zhou, Yalong Bai, Wei Zhang, Tiejun Zhao, and Tao
+     36(4):1–13, 2017.                                              Mei. Responsive listening head generation: A benchmark
+[48] Fei Tao and Gang Liu. Advanced lstm: A study about better            dataset and baseline. arXiv preprint arXiv:2112.13548, 2021.
+     time dependency modeling in emotion recognition. In 2018
+    IEEE International Conference on Acoustics, Speech and
+     Signal Processing (ICASSP), pages 2906–2910. IEEE, 2018.
+[49] Justus Thies, Mohamed Elgharib, Ayush Tewari, Christian
+     Theobalt, and Matthias Nießner.  Neural voice puppetry:
+     Audio-driven facial reenactment. In Computer Vision–ECCV
+     2020: 16th European Conference, Glasgow, UK, August 23–
+     28, 2020, Proceedings, Part XVI 16, pages 716–731. Springer,
+     2020.
+[50] Justus Thies, Michael Zollhofer, Marc Stamminger, Christian
+     Theobalt, and Matthias Nießner. Face2face: Real-time face
+     capture and reenactment of rgb videos. In Proceedings of the
+    IEEE conference on computer vision and pattern recognition,
+     pages 2387–2395, 2016.
+[51] Aaron Van Den Oord, Oriol Vinyals, et al. Neural discrete
+      representation learning. Advances in neural information pro-
+     cessing systems, 30, 2017.
+[52] Laurens Van der Maaten and Geoffrey Hinton. Visualizing
+     data using t-sne. Journal of machine learning research, 9(11),
+     2008.
+
+
+
+                                                      20849

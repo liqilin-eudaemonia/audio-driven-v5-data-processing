@@ -1,0 +1,155 @@
+{
+  "checked_at": "2026-11-09T15:46:04Z",
+  "scope": "public evidence confirmation;not author communication",
+  "evidence": {
+    "repository_head": "9fc92f7255d7f1f037fad30f0ed034fd1eb28bcb",
+    "initial_code_release": "cfa6485d3d342d104a37f1ed3ac70586e38493c5",
+    "unchanged_key_files": 7,
+    "all_issues_checked": 3,
+    "issue_comments": {
+      "3": 1,
+      "2": 2,
+      "1": 0
+    },
+    "releases": 0,
+    "tags": 0,
+    "forks_inspected": 10,
+    "official_EMOCA_named_checkpoints": 1
+  },
+  "confirmed_public_rules": [
+    {
+      "item": "test_split",
+      "value": "get_vico_dataloaders stores ViCoDataset(mode=test) under valid key;valid does not mean validation split",
+      "source": "code/dataset/data_loader.py:get_vico_dataloaders"
+    },
+    {
+      "item": "sampler",
+      "value": "README test_s2s_pretrain.py calls evaluate_test_epoch:10 draws,per-clip minimum GT Frechet on full56;single chosen candidate for all metrics",
+      "source": "code/test_s2s_pretrain.py -> code/x_engine_pt.py:evaluate_test_epoch"
+    },
+    {
+      "item": "FD",
+      "value": "raw EMOCA pose6/exp50;Gaussian Frechet per clip;equal clip mean",
+      "source": "code/mymetrics.py:print_metrics"
+    },
+    {
+      "item": "SID",
+      "value": "GT-fitted KMeans exp40/pose20;global predicted-frame histogram;log2 entropy",
+      "source": "code/metrics/eval_utils.py:calcuate_sid"
+    },
+    {
+      "item": "released_Var",
+      "value": "pool all clips,then flatten frames and coordinates before np.var;different from requested per-coordinate mean variance",
+      "source": "code/mymetrics.py:print_metrics"
+    },
+    {
+      "item": "EMOCA_model",
+      "value": "EMOCA_v2_lr_mse_20 explicitly named;official archive contains one checkpoint;its encoder tensors strictly loaded locally",
+      "source": "code/vico_preprocessing.py;EMOCA archive",
+      "checkpoint": "EMOCA_v2_lr_mse_20/detail/checkpoints/deca-epoch=10-val_loss/dataloader_idx_0=3.25521111.ckpt"
+    },
+    {
+      "item": "time_index",
+      "value": "listener t1..T-1 versus speaker t0..T-2 in released pretrain tester",
+      "source": "code/x_engine_pt.py:evaluate_test_epoch"
+    }
+  ],
+  "conflict_resolved_by_explicit_local_choice": [
+    {
+      "item": "speaker_motion",
+      "paper": "P-FD/rPCC defined with actual speaker motion",
+      "default_loader": "replaced by all ones",
+      "choice": "use actual speaker motion for scoring;constant Pearson correlation is undefined",
+      "author_run_confirmed": false
+    }
+  ],
+  "still_unverified_published_execution": [
+    {
+      "item": "Table1_effective_GT_assets",
+      "missing": "author GT EMOCA features and effective IDs/frame ranges/crop/failure mask tied to Table1",
+      "search_result": "not found in checked public repo,project page,supplement,issues or release assets",
+      "issue": "https://github.com/Boese0601/Dyadic-Interaction-Modeling/issues/1",
+      "open_issue_has_replies": false
+    },
+    {
+      "item": "Table1_exact_evaluation_branch",
+      "missing": "published-run command/checkpoint and candidate selection/metric settings tied to each Table1 row",
+      "known": "pretrain tester uses10;test_s2s.py is a separate one-pass/logit-based entry;README lists both;neither is explicitly bound to Table1",
+      "search_result": "no Table1 run manifest found;code behavior is confirmed,publication binding is not"
+    }
+  ],
+  "no_longer_treated_as_unknown": [
+    "FD mathematical formula",
+    "pose6/exp50 ordering",
+    "released SID K and pooling",
+    "released Var formula",
+    "pretrain tester candidate budget",
+    "test versus validation mode",
+    "named official EMOCA checkpoint selection"
+  ],
+  "known_implementation_differences": [
+    "ours RGB re-extraction versus native predicted coefficients",
+    "ours currently single sample versus public pretrain best10",
+    "requested Var display versus released Var;both supplied in CSV"
+  ],
+  "excluded_sources": [
+    {
+      "source": "VhahahaV fork",
+      "reason": "independent Seamless51 adaptation;not author evidence for DIM original table"
+    },
+    {
+      "source": "listening_head.zip inputs/test.csv",
+      "reason": "30 opaque-ID challenge records;not the 43-listener DIM paper metadata;not substituted"
+    },
+    {
+      "source": "DiTaiListener subsequent paper",
+      "reason": "separate paper/training/evaluation;cannot establish original DIM Table1 private settings"
+    }
+  ],
+  "best10_generation_status": {
+    "stage": "paused_by_user_for_31gpu_training",
+    "at": 1794148131.236719,
+    "gpu": 7,
+    "seed": 138,
+    "outputs_preserved": true
+  },
+  "new_gpu_jobs": false,
+  "original_results_modified": false,
+  "source_files": {
+    "experiments/p2_vico_dim_public_confirmation_20261109/tree.json": "3dc4d54aa2be282bd55a6914b32a6a569bcb8d2e43a417e0632c84a586836f2b",
+    "experiments/p2_vico_dim_public_confirmation_20261109/fork_rajvizala.json": "9cc16ec0a2277b7425b2d704eb9c5968e0cc00ae52aa0d257d88832cc5a74bd4",
+    "experiments/p2_vico_dim_public_confirmation_20261109/tester_history.json": "57a50ee4d501a7cab58d2490f0901c8338c8dcb952e3d9a32e791316621c73ce",
+    "experiments/p2_vico_dim_public_confirmation_20261109/metrics_history.json": "57a50ee4d501a7cab58d2490f0901c8338c8dcb952e3d9a32e791316621c73ce",
+    "experiments/p2_vico_dim_public_confirmation_20261109/tags.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "experiments/p2_vico_dim_public_confirmation_20261109/PUBLIC_RULES_SINGLE_SAMPLE.csv": "471b5fd5a0b644f09e32439cc1eaca00aafa611c8f8b3e7969f0ee981f7cbe22",
+    "experiments/p2_vico_dim_public_confirmation_20261109/releases.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "experiments/p2_vico_dim_public_confirmation_20261109/forks.json": "2ce331d63760df4c559712ed4c308fee71660783f7d8c888bc0f04acc94edf85",
+    "experiments/p2_vico_dim_public_confirmation_20261109/ditailistener_supp_pdf.pdf.txt": "966129f765f4abf5dc80d720be52427de6cac4242432c567664c6e3ff9c3e96b",
+    "experiments/p2_vico_dim_public_confirmation_20261109/supp_pdf.pdf": "ab6be96675895a30337eb748a1703bb5ec0e2e08a5b27a0eb728bf2d31e2b5e3",
+    "experiments/p2_vico_dim_public_confirmation_20261109/repo.json": "aa109fa9f482b9232090a450a6b7c8352c5b782b98b44a8035421b752d3dda17",
+    "experiments/p2_vico_dim_public_confirmation_20261109/issues.json": "8e0e576012cefc8e91ae01b412ac872ea42237821fa0c4f8b265d2d318878d61",
+    "experiments/p2_vico_dim_public_confirmation_20261109/project_html.html": "62482c8ad6e2bcc03202f106a39f67f7b67c64b39717db8b02af6debded1e656",
+    "experiments/p2_vico_dim_public_confirmation_20261109/fork_VhahahaV.json": "260bf89995aafd26d451aa966230c0e483651c612fdc9618ce78cb5d1411029b",
+    "experiments/p2_vico_dim_public_confirmation_20261109/author_repos.json": "0504df9dce73d3fdf83b389dea99a1bfbfdfca240c86c5e8e7a945ffd92a7dbd",
+    "experiments/p2_vico_dim_public_confirmation_20261109/loader_history.json": "57a50ee4d501a7cab58d2490f0901c8338c8dcb952e3d9a32e791316621c73ce",
+    "experiments/p2_vico_dim_public_confirmation_20261109/supp_pdf.pdf.txt": "a417d2359f7082d9108b2746558c5d93c10388a67a01271ae2049ed6349c3248",
+    "experiments/p2_vico_dim_public_confirmation_20261109/branches.json": "41317f1e1e31c8ce1d3a49cb955b189e3df58474f0c9d27c6cce98aca8773266",
+    "experiments/p2_vico_dim_public_confirmation_20261109/FETCH_MORE.json": "01c879955452fdd58ddd4b21c56e9bc782263f3f7938dbcb56322bd85a97363c",
+    "experiments/p2_vico_dim_public_confirmation_20261109/issue3_comments.json": "db65ebe44657756dc6496bb1b3db8b51ba0ace7d6cc8d63a4e10d28c5941efc3",
+    "experiments/p2_vico_dim_public_confirmation_20261109/original_baseline_test.csv": "17205a5490dd20a1527ad56bd9e1fad9ed3818eac9005fd8886cf4d90f00ff3a",
+    "experiments/p2_vico_dim_public_confirmation_20261109/issue2_comments.json": "5f4931932d482f02106047984786884f8643e906c81a91f5348cbf6b827177ff",
+    "experiments/p2_vico_dim_public_confirmation_20261109/HISTORY_PARITY.json": "bb68b0760268fcf1c62a6083cdf0d36bedff49934c10fc514f307ff75858ed23",
+    "experiments/p2_vico_dim_public_confirmation_20261109/issue1_comments.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "experiments/p2_vico_dim_public_confirmation_20261109/ditailistener_pdf.pdf": "d9bc064e4fe70f7d937bf93e5b03ee99f41f5211f0eddddc09145c60e2ed30d8",
+    "experiments/p2_vico_dim_public_confirmation_20261109/ditailistener_pdf.pdf.txt": "eb20c611ede894325a4215a0a08a34161e5b8aec3360ec8bcd6917d76991769c",
+    "experiments/p2_vico_dim_public_confirmation_20261109/FETCH.json": "a7605e2f4ab40b719891fddd8cd8df68061ee714f25f706b12762a970d32075b",
+    "experiments/p2_vico_dim_public_confirmation_20261109/ditailistener_supp_pdf.pdf": "34483139bf023258849333f5cd8e3399522b3526540249ba24973226fad41bff",
+    "experiments/p2_vico_dim_public_confirmation_20261109/first_release/code/test_s2s_pretrain.py": "72e4a56db4d973dabdf18bb20a505c606d8a49030fdeb932b0f02179deeea238",
+    "experiments/p2_vico_dim_public_confirmation_20261109/first_release/code/vico_preprocessing.py": "93b1f5f4d982d02941fcc572caebae816b885f18a8d0791027df25ce2280b9d0",
+    "experiments/p2_vico_dim_public_confirmation_20261109/first_release/code/test_s2s.py": "860fcaaed4be92187c735605498b2a1f1c016016f0030630d24f861289a07238",
+    "experiments/p2_vico_dim_public_confirmation_20261109/first_release/code/mymetrics.py": "96844e66b846a6fafe98e90b3eb0701b5d62cd34a69b623614361557acf5d8f0",
+    "experiments/p2_vico_dim_public_confirmation_20261109/first_release/code/x_engine_pt.py": "f62f7567c13d0df6a9aa0dbc6b0863d1c0cda7eaa38fe150a787f0c68b2728e6",
+    "experiments/p2_vico_dim_public_confirmation_20261109/first_release/code/dataset/data_loader.py": "6eb83602f5125edbaaf0c5f8643cda2d9d597601da3d38753d17ee392bba0d12",
+    "experiments/p2_vico_dim_public_confirmation_20261109/first_release/code/metrics/eval_utils.py": "0438a541fb632b82585522d7af169ef4f60708f243bf43a2aeb07cebf876e3c5"
+  }
+}

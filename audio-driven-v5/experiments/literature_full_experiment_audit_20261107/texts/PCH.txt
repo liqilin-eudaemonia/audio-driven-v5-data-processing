@@ -1,0 +1,291 @@
+               Perceptual Conversational Head Generation
+            with Regularized Driver and Enhanced Renderer
+
+                    Ailin Huang∗                Zhewei Huang∗               Shuchang Zhou
+                     Megvii Research                     Megvii Research                     Megvii Research
+                Wuhan University
+                 huangailin@megvii.com            huangzhewei@megvii.com               zsc@megvii.com
+
+      ABSTRACT                                                        also video synthesis [3]. We need to use the voice signal to infer
+          This paper reports our solution for ACM Multimedia ViCo 2022      the changes in the expressions and lip shapes of the people in the
+           Conversational Head Generation Challenge, which aims to generate      conversation. Then we also need to synthesize high-quality gener-
+            vivid face-to-face conversation videos based on audio and reference      ated video frames based on the reference images of speakers and
+           images. Our solution focuses on training a generalized audio-to-       listeners. The prior art [24] has shown that realistic digital humans2022          head driver using regularization and assembling a high-visual qual-     can be generated from a large number of videos of the same speaker.
+             ity renderer. We carefully tweak the audio-to-behavior model and      However, further research is needed to build a digital human system
+           post-process the generated video using our foreground-background       for any speaker with less available digital information.
+                                                                                     In our paper, we focus on training an audio-to-head driver withAug    fusion module. We get first place in the listening head generation
+            track and second place in the talking head generation track on the       limited data and assembling a powerful renderer to generate vivid
+2
+              official leaderboard. Our code is available at https://github.com/      videos. Our main techniques include:
+          megvii-research/MM2022-ViCoPerceptualHeadGeneration.
+                                                                        • We apply several neural network training techniques to im-
+                                                                               prove the performance of audio-to-head driver training on      CCS CONCEPTS
+                                                                                            limited data, and further explore ensemble learning to make
+              • Computing methodologies →Reconstruction.                                                                                     the model more robust.
+                                                                        • We assemble an enhanced renderer for producing visually[cs.CV]  KEYWORDS                                                                                            better and more stable generated videos.
+           Conversational Head Generation
+
+       ACM Reference Format:
+             Ailin Huang, Zhewei Huang, and Shuchang Zhou. 2022. Perceptual Conver-    2  RELATED WORK
+              sational Head Generation with Regularized Driver and Enhanced Renderer.
+             In Proceedings of the 30th ACM International Conference on Multimedia (MM     Audio-Driven Head Synthesis
+                ’22), October 10–14, 2022, Lisboa, Portugal. ACM, New York, NY, USA, 5 pages.       With a reference head image and audio streams, many methods
+             https://doi.org/10.1145/3503161.3551577                                  explore synthesizing a video based on a reference image, consid-
+                                                                               ering the head motion, expression, and lip shape changes. Some
+        1  INTRODUCTION                                          straightforward methods directly model the relationship between
+                                                                             audio streams and reference images [14, 31]. To better correlate the            In face-to-face communication, people can observe real-time expres-
+                                                                              video and audio factors, many recent works use a two-stage strategy            sions and demeanor and more accurately capture their counterpart’s
+                                                                                  to map reference images and audios firstly to feature representa-             feelings. It is interesting to understand this communication behav-
+                                                                                   tions (e.g. landmarks [4], 3D morphable models (3DMM) [27, 30],            ior and generate vivid talking head videos using computer vision
+                                                                                   face parsing), and then render the final videos.           technology. Proper responsive listening behavior is essential as well
+                                                                                       Recently, some very popular and advanced techniques have been            to effective communication, and also of critical importance to makearXiv:2206.12837v2                                                                        applied to this task. StyleRig [26] describes a method to control             digital humans more realistic during face-to-face human-computer
+                                                                 StyleGAN [15] via a 3DMM. StyleGAN-based methods are very            interaction and animation production.
+                                                                                       visually attractive, but their inference efficiency and identity reten-             Generating conversational head videos is challenging because
+                                                                                      tion performance still need improvement. The neural radiance field                it involves not only the processing of serialized speech signals but
+                                                              AD-NeRF [8] can show very promising results for a scenario where
+             ∗Both authors contributed equally to this work.                                 the data of the target person is relatively sufficient.
+                                                                   Neural Model and Regularization
+             Permission                          to                      make                                       digital                                       or hard                                                copies                                                         of all                                                          or                                                                part of                                                                              this                                                           work                                                                                     for                                                                                personal                                                                                         or       The head generation task requires a special collection of pro-              classroom use                                     is                             granted                                    without                                                  fee                                                provided                                                              that                                                                copies                                                                       are                                                                     not                                                            made                                                                                 or                                                                                           distributed
+                for profit or commercial advantage and that copies bear this notice and the full citation      cessed data. Training effective models with limited data is an im-
+            on the first page. Copyrights for components of this work owned by others than ACM      portant topic of the ViCo challenge [1]. Recently, deep neural net-
+            must be honored. Abstracting with credit is permitted. To copy otherwise, or republish,
+               to post on servers or to redistribute to lists, requires prior specific permission and/or a     work with residual learning [9] has shown good performance in
+                 fee. Request permissions from permissions@acm.org.                             various tasks [7, 12, 18, 25]. Meanwhile, many regularization tech-
+        MM ’22, October 10–14, 2022, Lisboa, Portugal                                   niques have been proposed to increase the generalization of neural
+         © 2022 Association for Computing Machinery.
+         ACM ISBN 978-1-4503-9203-7/22/10...$15.00                                networks [28]. Among these techniques, Dropout [23] and Batch
+               https://doi.org/10.1145/3503161.3551577                                     Normalization (BN) [13] are the most popular and powerful.MM ’22, October 10–14, 2022, Lisboa, Portugal                                                                                       Ailin Huang, Zhewei Huang, & Shuchang Zhou
+
+
+
+
+
+Figure 1: Overview of video-driven head generation pipeline. Given an audio signal sequence, a sequential driver approxi-
+mates the 3DMM parameters for every video frame. Then a pre-trained PIRenderer [22] renders the final video based on these
+parameters and reference frame
+
+
+   Besides, ensemble learning [6] is a well-explored technique to im-     Table 1: The official final leaderboard in ViCo challenge [1].
+prove the accuracy and generalization of the model. So it is usually    We intercept the results of the top few teams
+used in various task, such as image classification [29], reinforcement
+learning [16] and combination optimization [2].                      Team (Talking)   PSNR↑   FID↓   LMD↓
+                                                                  sysu_hcp          17.767   29.709   10.101
+                                                       Ours              17.179   24.678    10.646
+3  TASK OVERVIEW                                                                      iLearn             16.546    25.050    10.900
+3.1  Definition                                                 Avatar             17.696    34.571    11.643
+Our work uses a unified framework to learn both following tasks.          Digital_Human     17.331    30.944    12.837
+We briefly introduce the definitions of these two tasks. The main           THU-Talking       16.390    45.361    12.707
+results and experiments of this paper are presented on the talking         Team (Listening)  PSNR↑   FID↓   ExpFD↓
+head generation task.
+                                                       Ours             18.512   21.350    0.116
+Vivid Talking Head Video Generation
+                                                                      iLearn             18.491    26.675     0.133  Given the an input audio signal sequence A𝑡= 𝑎1, ...,𝑎𝑡of
+                                                                         cheese              16.202    42.019     0.137the speaker in time stamps ranging from {1, ...,𝑡} and a reference
+image 𝑣𝑟𝑒𝑓                     , our goal is to generate a talking head video V𝑇𝑎𝑙𝑘𝑖𝑛𝑔𝑡     =            en_train            16.780    80.538     0.161       0
+{𝑣0, 𝑣1, ..., 𝑣𝑡}.                                         LIMMC            16.265    86.983     0.167
+Responsive Listening Head Video Generation
+   In addition to the input of the Talking Head Video Generation,     3.3  Evaluation
+the listening head generation additionally receives the input of the
+                                            We consider evaluating our models in terms of image quality and
+listener’s attitude. Our goal is to generate a listening head video
+V𝐿𝑖𝑠𝑡𝑒𝑛𝑖𝑛𝑔𝑡      = {𝑣0, 𝑣1, ..., 𝑣𝑡}.                                           semantics. Because the generated images and the real video are                                                                       unlikely to be pixel-by-pixel aligned, the traditional metric (PSNR,
+                                                             SSIM) may not be reasonable. We mainly consider a metric at the
+                                                                       feature level, Fréchet Inception Distance (FID) [10]. We further
+3.2  Dataset
+                                                                 analyze the landmark distance (LMD) and expression feature dis-
+ViCo dataset [32] contains 483 video clips of 76 listeners respond-      tance (ExpFD) between generated faces and ground truth. The
+ing to 67 speakers. The total length of these clips is approximately     whole system can render 4 frames per second at 256 × 256 resolu-
+95 minutes. Following previous work [5, 22], we extract 3DMM       tion. Comparing our model with methods from other teams shown
+parameters for each frame. As ViCo baseline [32], relative dynamic                                                                         in Table 1, our model mainly gains an advantage on the FID index.
+and identity-independent features face can be represented paramet-
+rically using {𝛽∈R64, 𝑝∈R6} which denotes the expression and                                               4 METHOD
+pose. Here, 𝑝represents rotations with 𝑆𝑂(3) ∈R3 and transla-
+tions in R3. Additionally, for better modeling head movements, the     4.1  Framework
+baseline uses a “crop" parameter 𝑐of R3. This annotates where we    We illustrate the overall pipeline in Figure 1. We use a two-stage
+will place and size the parametric 3D face in the original image.       method to generate the head video with 3DMM parameters as thePerceptual Conversational Head Generation with Regularized Driver and Enhanced Renderer                 MM ’22, October 10–14, 2022, Lisboa, Portugal
+
+
+
+
+
+                                                             Figure 3: The effect of foreground-background fusion. The
+                                                 movement of the background is easily noticeable during
+                                                            video playback
+
+
+Figure 2: Architecture of the sequential driver model. For
+                                                                 Details
+each frame, we approximate the residual relative to the ini-
+                                                                     For audio preprocessing, we follow the ViCo baseline [32]. We ex-
+tial parameters of the first frame (reference image)
+                                                                                tract the 14-dim Mel-frequency cepstral coefficients (MFCC) feature
+                                                                with the corresponding MFCC Delta and Delta-Delta (second-order
+mediator interface. We firstly approximate the parameters of every       difference) feature. The energy, loudness and zero-crossing rate
+frame using a sequential driver model. We then use a pre-trained     (ZCR) are also embedded into audio features 𝑆𝑖for each audio
+PIRenderer [22] to render the final video based on these parameters      frame clip 𝐴𝑖. The 45-dimensional audio feature extracted from 𝐴𝑡𝑠
+and the reference image. Furthermore, we enhance PIRenderer use        is denoted as 𝑆𝑡𝑠= 𝑠1, ...,𝑠𝑡.
+an image boundary inpainting trick and a foreground-background       Our driver model is trained on four TITAN 2080Ti GPUs for
+fusion module.                                                    about three hours. We use AdamW [17, 19] optimizer with a weight
+   In the ViCo challenge [1], participants are restricted to train-     decay of 0.05. Our training uses a batch size of 128. We gradu-
+ing their methods on ViCo training set. We observe large perfor-       ally reduce the learning rate from 5 × 10−3 to 10−4 using cosine
+mance differences between the models on the training and valida-      annealing during the whole training process.
+tion sets. To overcome this over-fitting issue, we introduce several
+model regularization techniques, including residual learning [9],     4.3  Enhanced Renderer
+Dropout [23], and training using BN [13] with big batch size. The    We use a controllable portrait image generation model, PIRen-
+architecture of sequential driver containing a four-layer LSTM [11]      derer [22], to convert 3DMM face parameters to video based on the
+model is illustrated in Figure 2.                                       reference image. PIRenderer employs a subset of 3DMM parame-
+                                                                               ters as the head motion descriptor. Overall, PIRenderer works very
+4.2  Learning                                                         well. However, two issues may degrade the image quality, including
+Loss Function                                                background distortion and image border artifacts.
+  For model optimization, we supervise each prediction using     Foreground-Background Fusion
+3DMM parameters extracted from training videos. We randomly        Since we cannot estimate camera motion in the audio-driven
+sample clips with 𝑇= 90 frames and calculate the loss function as:     head generation, we assume that the background is completely
+                                                                                     static. PIrenderer still needs background textures to complement
+               𝑇                                          some backgrounds revealed during head movement, which may not
+                                                                             exist in the reference image. Due to the out-of-focus and complex      L𝑔𝑒𝑛= ∑︁ ∥𝛽𝑡−b𝛽𝑡∥2 + ∥𝑐𝑡−b𝑐𝑡∥2 + ∥𝑝𝑡−b𝑝𝑡∥1,       (1)
+               𝑡=1                                                    texture of the background, the optical flow inferred by PIRenderer
+where 𝛽, 𝑝,𝑐denote the ground truth and b𝛽, b𝑝,b𝑐represent the result        is not only on the surface of the head as wished. Therefore, weof driver model. We experimentally search the choice of 𝐿1 and 𝐿2      often observe unreasonable background distortions in synthetic
+loss functions. A head motion constraint loss L𝑚𝑜𝑡is applied to       videos, as shown in Figure 3.
+encourage the inter-frame continuity:                             To address this, We use a pre-trained foreground-background
+                        𝑇                                        segmentation model, U2Net [21], to segment the static background
+                                                                                                                                                     𝑡   and reference image 𝐼𝑟𝑒𝑓, we             L𝑚𝑜𝑡= ∑︁ ∥𝜇(𝑐𝑡)                               (2)       area. For the generated image b𝐼𝑔𝑒𝑛                                    −𝜇(b𝑐𝑡)∥2,                         detect their background regions:                         𝑡=1
+where 𝜇(·) measures the inter-frame changes i.e. 𝜇(𝑐𝑡) = 𝑐𝑡−𝑐𝑡−1.
+                                                                                                                                                        𝑡   ),𝑠𝑒𝑔(𝐼𝑟𝑒𝑓),                 (4)The final loss function can be formulated as:                                                                              𝑀𝑡, 𝑀𝑟𝑒𝑓= 𝑠𝑒𝑔(b𝐼𝑔𝑒𝑛
+                                                         where 𝑠𝑒𝑔(·) denotes the background region segmented from the
+                  L𝑡𝑜𝑡𝑎𝑙= L𝑔𝑒𝑛+ L𝑚𝑜𝑡.                      (3)      image. To enhance inter-frame consistency, we calculate a medianMM ’22, October 10–14, 2022, Lisboa, Portugal                                                                                       Ailin Huang, Zhewei Huang, & Shuchang Zhou
+
+
+                                                            Table 2: The ablation studies on model design and training
+                                                           batch size
+
+                                                                         Setting         PSNR↑   FID↓  LMD↓
+                                                  w/o BN [13]                16.16    17.67    50.00
+                                                  w/o residual learning [9]    14.79    19.20    65.18
+                                                  w/o Dropout [23]          16.38    17.12    44.34
+                                                                 Final Model                 16.25    16.73   43.02
+                                                           batch size 8                 16.52    18.13    43.07Figure 4: The effect of image boundary inpainting. When the
+features close to the boundary are warped, filling these holes       batch size 32              16.70    17.18   42.06
+with the boundary values of the original feature map will       batch size 128               16.25    16.73    43.02
+eliminate some artifacts
+
+
+                                                                Table 3: The ablation study on ensemble learning
+
+segmentation result, each pixel of which is the median of the results
+of the previous five frames. Formally,                                           Setting         PSNR↑   FID↓  LMD↓
+                                                     w/o ensemble                 16.25    16.73    43.02
+                                                                              self ensemble (3×)            16.34    16.31    42.65
+  𝑀𝑚𝑒𝑑𝑡   (𝑥,𝑦) = 𝑚𝑒𝑑𝑖𝑎𝑛{𝑀𝑡(𝑥,𝑦), 𝑀𝑡−1(𝑥,𝑦), ..., 𝑀𝑡−4(𝑥,𝑦)},   (5)                                                             cross-model ensemble (3×)   16.56   15.81   41.73
+
+where we calculate the recent median for each pixel-wise location.
+  Then we paste the common background area from reference
+image 𝐼𝑟𝑒𝑓to generated image b𝐼𝑔𝑒𝑛:                             5.2  Model Ensemble
+                                            We observe whether ensemble trained models in the same train-
+            𝑀𝑓𝑢𝑠𝑖𝑜𝑛𝑡    = 𝐺𝑎𝑢𝑠𝑠𝑖𝑎𝑛(𝑀𝑚𝑒𝑑𝑡   ∩𝑀𝑟𝑒𝑓),              (6)      ing process (self ensemble) or models in different training pro-
+                                                                       cesses (cross-model ensemble), all performance metrics can be im-
+                                                              The experiment                                                                                                      results are                                                                                 shown                                                                                                                   in                                                                                                            Table                                                                                                                                                   3.                                                                                                                          In the ViCo                                                    𝑡  + 𝑀𝑓𝑢𝑠𝑖𝑜𝑛𝑡      ⊙𝐼𝑟𝑒𝑓,      (7)      proved.         b𝐼𝑓𝑢𝑠𝑖𝑜𝑛             𝑡    = (1 −𝑀𝑓𝑢𝑠𝑖𝑜𝑛𝑡       ) ⊙b𝐼𝑔𝑒𝑛                                                                    competition,                                                          we finally validate                                                                                          models                                                                                         on                                                                                                      our                                                                                                                          validation                                                                                                                                             set                                                                                    10
+where we use a 7 × 7 Gaussian filter to smooth the seam of the     and cross-ensemble the best 5 models. The most time spent in our
+stitched image.                                                system is in the PIRenderer part, so the ensemble on the driver
+Image Boundary Inpainting                                 model only slightly increases the inference overhead.
+   For a good visual effect, the human hair and upper body should
+move with the movement of the head. In this case, we need to    6 FUTURE WORK
+inpaint some texture around the edges of the image. We can easily
+                                              We do not have enough time to fully explore the following relevant
+perform this technique by setting the padding mode to “border" in
+                                                                   techniques in this short challenge, which might be very useful for
+grid_sample function of PyTorch [20] when warping image features.                                                                                this task. 1) Finetuning the renderer for current tasks and metrics is
+The result is shown in Figure 4.
+                                                                  a reasonable point of improvement. The existing renderers produce
+  Combining these two modules, we observe about 0.4dB gain and
+                                                                              results with inaccurate character identity retention and background
+1.2 drop of FID on our validation set without any extra training
+                                                                      disturbance. We could get a more targeted model to restrict the
+overhead.
+                                                                      renderers to a specific application scenario, including rendering the
+                                                        same character and static background. 2) The lip shape generated
+5  EXPERIMENTS                                      by our talking head model is relatively conservative and insufficient
+5.1  Ablation Studies                                            to distinguish different syllables. The mapping of syllables to lips is
+                                                                  a long-studied topic, and some experience from traditional methods
+We do ablation studies on some designs, including regularization
+                                                 may help to improve our model further. 3) There is also much
+and model ensemble. The results are shown in Table 2.
+                                                      room for exploration in more feature engineering techniques and
+Ablation on Model Design
+                                                                     stronger models.
+   Ablation experiments on model design are reported in Table 2.
+Our model learns the residual added to the initial 3DMM parameters.
+Removing this design will greatly reduce the performance of the    7  CONCLUSION
+model (1.46dB). We also observe that BN and Dropout can help      In this paper, we introduce our solution for the conversational
+alleviate the over-fitting issue.                                    head generation competition. We propose a regularized driver and
+  We further increase the batch size for training, specifically 128.     enhanced renderer to synthesize perceptually impressive videos.
+Our experiments show that large batch sizes have overall competi-      Hopefully, our discoveries and engineering practices can help future
+tive performance while reducing training time exponentially.           researchers.Perceptual Conversational Head Generation with Regularized Driver and Enhanced Renderer                 MM ’22, October 10–14, 2022, Lisboa, Portugal
+
+REFERENCES                                                                          Pavlov, Sergey Kolesnikov, et al. 2018. Learning to run challenge solutions: Adapt-
+ [1] JD Explore Academy. 2021. Conversational Head Generation Challenge. https:             ing reinforcement learning methods for neuromusculoskeletal environments. In
+      //vico-challenge.github.io.                                                        The NIPS’17 Competition: Building Intelligent Systems. Springer, 121–153.
+ [2] Zixuan Cao, Yang Xu, Zhewei Huang, and Shuchang Zhou. 2022. ML4CO-KIDA:        [17] Diederik P Kingma and Jimmy Ba. 2014. Adam: A method for stochastic opti-
+    Knowledge Inheritance in Dataset Aggregation. arXiv preprint arXiv:2201.10328             mization. arXiv preprint arXiv:1412.6980 (2014).
+      (2022).                                                                                [18] Bee Lim, Sanghyun Son, Heewon Kim, Seungjun Nah, and Kyoung Mu Lee.
+ [3] Lele Chen, Guofeng Cui, Celong Liu, Zhong Li, Ziyi Kou, Yi Xu, and Chenliang             2017. Enhanced deep residual networks for single image super-resolution. In
+     Xu. 2020. Talking-head generation with rhythmic head motion. In European             Proceedings of the IEEE conference on computer vision and pattern recognition
+     Conference on Computer Vision. Springer, 35–51.                                          workshops. 136–144.
+ [4] Lele Chen, Ross K Maddox, Zhiyao Duan, and Chenliang Xu. 2019. Hierarchical        [19] Ilya Loshchilov and Frank Hutter. 2018. Fixing weight decay regularization in
+     cross-modal talking face generation with dynamic pixel-wise loss. In Proceedings            adam. (2018).
+      of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. 7832–        [20] Adam Paszke, Sam Gross, Soumith Chintala, Gregory Chanan, Edward Yang,
+     7841.                                                                         Zachary DeVito, Zeming Lin, Alban Desmaison, Luca Antiga, and Adam Lerer.
+ [5] Yu Deng, Jiaolong Yang, Sicheng Xu, Dong Chen, Yunde Jia, and Xin Tong. 2019.             2017. Automatic differentiation in pytorch. (2017).
+     Accurate 3d face reconstruction with weakly-supervised learning: From single        [21] Xuebin Qin, Zichen Zhang, Chenyang Huang, Masood Dehghan, Osmar Zaiane,
+     image to image set. In Proceedings of the IEEE/CVF Conference on Computer Vision           and Martin Jagersand. 2020. U2-Net: Going Deeper with Nested U-Structure for
+    and Pattern Recognition Workshops. 0–0.                                                       Salient Object Detection. Pattern Recognition 106, 107404.
+ [6] Thomas G Dietterich. 2000. Ensemble methods in machine learning. In Interna-        [22] Yurui Ren, Ge Li, Yuanqi Chen, Thomas H Li, and Shan Liu. 2021. PIRenderer: Con-
+      tional workshop on multiple classifier systems. Springer, 1–15.                                    trollable Portrait Image Generation via Semantic Neural Rendering. In Proceedings
+ [7] Xiaohan Ding, Xiangyu Zhang, Ningning Ma, Jungong Han, Guiguang Ding, and               of the IEEE/CVF International Conference on Computer Vision. 13759–13768.
+     Jian Sun. 2021. Repvgg: Making vgg-style convnets great again. In Proceedings        [23] Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya Sutskever, and Ruslan
+      of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. 13733–             Salakhutdinov. 2014. Dropout: a simple way to prevent neural networks from
+     13742.                                                                                              overfitting. The journal of machine learning research 15, 1 (2014), 1929–1958.
+ [8] Yudong Guo, Keyu Chen, Sen Liang, Yong-Jin Liu, Hujun Bao, and Juyong Zhang.        [24] Supasorn Suwajanakorn, Steven M Seitz, and Ira Kemelmacher-Shlizerman. 2017.
+     2021. Ad-nerf: Audio driven neural radiance fields for talking head synthesis. In             Synthesizing obama: learning lip sync from audio. ACM Transactions on Graphics
+     Proceedings of the IEEE/CVF International Conference on Computer Vision. 5784–            (ToG) 36, 4 (2017), 1–13.                                                                                            [25] Zachary Teed and Jia Deng. 2020. Raft: Recurrent all-pairs field transforms for
+     5794.
+                                                                                                      optical flow. In European conference on computer vision. Springer, 402–419.
+ [9] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. 2016. Deep residual
+                                                                                            [26] Ayush Tewari, Mohamed Elgharib, Gaurav Bharaj, Florian Bernard, Hans-Peter
+     learning for image recognition. In Proceedings of the IEEE conference on computer                                                                                                        Seidel, Patrick Pérez, Michael Zollhofer, and Christian Theobalt. 2020.  Sty-
+      vision and pattern recognition. 770–778.
+                                                                                                                   lerig: Rigging stylegan for 3d control over portrait images. In Proceedings of the
+[10] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and
+                                                                                    IEEE/CVF Conference on Computer Vision and Pattern Recognition. 6142–6151.
+     Sepp Hochreiter. 2017. Gans trained by a two time-scale update rule converge to
+                                                                                            [27] Justus Thies, Mohamed Elgharib, Ayush Tewari, Christian Theobalt, and Matthias
+     a local nash equilibrium. Advances in neural information processing systems 30                                                                                          Nießner. 2020.  Neural voice puppetry: Audio-driven facial reenactment. In
+      (2017).
+                                                                                      European conference on computer vision. Springer, 716–731.
+[11] Sepp Hochreiter and Jürgen Schmidhuber. 1997. Long short-term memory. Neural                                                                                            [28] Pascal Vincent, Hugo Larochelle, Yoshua Bengio, and Pierre-Antoine Manzagol.
+     computation 9, 8 (1997), 1735–1780.                                                                                                  2008. Extracting and composing robust features with denoising autoencoders. In
+[12] Zhewei Huang, Tianyuan Zhang, Wen Heng, Boxin Shi, and Shuchang Zhou.
+                                                                                                Proceedings of the 25th international conference on Machine learning. 1096–1103.
+     2020. Rife: Real-time intermediate flow estimation for video frame interpolation.
+                                                                                            [29] Mitchell Wortsman, Gabriel Ilharco, Samir Yitzhak Gadre, Rebecca Roelofs,
+     arXiv preprint arXiv:2011.06294 (2020).                                                                                    Raphael Gontijo-Lopes, Ari S Morcos, Hongseok Namkoong, Ali Farhadi, Yair
+[13] Sergey Ioffe and Christian Szegedy. 2015. Batch normalization: Accelerating deep
+                                                                                 Carmon, Simon Kornblith, et al. 2022. Model soups: averaging weights of multiple
+     network training by reducing internal covariate shift. In International conference
+                                                                                              fine-tuned models improves accuracy without increasing inference time. arXiv
+     on machine learning. PMLR, 448–456.
+                                                                                                     preprint arXiv:2203.05482 (2022).
+[14] Amir Jamaludin, Joon Son Chung, and Andrew Zisserman. 2019. You said that?:
+                                                                                            [30] Ran Yi, Zipeng Ye, Juyong Zhang, Hujun Bao, and Yong-Jin Liu. 2020. Audio-
+     Synthesising talking faces from audio. International Journal of Computer Vision                                                                                             driven talking face video generation with learning-based personalized head pose.
+     127, 11 (2019), 1767–1779.
+                                                                                          arXiv preprint arXiv:2002.10137 (2020).
+[15] Tero Karras, Samuli Laine, and Timo Aila. 2019. A style-based generator ar-
+                                                                                            [31] Hang Zhou, Yu Liu, Ziwei Liu, Ping Luo, and Xiaogang Wang. 2019. Talking
+     chitecture for generative adversarial networks. In Proceedings of the IEEE/CVF                                                                                                face generation by adversarially disentangled audio-visual representation. In
+     conference on computer vision and pattern recognition. 4401–4410.
+                                                                                                Proceedings of the AAAI Conference on Artificial Intelligence, Vol. 33. 9299–9306.
+[16] Łukasz Kidziński, Sharada Prasanna Mohanty, Carmichael F Ong, Zhewei Huang,
+                                                                                            [32] Mohan Zhou, Yalong Bai, Wei Zhang, Tiejun Zhao, and Tao Mei. 2021. Responsive
+    Shuchang Zhou, Anton Pechenko, Adam Stelmaszczyk, Piotr Jarosik, Mikhail
+                                                                                              Listening Head Generation: A Benchmark Dataset and Baseline. arXiv preprint
+                                                                                                arXiv:2112.13548 (2021).

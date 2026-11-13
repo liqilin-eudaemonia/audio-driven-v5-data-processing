@@ -1,0 +1,33 @@
+--- before/src/p2_event_presence/candidates.py
++++ src/p2_event_presence/candidates.py
+@@ -10,6 +10,7 @@
+ 
+ from .contracts import read, save, sha
+ from .media import ROOT
++from .hints import smile_trace
+ 
+ 
+ def measure(entry, fer_python):
+@@ -26,9 +27,10 @@
+     with contextlib.redirect_stdout(sys.stderr): face.process_video(video, pose, str(MODEL))
+     detected, pitch, yaw = nod.load_pose_from_pkl(pose)
+     with pose.open('rb') as f: raw = pickle.load(f)  # Created locally immediately above.
+-    duration = entry['duration_s']; result = dict(schema='annotation-visual-candidates-v1',
++    duration = entry['duration_s']; result = dict(schema='annotation-visual-candidates-v2',
+         media_id=entry['media_id'], face_frames=len(raw), detected_frames=int(detected.sum()),
+         frame_coverage=float(detected.mean()) if len(raw) else 0., fps=25,
++        framewise_face_detected=[bool(v) for v in detected],
+         face_model_sha256=sha(MODEL), parameters=dict(nodding=PROFILES['recall'], headshake_gate=SH, expression_gate=EX),
+         cues=[], candidate_only=True, missing_candidates_are_not_absence=True)
+     if not detected.any():
+@@ -63,9 +65,7 @@
+             if assess_frown(signal['brow_down'],score,e['start_frame'],e['end_frame_exclusive'],EX)['retain']:
+                 result['cues'].append(dict(e,type='frowning'))
+     # Preserve smile evidence without inventing a new binary smile threshold.
+-    result['smile_blendshape'] = {'framewise_mean_left_right': [
+-        .5*(float(x.get('blendshapes',{}).get('mouthSmileLeft',0)) + float(x.get('blendshapes',{}).get('mouthSmileRight',0)))
+-        if x.get('detected') else None for x in raw]}
++    result['smile_blendshape'] = {'framewise_mean_left_right': smile_trace(raw)}
+     save(folder/'candidates.json',result); return result
+ 
+ 

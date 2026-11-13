@@ -1,0 +1,73 @@
+% Candidate 1: dataset comparison. Caption is below the table as requested.
+% TBD means unverified in this writing pass, not unavailable or unreported.
+\begin{table*}[t]
+    \centering\small
+    \begin{tabularx}{\textwidth}{@{}Yccc@{}}
+    \toprule
+    Dataset & \makecell{Listening\\organization} &
+    \makecell{Separate speaker/\\listener audio} & Paired samples \\
+    \midrule
+    ViCo~\cite{vico} & Dedicated & \pending & 483 clips \\
+    RealTalk~\cite{realtalk} & General dialogue & \pending & \pending \\
+    Seamless~\cite{seamless} & General dialogue & \on & \pending \\
+    SpeakerVid-5M (listening)~\cite{speakervid} & Dedicated branch & \off & \pending \\
+    ResponseNet~\cite{omniresponse} & General dialogue & \on & 696 conversations \\
+    GLARE~\cite{glare} & Dedicated & \pending & 107,149 clips \\
+    \midrule
+    Ours & Dedicated & \on & 711,455 clips \\
+    \bottomrule
+    \end{tabularx}
+    \caption{【Candidate 1】Comparison of data resources. Separate audio denotes participant-specific tracks for both speakers and listeners; the SpeakerVid-5M listening branch pairs speaker audio with silent listener video. Conversation counts and segmented-clip counts use different units. Ours counts the retained training and test pairs.}
+    \label{tab:dataset-comparison}
+    \end{table*}
+    
+
+% Candidate 2: method scope and generated modalities, not a performance ranking.
+\begin{table*}[t]
+    \centering\small
+    \begin{tabularx}{\textwidth}{@{}Yccc@{}}
+    \toprule
+    Method & \makecell{Listening\\modeling} & Joint A/V & Generated output \\
+    \midrule
+    CustomListener~\cite{customlistener} & Dedicated & \NA & Visual \\
+    DiffListener~\cite{difflistener} & Dedicated & \NA & Visual \\
+    GLARE~\cite{glare} & Dedicated & \NA & Visual \\
+    INFP~\cite{infp} & Included & \NA & Visual \\
+    OmniResponse~\cite{omniresponse} & Included & \off & Audio + visual \\
+    OmniPersona~\cite{omnipersona} & Included & \on & Audio + visual \\
+    \midrule
+    Ours & Dedicated & \on & Audio + visual \\
+    \bottomrule
+    \end{tabularx}
+    \caption{【Candidate 2】Comparison of generation settings. Dedicated methods focus on listening; Included methods also model listening within broader interaction tasks. Joint A/V denotes joint audio--video synthesis; OmniResponse synthesizes audio through TempoVoice. Outputs list generated modalities, excluding supplied audio.}
+    \label{tab:method-comparison}
+    \end{table*}
+    
+
+% Candidate 3: our retained train/test resource; not the 284,218-clip AV selection.
+% Example category rows must be replaced/expanded after the vocabulary is frozen.
+% Neither the training Event vocabulary nor the seven evaluation classes defines
+% the full dataset taxonomy automatically. Counts below are intentionally TBD.
+\begin{table*}[t]
+    \centering\small
+    \begin{tabularx}{\textwidth}{@{}lYrrr@{}}
+    \toprule
+    Modality & Behavior category & Train pairs & Test pairs & Total pairs \\
+    \midrule
+    Visual & Head nodding & \pending & \pending & \pending \\
+           & Smiling & \pending & \pending & \pending \\
+           & $\ldots$ & $\ldots$ & $\ldots$ & $\ldots$ \\
+    Vocal & Audible laughter & \pending & \pending & \pending \\
+          & $\ldots$ & $\ldots$ & $\ldots$ & $\ldots$ \\
+    \midrule
+    \multicolumn{2}{@{}l}{Number of visual categories} & \multicolumn{3}{r@{}}{\pending} \\
+    \multicolumn{2}{@{}l}{Number of vocal categories} & \multicolumn{3}{r@{}}{\pending} \\
+    \multicolumn{2}{@{}l}{Total number of categories} & \multicolumn{3}{r@{}}{\pending} \\
+    \midrule
+    \multicolumn{2}{@{}l}{All pairs (unique within each split)} & 704,368 & 7,087 & 711,455 \\
+    \bottomrule
+    \end{tabularx}
+    \caption{【Candidate 3】Category distribution and split sizes of our retained data. Category rows illustrate the layout pending the final vocabulary and counts. Each pair is counted once per category and may contain multiple categories, so category counts need not sum to the dataset total.}
+    \label{tab:data-statistics-candidate}
+    \end{table*}
+    

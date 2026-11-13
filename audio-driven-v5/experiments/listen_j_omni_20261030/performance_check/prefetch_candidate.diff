@@ -1,0 +1,92 @@
+--- production-v2
++++ candidate-process-prefetch
+@@ -18,6 +18,7 @@
+ from listen_benchmark.j_annotation import read, write, acquire, locked, JobQueue, result_path
+ from listen_benchmark.native_caption_nod import render, PROMPT_STYLES
+ from listen_benchmark.native_caption_quality import generation_failures
++from listen_benchmark.j_omni_prefetch import PreparationPool
+ 
+ STYLE = 'first_plus_evidence'
+ MODEL = '/private/ckpts/Qwen3-Omni/Instruct'
+@@ -237,12 +238,16 @@
+     from vllm import LLM,SamplingParams
+     from vllm.sampling_params import StructuredOutputsParams
+     work=Path(work);cfg=read(work/'config.json');name=f'{node}-gpu-{gpu}'
++    baseline=dict(backend='thread',workers=2,prefetch=2,ready_first=False)
++    profile=cfg.get('preparation_profiles',{}).get(name,baseline)
++    if set(profile)!=set(baseline) or type(profile['ready_first']) is not bool or type(profile['prefetch']) is not int or not 1<=profile['prefetch']<=32:raise ValueError('Invalid preparation profile')
++    revision=EXECUTION_REVISION if profile==baseline else EXECUTION_REVISION+'+process-prefetch-v1' 
+     assert os.environ['CUDA_VISIBLE_DEVICES']==str(gpu)
+     if os.uname().nodename!=cfg['nodes'][node]['hostname']:raise ValueError('Wrong host')
+     owner=acquire(work/'worker_locks'/f'{name}.lock',False)
+     if owner is None:raise RuntimeError('Worker already running')
+     stop=threading.Event();signal.signal(signal.SIGTERM,lambda *_:stop.set());signal.signal(signal.SIGINT,lambda *_:stop.set())
+-    state=dict(pid=os.getpid(),node=node,gpu=gpu,stage='loading_model',started_at=time.time(),completed_clips=0,failed_clips=0,held_clips=0,execution_revision=EXECUTION_REVISION)
++    state=dict(pid=os.getpid(),node=node,gpu=gpu,stage='loading_model',started_at=time.time(),completed_clips=0,failed_clips=0,held_clips=0,execution_revision=revision,preparation_profile=profile,preparation_wait_s=0.)
+     def status():write(work/'workers'/f'{name}.json',dict(state,heartbeat=time.time()))
+     def heartbeat():
+         while not stop.wait(10):status()
+@@ -255,7 +260,7 @@
+         limit_mm_per_prompt={'image':128,'audio':1,'video':1},skip_mm_profiling=True,enforce_eager=False,
+         compilation_config=dict(mode=0,cudagraph_mode='FULL_DECODE_ONLY',cudagraph_capture_sizes=[1],max_cudagraph_capture_size=1))
+     q=JobQueue(work,'caption');state['stage']='waiting';status()
+-    with ThreadPoolExecutor(max_workers=2) as pool:
++    with PreparationPool(profile['backend'],profile['workers']) as pool:
+         while not stop.is_set():
+             claim=q.claim(name)
+             if claim is None:
+@@ -267,23 +272,22 @@
+             try:
+                 origin=read(work/'job_origins'/f'{jid}.json');job=verified_job(work/'jobs'/f'{jid}.json')
+                 if job['source_result_sha256']!=origin['source_result_sha256']:raise ValueError('Completion source differs')
+-                rows=sorted(job['rows'],key=lambda r:-r['source']['duration_s']);pending={};next_index=0
+-                def prep(r):
+-                    return prepare_input(r,origin['old_work'],work,cfg['nodes'][node]['resource_work'])
++                rows=sorted(job['rows'],key=lambda r:-r['source']['duration_s']);todo=[]
++                for row in rows:
++                    dest=result_path(work,'caption',row['sample_id'])
++                    if dest.exists():
++                        old=read(dest)
++                        if old['source']!=row['source'] or old['pipeline_id']!=cfg['pipeline_id']:raise ValueError('Existing output provenance mismatch')
++                    elif not result_path(work,'held',row['sample_id']).exists():todo.append(row)
++                stream=pool.stream(todo,origin['old_work'],work,cfg['nodes'][node]['resource_work'],profile['prefetch'],stop,profile['ready_first'])
+                 try:
+-                    for i,row in enumerate(rows):
++                    for row,future,wait_s in stream:
+                         if stop.is_set():break
+-                        for j in range(next_index,min(len(rows),i+2)):
+-                            sid=rows[j]['sample_id']
+-                            if not result_path(work,'caption',sid).exists() and not result_path(work,'held',sid).exists():pending[j]=pool.submit(prep,rows[j])
+-                            next_index=j+1
+                         sid=row['sample_id'];dest=result_path(work,'caption',sid)
+-                        if dest.exists():
+-                            old=read(dest)
+-                            if old['source']!=row['source'] or old['pipeline_id']!=cfg['pipeline_id']:raise ValueError('Existing output provenance mismatch')
+-                            continue
+-                        if result_path(work,'held',sid).exists():continue
+-                        try:prepared=pending.pop(i).result()
++                        try:
++                            wait_start=time.monotonic();prepared=future.result();wait_s+=time.monotonic()-wait_start
++                            state['preparation_wait_s']+=wait_s
++                            if profile['backend']=='process' and prepared['_preparation_metrics']['cuda_visible_devices']!='':raise ValueError('CPU decoder exposed CUDA')
+                         except EvidenceUnavailable as exc:
+                             # Missing/unavailable evidence is quarantined, never rendered as empty cues.
+                             write(result_path(work,'held',sid),dict(sample_id=sid,source=row['source'],reason=repr(exc),at=time.time(),training_admitted=False))
+@@ -320,14 +324,12 @@
+                             caption=att['caption'],finish_reason=att['finish_reason'],generation_checks_passed=not att['failures'],
+                             review_flags=list(att['failures']),completion_tokens=att['completion_tokens'],attempts=attempts,
+                             input_evidence=ev,audio_recipe=prepared['recipe'],seconds=time.monotonic()-start,
+-                            node=node,gpu=gpu,execution_revision=EXECUTION_REVISION,completed_at=time.time(),training_admitted=False,human_ground_truth=False)
++                            node=node,gpu=gpu,execution_revision=revision,preparation_profile=profile,preparation_metrics=dict(prepared['_preparation_metrics'],main_wait_s=wait_s),completed_at=time.time(),training_admitted=False,human_ground_truth=False)
+                         immutable(dest,result);state['completed_clips']+=1;state['failed_clips']+=bool(att['failures']);state['last_progress_at']=time.time();status()
++                        state['stage']='preparing'
+                         if max_clips and state['completed_clips']>=max_clips:stop.set()
+                 finally:
+-                    # Do not release the source claim while preparation still touches its records.
+-                    for future in pending.values():
+-                        try:future.result()
+-                        except Exception:pass
++                    stream.close()  # drain/cancel preparation before source claim release
+                 completed=sum(result_path(work,'caption',r['sample_id']).exists() for r in rows)
+                 held=sum(result_path(work,'held',r['sample_id']).exists() for r in rows)
+                 if completed+held==len(rows):

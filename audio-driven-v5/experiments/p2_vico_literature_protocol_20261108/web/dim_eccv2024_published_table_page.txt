@@ -1,0 +1,53 @@
+10    M. Tran et al.
+
+
+Table 1: Quantitative Comparison of Listener Generation on ViCo [80] Dataset. †
+denotes the corresponding method has been pre-trained on the CANDOR [54] dataset.
+∗denotes the method didn’t release any code, and we re-implement it from scratch on
+our own.
+
+
+              FD↓    P-FD↓   MSE↓    SID     Var   rPCC↓
+ Method
+             Exp Pose Exp Pose Exp Pose Exp Pose Exp Pose Exp Pose
+
+ Random          72.88  0.12  75.82  0.12  2.05  0.03  4.68  3.83  1.49  0.02  0.09  0.17
+ Nearest Audio    65.77  0.10  68.84  0.10  1.77  0.03  4.81  3.93  1.49  0.02  0.07  0.11
+ Nearest Motion   42.41 0.06 45.33 0.06 1.27  0.02  4.62  3.74  1.49  0.02  0.08  0.12
+ ELP∗[62]        47.17  0.08  47.48  0.08  0.98  0.02  1.76  1.66  1.49  0.02  0.09 0.01
+ RLHG [80]       39.02  0.07  40.18  0.07  0.86 0.01 3.62  3.17  1.52  0.02  0.08  0.02
+ L2L [47]          33.93 0.06 35.88 0.06 0.93 0.01 2.77  2.66  0.83  0.02 0.06 0.08
+ L2L† [47]         31.03 0.06 33.02 0.06 0.87 0.01 3.53  3.05  0.83  0.02 0.06 0.09
+ GT                       -       -       -       -      -      -   5.03  4.07  0.93  0.01    -      -
+ DIM-Listener † 23.88 0.06 24.39 0.06 0.70 0.01 3.71  2.35  1.53  0.02 0.06 0.03
+
+
+Baselines We compare the performance of DIM-Listener on Listener Gener-
+ation with random and nearest neighbor baselines in addition to the following
+state-of-the-art methods.
+
+
+ – RLHG [80] is a regression method. We use their released official code for a
+     fair comparison.
+ – L2L [47] utilizes a discrete codebook to synthesize motion patterns. We use
+    their released official code for a fair comparison.
+ – ELP [62] extracts speaker-style features and emotion vectors. Due to the
+    unavailability of the source code, we re-implement the baseline following the
+    paper. We provide our re-implementation in the supplementary materials.
+
+
+   The random and nearest neighbor baselines are also widely reported in pre-
+vious work [47,62,80], which include:
+
+ – We randomly select the facial and head motion parameters in the training
+    data, and inject random small perturbations into the normal distribution.
+ – We use the smoothed speaker’s motion as the listener’s motion.
+ – For arbitrary input speaker motion or audio input, we find its nearest neigh-
+   bor from the training set and use its corresponding listener motion as output.
+
+Metrics We re-implement all baselines and train them with EMOCA 3DMM
+as output motion representation. We then evaluate them using the metrics re-
+ported in LM_Listener [48] and ELP [62], namely the Frechet Distance (FD),
+Paired FD (P-FD) for synchrony , Mean Squared Error (MSE), SI for Diversity
+(SID), Variance (Var), and Residual Pearson Correlation Coefficient (rPCC).
+We provide more details about the used metrics in the supplementary materials.

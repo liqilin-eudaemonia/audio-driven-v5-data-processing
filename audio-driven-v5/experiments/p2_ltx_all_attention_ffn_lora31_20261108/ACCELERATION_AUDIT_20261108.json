@@ -1,0 +1,72 @@
+{
+  "at": 1794147226.7362413,
+  "production_step": 769,
+  "scope": "read-only configuration, source, schedule and live process environment audit",
+  "configuration_sha256": "03c08eabb09dba7e6786e620fbaa99c66af2fe988760cb35a2efc7325999fd27",
+  "core_source_unchanged": 282,
+  "items": [
+    {
+      "item": "frozen_cache_and_numeric_event_labels",
+      "status": "enabled",
+      "evidence": "config current_cache_index, qwen_hidden_source, teacher_cache, whisper_cache, clip_numeric_labels"
+    },
+    {
+      "item": "duration_grouping",
+      "status": "enabled",
+      "window": 496,
+      "global_batch": 31,
+      "manifest_verified": true
+    },
+    {
+      "item": "cpu_prefetch",
+      "status": "enabled",
+      "depth": 2
+    },
+    {
+      "item": "bf16_and_pytorch_sdpa",
+      "status": "enabled",
+      "evidence": "training.py autocast; omni_av_p2.ltx.load_renderer PytorchAttention"
+    },
+    {
+      "item": "gpu_adam_states",
+      "status": "enabled",
+      "cpu_offload": false
+    },
+    {
+      "item": "streaming_fp64_sum",
+      "status": "enabled",
+      "bucket_mib": 512
+    },
+    {
+      "item": "multi_hca_8_ports",
+      "status": "not_applied",
+      "historical": "=mlx5_0:1,mlx5_1:1,mlx5_2:1,mlx5_3:1,mlx5_4:1,mlx5_5:1,mlx5_6:1,mlx5_7:1",
+      "actual": "=mlx5_0:1",
+      "hardware": "all four nodes mlx5_0..7 ACTIVE 400Gb/sec",
+      "speed_benefit": "not measured for current pipeline"
+    },
+    {
+      "item": "partial_checkpointing",
+      "status": "tested_rejected",
+      "reason": "three_quarters real physical GPU OOM"
+    },
+    {
+      "item": "grouped_gradient_stats_and_fp64_pipeline",
+      "status": "not_adopted",
+      "reason": "historical benchmark had no stable gain"
+    },
+    {
+      "item": "fused_adamw",
+      "status": "not_enabled_in_current_pipeline",
+      "reason": "README enabled it for Qwen SFT; current full training torch.optim.AdamW without fused=True; needs independent validation"
+    },
+    {
+      "item": "multi_experiment_parallelism_and_eval_preprocessing",
+      "status": "different_workload",
+      "reason": "not directly applicable to single full-pipeline cached training"
+    }
+  ],
+  "live_environment_evidence": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_attention_ffn_lora31_20261108/recompute_trial_physical/LIVE_ACCELERATION_ENV_AUDIT.json",
+  "historical_network_reference": "/private/liqi_workspace/project_code/audio-driven-v5/configs/p2_listen_h200_multinode.env",
+  "production_modified": false
+}

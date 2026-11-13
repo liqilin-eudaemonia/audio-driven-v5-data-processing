@@ -1,0 +1,211 @@
+{
+  "checked_utc": "2026-11-09T15:34:14Z",
+  "target": "DIM Table1; inherited rows in INFP/AvatarForcing",
+  "passed": true,
+  "checks": {
+    "current_public_source_ast_equal": true,
+    "verified_native_source_files": 14,
+    "official_test43_membership": true,
+    "verified_feature_arrays": 172,
+    "shared_scored_frames": 16238,
+    "numerical_recomputed_scalars": 548,
+    "numerical_max_abs": 0.0,
+    "variance_recomputed_scalars": 12,
+    "variance_max_abs": 0.0
+  },
+  "aligned": [
+    "EMOCA_v2_lr_mse_20 model name; strict 644 encoder tensors loaded",
+    "raw pose6 + exp50; no coefficient normalization or display multiplier",
+    "FD/P-FD/MSE formulas and equal-clip aggregation match current public code",
+    "SID uses public GT-fitted KMeans40/20, pooled histogram and log2",
+    "released tester listener t1..T-1 / speaker t0..T-2 offset implemented"
+  ],
+  "confirmed_differences": [
+    {
+      "item": "sampling",
+      "ours": "one sealed seed137 output",
+      "released_code": "10 candidates; minimum GT Frechet over full56 per clip",
+      "affects": "all model scores via candidate selection",
+      "published_table_use_confirmed": false
+    },
+    {
+      "item": "coefficient_readout",
+      "ours": "RGB video re-extracted into EMOCA",
+      "dim_baselines": "predict native EMOCA coefficients and score those outputs",
+      "affects": "all motion metrics",
+      "note": "measurement-route difference; not proof FD formula mismatch"
+    },
+    {
+      "item": "current_Var_formula",
+      "ours": "mean per-coordinate temporal variance on pooled frames",
+      "released_code": "variance after flattening frames and coordinates",
+      "affects": "Var only",
+      "both_readouts_available": true
+    }
+  ],
+  "unconfirmed_published_execution": [
+    {
+      "item": "effective_test_scope",
+      "ours": "43 unique listener UUIDs /16238 shared valid frames",
+      "code_projection": "41 loader rows /39 unique listeners using metadata audio-key overwrite and video-length filtering",
+      "projection_is_not_exact_author_test": true,
+      "missing_evidence": "author HuBERT lengths and retained test manifest",
+      "affects": "all metrics"
+    },
+    {
+      "item": "exact_EMOCA_preprocessing",
+      "ours": {
+        "model_sha256": "90e3c1ca3752a67eeb69672ce2eea172ad32966585f2ec519eac87276f62343a",
+        "source_protocol_sha256": "a1d861e8a78d6019e613a2bc4a21b699214b250bb5234fe4c6c0874760049833",
+        "crop": "Official FaceDataModuleBase._detect_faces_in_image; FAN2D, threshold.9, scale1.25,224, bicubic, uint8 lossless PNG-equivalent, first face",
+        "video_decode": "OpenCV RGB full timeline; reference decoder parity checked on smoke",
+        "missing_face": "NaN at original frame index; never interpolation; scorer discloses shared valid mask",
+        "batch": 16,
+        "coefficients": "pose6+exp50, unnormalized",
+        "implementation_sha256": "a6b644b2a53b9b4e8e176493695047bb1c9a49477627a91d99254dc8fccfea02"
+      },
+      "missing_evidence": "full extraction settings and scored feature files tied to the published table",
+      "affects": "all motion metrics",
+      "same_model_name_already_verified": true
+    },
+    {
+      "item": "missing_face_filter",
+      "ours": "shared valid mask;7 frames excluded after t0",
+      "missing_evidence": "published filtering policy and effective frame mask",
+      "affects": "scored frames for all metrics"
+    },
+    {
+      "item": "speaker_input",
+      "ours": "real speaker motions in scorer",
+      "released_loader": "ViCoDataset replaces speaker motion with all ones",
+      "affects": [
+        "P_FD",
+        "rPCC"
+      ],
+      "does_not_affect_FD": true,
+      "note": "constant-input correlation is undefined; do not copy this anomaly merely to imitate the loader"
+    },
+    {
+      "item": "main_table_sampling_and_SID_execution",
+      "ours": "public metric implementation;single sample",
+      "missing_evidence": "published-run configuration tying sampler and pooling to Table1",
+      "note": "current code behavior is known; paper-run equivalence not established"
+    }
+  ],
+  "variance_values": {
+    "gt": {
+      "pose": {
+        "released_flatten": 0.023274242877960205,
+        "current_per_coefficient_mean": 0.012037987820804119
+      },
+      "exp": {
+        "released_flatten": 1.456109642982483,
+        "current_per_coefficient_mean": 0.9045227766036987
+      }
+    },
+    "joint": {
+      "pose": {
+        "released_flatten": 0.022071514278650284,
+        "current_per_coefficient_mean": 0.014011909253895283
+      },
+      "exp": {
+        "released_flatten": 1.4227445125579834,
+        "current_per_coefficient_mean": 0.841254472732544
+      }
+    },
+    "joint_sft2752": {
+      "pose": {
+        "released_flatten": 0.018672095611691475,
+        "current_per_coefficient_mean": 0.010620147921144962
+      },
+      "exp": {
+        "released_flatten": 1.4715808629989624,
+        "current_per_coefficient_mean": 0.8546022176742554
+      }
+    }
+  },
+  "gt_anchor": {
+    "published": {
+      "FD": {
+        "exp": null,
+        "pose": null
+      },
+      "P_FD": {
+        "exp": null,
+        "pose": null
+      },
+      "MSE": {
+        "exp": null,
+        "pose": null
+      },
+      "SID": {
+        "exp": 5.03,
+        "pose": 4.07
+      },
+      "Var": {
+        "exp": 0.93,
+        "pose": 0.01
+      },
+      "rPCC": {
+        "exp": null,
+        "pose": null
+      }
+    },
+    "measured_current": {
+      "FD": {
+        "pose": -6.365275312650362e-17,
+        "exp": -4.1379203536508364e-08
+      },
+      "P_FD": {
+        "pose": 2.290238412353566e-16,
+        "exp": -2.4040991750323057e-07
+      },
+      "MSE": {
+        "pose": 0.0,
+        "exp": 0.0
+      },
+      "SID": {
+        "pose": 3.883173902095569,
+        "exp": 5.0415778079719304
+      },
+      "SID_GT": {
+        "pose": 3.883173902095569,
+        "exp": 5.0415778079719304
+      },
+      "Var": {
+        "pose": 0.012037987820804119,
+        "exp": 0.9045227766036987
+      },
+      "Var_GT": {
+        "pose": 0.012037987820804119,
+        "exp": 0.9045227766036987
+      },
+      "rPCC": {
+        "pose": 0.0,
+        "exp": 0.0
+      }
+    },
+    "note": "Differences do not identify a unique cause; never tune extraction to force agreement"
+  },
+  "other_paper_protocol": {
+    "AvatarForcing_newly_measured_rows": "SPECTRE;SID15/9",
+    "DIM_inherited_rows": "original DIM scores; not a uniform SPECTRE rerun",
+    "not_an_unresolved_DIM_FD_formula": true
+  },
+  "best10_status": {
+    "stage": "paused_by_user_for_31gpu_training",
+    "at": 1794148131.236719,
+    "gpu": 7,
+    "seed": 138,
+    "outputs_preserved": true
+  },
+  "original_results_modified": false,
+  "new_generation": false,
+  "gpu_used": false,
+  "sources": {
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_vico_dim_alignment_recheck_20261109/PUBLIC_SOURCE_PARITY.json": "6a9fce965d34e1380fc9eb157cfb24cde5929425775dd818ecc679443d503481",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_vico_literature_protocol_20261108/RESULTS.json": "a99ab05cf888cebe6edf8a95a99a82c35657aac7bcfea2c8fd2e139989b3b12d",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_vico_dim_var_per_coefficient_20261108_v2/RESULTS.json": "779d47b5364f782e3daed4b35959a2490b53259caf19f96f255759dd681e0e11",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_vico_dim_alignment_recheck_20261109/recompute.log": "370aac0c0cfc465ec90fafaa9d05989a75fb3340664d513bc8e3707be11436bf"
+  }
+}

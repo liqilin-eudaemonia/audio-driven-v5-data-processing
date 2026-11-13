@@ -1,0 +1,75 @@
+{
+  "schema": "omniresponse-paired-video-v1",
+  "arguments": {
+    "manifest": "/private/liqi_workspace/.cache/paired_video_metrics/smoke_20261101/perturbed_pairs.json",
+    "output": "/private/liqi_workspace/.cache/paired_video_metrics/smoke_20261101/perturbed_v1",
+    "assets": "evaluation/video/paired_metrics/assets.local.json",
+    "metrics": "psnr,ssim,fid,fvd,lpips,emo_acc,emo_div,delta_resp",
+    "device": "cpu",
+    "threads": 2,
+    "batch_size": 8,
+    "fid_frames": 32,
+    "fvd_frames": 32,
+    "fvd_stride": 1,
+    "whole_clip_listening": false,
+    "allow_partial": false
+  },
+  "manifest_sha256": "edbfdad71a866b35721bac1180414858b203debed88e8e74ea546019465996ff",
+  "emotion_labels": [
+    "angry",
+    "disgust",
+    "fear",
+    "happy",
+    "sad",
+    "surprise",
+    "neutral"
+  ],
+  "alignment": "CFR frame-index, trim to shorter, no resizing for pixel/LPIPS",
+  "fid": "pytorch-fid TensorFlow-compatible Inception pool3 2048, sample covariance",
+  "fvd": "StyleGAN-V/TFHub I3D, uint8 RGB 224, population covariance",
+  "delta_resp": "AnyTalker Eq8-9, shared fixed square max>=224, EMA center .7; common adjacent valid support",
+  "assets": {
+    "alexnet": {
+      "path": "/private/ckpts/torch/hub/checkpoints/alexnet-owt-7be5be79.pth",
+      "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+    },
+    "fid_inception": {
+      "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/pt_inception-2015-12-05-6726825d.pth",
+      "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2"
+    },
+    "i3d": {
+      "path": "/public/2_CKPT/0_WM/llq/omniresponse_pipeline_eval_dev8_20261013/i3d_torchscript.pt",
+      "sha256": "bec6519f66ea534e953026b4ae2c65553c17bf105611c746d904657e5860a5e2"
+    },
+    "emotion": {
+      "path": "/private/liqi_workspace/.cache/paired_video_metrics/assets/facial_expression_model_weights.h5",
+      "sha256": "e8e8851d3fa05c001b1c27fd8841dfe08d7f82bb786a53ad8776725b7a1e824c"
+    },
+    "insightface_root": {
+      "2d106det.onnx": "f001b856447c413801ef5c42091ed0cd516fcd21f2d6b79635b1e733a7109dbf",
+      "det_10g.onnx": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91"
+    }
+  },
+  "versions": {
+    "numpy": "1.26.4",
+    "scipy": "1.15.3",
+    "torch": "2.6.0+cu126",
+    "torchvision": "0.21.0+cu126",
+    "opencv-python": "4.11.0.86",
+    "scikit-image": "0.25.2",
+    "lpips": "0.1.4",
+    "pytorch-fid": "0.3.0",
+    "deepface": "0.0.99",
+    "tensorflow": "2.21.0",
+    "insightface": "0.7.3",
+    "onnxruntime": null
+  },
+  "code": {
+    "__init__.py": "6ea785856f00a45f96b6e3f7eaf3e0557c8df945869dd75b7655807ccabe3d8b",
+    "backends.py": "8e040f21570f75cf1eb786e391db1051b4654775c98e9a63e8f9538b24b25c8f",
+    "core.py": "c5d022ea6a064987aa98c370cb136354b76634a5d28c50299e2e883dbf577bd1",
+    "media.py": "06651763db0c1e3227a648e078baf5bf456251f3f894ed097ff4b646d7baefc3",
+    "run.py": "52376d8eab5d6e535937401bccb174af7c9111df4f20114a4946049519ff47cc",
+    "test_core.py": "6ad7dee062984fce9349a99f108a5a42185aa8d55d8e30c601258f0945739cb5"
+  }
+}

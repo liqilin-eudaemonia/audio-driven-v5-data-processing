@@ -1,0 +1,138 @@
+\section{Model and Training Details}  \label{app:model_training}
+
+\subsection{Architecture and Optimization}  \label{app:architecture_optimization}
+
+{We build our baseline upon the FLOAT~\cite{ki2025float} architecture and adapt its input formulation to the listening-head generation setting. In our preliminary experiments, directly applying FLOAT resulted in overly static listener motion with minimal motion. We hypothesize that this is because speaker audio provides only weak and indirect cues for listener head motion, unlike standard audio-driven talking-head generation where speech and facial motion are tightly synchronized. To mitigate this issue, we introduce a reference clip $T_{\text{ref}}$ as an additional context input, together with the previous motion frames $T_{\text{prev}}$. This modified FLOAT serves as our baseline, which corresponds to the first row of Table \ref{tab:ablation_modules}. During training, we sample a video clip of length $T_{\text{total}}$ and divide it into $[T_{\text{prev}} + T_{\text{cur}} \mid T_{\text{ref}}]$. We then feed the segments in the order $[T_{\text{ref}} \mid T_{\text{prev}} + T_{\text{cur}}]$. This allows the model to use a reference segment as an additional context, while being consistent with the inference setting where the reference clip may be non-contiguous with the generated sequence. The loss is computed only on the generated $T_{\text{cur}}$ frames. For a fair and simple comparison, during inference, we use one fixed video clip as $T_{\text{ref}}$ across all experiments.}
+
+% Our model follows the latent flow-matching formulation described in the main paper, and 
+We report the implementation details in Table \ref{tab:app_training_config}. The LIA motion autoencoder \cite{wang2022lia} is initialized from pretrained checkpoints and kept frozen. During training, we optimize the conditional flow-matching transformer, audio projection layers, prosody projection branch, and auxiliary reaction head. All input video frames are resized to 512$\times$512 and normalized to [-1,1]. The video frame rate is 25 FPS and the audio sampling rate is 16 kHz. We use a 9:1 train/test split and report results separately on RealTalk and Seamless. We train our baseline with 650 epochs using 4 Nvidia L40s GPUs.
+
+\begin{table}[!htbp]
+    \centering
+    \small
+    \caption{Implementation details of our final model.}
+    \label{tab:app_training_config}
+    \begin{tabular}{ll}
+        \Xhline{1.2pt}
+        Item & Setting \\
+        \hline
+        Training precision & Mixed precision \\
+        Distributed training & Accelerate \\
+        GPUs & 4$\times$L40s \\
+        Optimizer & AdamW \\
+        Learning rate & $5\times10^{-4}$ \\
+        Learning-rate schedule & Cosine decay with warmup \\
+        Gradient clipping & 1.0 \\
+        Batch size & 256 \\
+        Training epochs & 650 \\
+        Video frame rate & 25 FPS \\
+        Audio sampling rate & 16 kHz \\
+        Image resolution & $512\times512$ \\
+        Image normalization & $[-1,1]$ \\
+        Train/test split & 9:1 \\
+        Motion autoencoder & Pretrained LIA, frozen \\
+        FMT attention heads & 8 \\
+        Attention window length & 2 \\
+        $d_r$ & 512 \\
+        $d_a$ & 512 \\
+        $d_e$ & 7 \\
+        $d_h$ & 1024 \\
+        $d_w$ & 512 \\
+        $d_p$ & 4 \\
+        Prosody projection dimension & 4 \\
+        Reaction loss coefficient $\lambda_{\mathrm{react}}$ & 0.05 \\
+        Velocity loss coefficient $\lambda_{\mathrm{vel}}$ & 1.0 \\
+        ODE solver & Euler \\
+        Number of function evaluations & 10 \\
+        \Xhline{1.2pt}
+    \end{tabular}
+\end{table}
+
+
+
+
+
+
+
+\subsection{Prosody Extraction and Frame Alignment}  \label{app:prosody_extraction}
+
+We extract speaker-side prosodic fluctuation cues using Qwen2-Audio-7B-Instruct \cite{Qwen2-Audio}. For each speaker audio segment, we prompt the audio LLM to return temporal intervals and confidence scores indicating prosodic or affective fluctuation. The prompt template is:
+
+\begin{tcolorbox}[
+    enhanced, 
+    breakable, 
+    colback=gray!10!white, 
+    colframe=gray!40!black, 
+    fontupper=\fontsize{8pt}{9pt}\selectfont\ttfamily,
+    sharp corners, 
+    boxrule=0.5pt, 
+    arc=0pt,
+]
+
+You are an expert in speech prosody analysis.
+\vspace{1em}
+
+You will be given an audio segment containing one speaker. Detect only the time intervals where the speaker shows a clear and localized prosodic fluctuation. A prosodic fluctuation means a noticeable change in vocal delivery, such as increased pitch, increased loudness, stronger stress, sharper emphasis, faster or slower speaking rate, unusual rhythm, hesitation, excitement, surprise, or other affective vocal variation. Focus only on acoustic and prosodic cues, not on the semantic meaning of the spoken words.
+\vspace{1em}
+
+For each detected prosodic event, output its start time, end time, and intensity score. The intensity score must be between 0 and 1 and should represent the salience of the prosodic change:
+
+- 0.50-0.60: weak but noticeable;
+
+- 0.60-0.80: clear;
+
+- 0.80-1.00: strong or highly salient.
+\vspace{1em}
+
+Detection rules:
+
+- Only output events with intensity score >= 0.50.
+
+- Do not output uncertain or ambiguous events.
+
+- Do not split one continuous prosodic fluctuation into many short intervals.
+
+- Merge neighboring intervals if they are part of the same prosodic event.
+
+- No interval overlapping.
+
+- Prefer concise intervals that cover the main fluctuation rather than long segments with neutral speech.
+\vspace{1em}
+
+Output format:
+
+- Each line must be: start\_time, end\_time, intensity\_score
+
+- All numbers must use exactly two decimal places.
+
+- Use seconds as the time unit.
+
+- Do not output any explanation, label, markdown, bullet point, or extra text.
+
+- If no valid event is detected, output exactly:
+
+NULL
+\vspace{1em}
+
+Example:
+
+2.34, 3.29, 0.78
+
+5.69, 7.29, 0.92
+
+\vspace{1em}
+
+Analyze the audio now and output only the formatted results.
+
+\end{tcolorbox}
+
+The output is parsed into a set of triplets $\{(t_{s,j},t_{e,j},c_j)\}_{j=1}^{M}$, where $t_{s,j}$ and $t_{e,j}$ are start and end times in seconds and $c_j\in[0,1]$ is the confidence score. We convert these sparse intervals into a frame-aligned scalar sequence $p\in[0,1]^{(T_{\mathrm{prev}}+T_{\mathrm{cur}})\times1}$ by assigning each video frame the confidence score of its corresponding interval covering that frame:
+\begin{equation}
+    % p_t = \max_{j:\,s_j \leq t/f_{\mathrm{fps}} < e_j} c_j,
+    p_t = c_j,\ \text{where}\ \ j:\,s_j \leq t/f_{\mathrm{fps}} < e_j
+\end{equation}
+where $f_{\mathrm{fps}}=25$. If no interval covers frame $t$, we set $p_t=0$. The scalar prosody sequence is then projected into a compact latent representation through an MLP followed by a sigmoid activation:
+\begin{equation}
+    w_{p,t} = \sigma\left(\mathrm{MLP}(p_t)\right), \quad w_{p,t}\in\mathbb{R}^{4}.
+\end{equation}
+The projected prosody condition is concatenated with the listener motion context $w_r$, speaker audio features $w_a$, and speaker emotion features $w_e$ for $c^{\text{base}}$.

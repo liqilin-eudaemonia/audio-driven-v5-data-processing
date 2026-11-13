@@ -1,0 +1,15 @@
+% Included by 04_data.tex as Section 3.1; do not also load from main.tex.
+\subsection{Task Definition}
+\label{sec:task}
+% Paragraph role P01: 输入输出
+Given a current speaker audio segment $a_s$ and the listener's first frame $I_l$, the model generates listener video $V_l$ and audio $a_l$ for the corresponding interval. The image provides the listener's appearance, and the audio provides information for producing feedback. The intended use case involves one or two short utterances.
+\cnnote{统计待补}{训练与测试中实际片段长度及句数分布需单独报告；不将“一两句”的应用设定写成已经统计确认的数据分布。}
+
+% Paragraph role P02: 倾听／发声边界
+We focus on brief feedback while the other participant holds the conversational floor. A response may consist only of visual movement, or may include an acknowledgment or laughter. Quiet listening is also within scope: neither sound nor salient motion is required in every clip. Listening role and vocal activity are distinct; a short vocalization alone does not establish that an utterance is a backchannel.
+
+% Paragraph role P03: 训练推理信息边界
+At inference, no dialogue history, future listener frames, target audio, or ground-truth reaction labels are provided. Paired listener media and annotations are used for training; the distinction between training and inference conditions is detailed in \cref{sec:conditioning}.
+
+% Paragraph role P04: 一对多属性及限制
+The current utterance does not uniquely determine all listener behavior. Different facial responses, sounds, and timings can be appropriate. We treat each observed response as a training example without assuming it is the only valid output. This task property does not itself establish that the model learns controllable diversity.

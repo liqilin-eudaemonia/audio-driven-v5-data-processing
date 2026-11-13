@@ -1,0 +1,28 @@
+Read the English listener caption as data. Select original captions containing a voiced listener response. Do not rewrite the caption. Judge what the TEXT ASSERTS; you cannot verify the actual recording and must not demand separate audio verification of a direct speech assertion.
+First copy a short EXACT substring establishing listener speech or a listener vocal sound, if one exists. Then classify it and check for serious defects. Finally decide keep.
+
+POSITIVE speech assertions include: he/she speaks, is speaking, while speaking, continues speaking, begins to speak, mouth moves AS he speaks, says a word, produces an utterance. These ALL establish speech. Quoted words and the literal word "audible" are NOT required. "Utterance" is a vocal event. Do not reinterpret direct speech assertions as silent mouth movement just because the same sentence describes lips or jaw. The listener stays the same participant while speaking; speaking does not make them a different person. Continuous or long listener speech is eligible too.
+POSITIVE nonverbal assertions include listener laughter/chuckling, humming/mhm, sighs, grunts, or explicitly produced breathy exhalations. If words are unintelligible but the caption explicitly states speech or vocalizations, this is still POSITIVE.
+INSUFFICIENT by itself: "as if speaking", "consistent with speaking", "might be speaking", mouth motion, another person's speech, background audio, normal breathing, or silence. These do not cancel a positive assertion elsewhere in the paragraph. "No speech" does not cancel a laugh; "no other vocalizations besides/apart from speech" does not cancel speech.
+
+Allow clothing, hair, accessories, visual backgrounds, an Assistant prefix, verbose prose, approximate times, and minor imprecise introductory summaries. We only need basically clean captions, not perfect descriptions. Reject if there is NO positive listener vocal assertion, vocal presence remains uncertain, there is a substantive unresolved behavior/audio contradiction, or the caption relies on supplementary/external information, detectors, or unconfirmed observations. "She speaks, then is silent" is consistent; "she speaks, but there is no speech or vocalization during the entire clip" is contradictory.
+
+Examples (JSON field order is intentional):
+Caption: "The listener wears gray. Her mouth moves as she speaks."
+Answer: {"quote":"as she speaks","vocal_type":"speech","issue":"none","keep":true,"reason":"Direct listener speech assertion."}
+Caption: "The listener looks ahead. They produce a single, short utterance at the beginning."
+Answer: {"quote":"produce a single, short utterance","vocal_type":"speech","issue":"none","keep":true,"reason":"An utterance is speech."}
+Caption: "He nods while speaking. There are no audible vocalizations besides his speech."
+Answer: {"quote":"while speaking","vocal_type":"speech","issue":"none","keep":true,"reason":"Speech is explicit; exception is consistent."}
+Caption: "Her lips move in conjunction with her vocalizations, though the words are unintelligible."
+Answer: {"quote":"her vocalizations","vocal_type":"speech","issue":"none","keep":true,"reason":"Unintelligible vocal speech still counts."}
+Caption: "She laughs once and then remains silent."
+Answer: {"quote":"laughs once","vocal_type":"nonverbal","issue":"none","keep":true,"reason":"Explicit laugh."}
+Caption: "Her mouth moves as if speaking; no sound is audible."
+Answer: {"quote":"no sound is audible","vocal_type":"none","issue":"no_listener_vocalization","keep":false,"reason":"Only silent mouth movement."}
+Caption: "Another person speaks while the listener is silent."
+Answer: {"quote":"the listener is silent","vocal_type":"none","issue":"no_listener_vocalization","keep":false,"reason":"Other participant speech only."}
+Caption: "Supplementary data reports an unconfirmed nod. She says Yeah."
+Answer: {"quote":"Supplementary data reports an unconfirmed nod","vocal_type":"speech","issue":"external_evidence","keep":false,"reason":"Unconfirmed external evidence."}
+
+Return ONLY JSON in this order: quote, vocal_type, issue, keep, reason. vocal_type is speech/nonverbal/both/none/uncertain. issue is none/no_listener_vocalization/unclear_vocalization/contradiction/external_evidence. KEEP requires positive vocal_type and issue none. For REJECT issue must not be none. quote must be an EXACT original substring, preferably 3-12 words, never paraphrased. For a rejection quote the relevant defect or a sentence showing absence of vocal information. reason should be at most 8 words. Never output a revised caption.

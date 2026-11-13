@@ -1,0 +1,217 @@
+    Diffusion-based Realistic Listening Head Generation via Hybrid Motion
+                              Modeling
+
+                           Supplementary Material
+
+
+   In this supplementary material, we provide details of the        3) Guidance net is used to explicitly control the head
+proposed network structures (Sec. A.1), training objectives     pose of the generated videos as shown in Fig. 1 (c) of the
+(Sec. A.2), experimental setup for compared methods (Sec.     main paper. The guidance net consists of 5 different consec-
+A.3), more visual results (Sec. B), additional experiments      utive convolutional layers. The output of each convolutional
+including user study (Sec. C), and ethics (Sec. D).               layer has the same dimension as each downblock’s output of
+                                                                the rendering module. The extracted features are integrated
+A. Implementation Details                                in the rendering module via Eq. (6) of the main paper.
+                                                                 4) The expression attention layers and speaker feature
+A.1. Network Structures                                  attention layers are applied to integrate expression features
+Explicit Motion Generation.  As shown in Fig. 1 (a) of     and speaker features in the layers of rendering module as
+the main paper, the explicit motion generation module is    shown in Fig. 1 (d) of the main paper, and they have the
+based on a diffusion transformer, which consists of: 1) A    same network structure as the original SD 1.5 cross at-
+mapping net to map the 51-dim raw speaker motion se-      tention layers.  The audio features are also obtained by
+quence extracted by mediapipe [23] into the latent space.     wav2vec 2.0, and the speaker motion is mapped to the la-
+It is a linear layer with an input dimension of 51 and an      tent space by a linear layer.
+output dimension of 512. 2) An audio encoder to extract                                                       A.2. Training Objectives
+high level audio information. The audio encoder is a pre-
+                                                              Explicit motion generation.  The explicit motion genera-trained wav2vec 2.0 [2], and the extracted audio features
+are mapped by a linear layer to the latent space. 3) A cross-      tion module learns to predict the clean sample at diffusion
+modal transformer to integrate the audio and speaker mo-     time step t instead of the noise ϵt, so the denoising objective
+                                                        can be written as,tion features. The cross-model transformer has 2 layers,
+with 8 attention heads and a hidden size of 512, where the      Lt = Et∼[1,T ],L0[||L0−Lθ(Lt, t, c)||2], c = {S, A} (10)
+speaker motion features are used as keys and values.  4)
+                                                     where S and A are the speaker’s facial expression featuresA transformer encoder to embed the noisy motion input.
+                                                      and audio features respectively. Besides the denoising ob-The diffusion time step feature is added to the output of
+                                                                        jective, we add a velocity loss to enhance the naturalness ofthe transformer encoder to inject the time step information.
+                                                                the generated motions, and the overall training objective is,5) A transformer decoder to generate the denoised motion
+sequence. In the transformer decoder, the integrated speaker     L = Lt + λLvel
+features are used as keys and values. Both the transformer
+                                    = Et∼[1,T ],L0(||L0 −ˆL0||2 + λ||∆L0 −∆ˆL0||2),encoder and decoder have 8 layers, with 4 attention heads
+                                                                                                                   (11)and a hidden size of 512.
+                                                     where L0 is the clean listener motion while ˆL0 is the de-
+High Fidelity Rendering Module.  The high fidelity ren-     noised listener motion predicted by the explicit motion gen-
+dering module is based on SD 1.5 structure, and consists of      eration module, ∆L0, ∆ˆL0 are the ground truth and pre-
+the following,                                                  dicted motion difference of consecutive frames respectively.
+   1) Motion module is adopted to apply self attention
+along the temporal dimension of the network’s intermediate    High Fidelity Rendering Module.  The training of the
+features to enable the video generation capability of SD 1.5.     high fidelity rendering module is two-stage.  In the pre-
+Concretely, the intermediate feature h ∈Rb×n×h×w×c is      training stage, the rendering module is trained to generate
+first reshaped into h ∈R(b×h×w)×n×c, then self-attention     a single frame conditioned on ground truth explicit motion
+is performed along the dimension n.                         guidance L, and a single listener portrait I. The training
+   2) Reference net is used to extract the listener’s iden-      objective is,
+tity features to ensure the identity consistency, as shown
+                                                     Lt = Et∼[1,T ],x0,ϵt[||ϵt −ϵθ(xt, t, c)||2], c = {L, I}. (12)in Fig. 1 (b) of the main paper. The reference net has the
+original SD 1.5 structure, and the extracted features are in-     In the second stage, the rendering module is trained to gen-
+tegrated into the rendering module via Eq. (9) of the main      erate consecutive video frames condition on generated ex-
+paper.                                                                     plicit motion guidace ˆL, listener portrait I, speaker’s audio Speaker
+
+
+
+     Reference                              Reference                              Reference                              Reference
+     Image                              Image                              Image                             Image
+
+
+
+GT
+
+ RLHG
+
+
+ L2L
+
+                          (a)
+
+ PCH
+
+
+ Ours
+
+                         (a)                                           (b)                                               (c)                                           (d)
+
+Speaker
+
+
+
+     Reference                             Reference                               Reference                              Reference
+    Image                            Image                              Image                              Image
+
+
+
+GT
+
+RLHG
+
+
+L2L
+
+
+PCH
+
+
+Ours
+
+
+                           (e)                                                    (f)                                             (g)                                         (h)
+
+
+Figure 6. Visualization of the compared methods. Our method exhibits highly detailed visuals, accurate motion, and vivid expressiveness.features A and facial expression features S. The training
+objective is,                                                           GT
+
+Lt = Et∼[1,T ],x0,ϵt[||ϵt −ϵθ(xt, t, c)||2], c = {ˆL, I, A, S}.
+                                                     (13)                         motion                                                                                                                                               w/o guidance
+A.3. Experimental Setup for Compared Methods
+We retrain RLHG [46], PCH [14], and L2L [25] on both              Ours
+RealTalk and ViCo dataset, following their original experi-
+mental setups. Additionally, for RLHG [46] and PCH [14],
+we train these methods without emotion labels as 1) there
+are no emotion labels available for RealTalk dataset, and       GT
+2) although ViCo dataset provides emotion labels, L2L and
+our method do not incorporate the emotion labels as guid-
+ance. For a fair comparison, we also retrain RLHG and PCH                         motion                                                                                                                                               w/o guidance
+without using the emotion labels. The evaluation metrics in-
+cluding SSIM, PSNR, FID, and FD are computed following
+RLHG [46], while FID∆fm and SND are computed follow-              Ours
+ing [43]. Since MFR-Net [20] and CustomListener [21] are
+not open-sourced, we report their results on ViCo dataset
+from the original papers for reference.                           Figure 7.  Visualization of the ablation study on explicit motion
+                                                                   guidance. We highlight the artifacts with red boxes.
+B. Visual Results
+
+B.1. Comparison with Other Methods
+
+We provide more visual results of the proposed framework
+                                                                        GT
+and other methods, including RLHG [46], PCH [14], and
+L2L [25]. As shown in Fig. 6, our method achieves better
+visual quality, more motion expressiveness and more visual
+details compared with other methods. From Fig. 6 (a) to (h),                     Pose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             Concatenate
+it can be seen that our results exhibit overall more similar fa-
+cial expressions as the ground truth than other methods, in-
+dicating that our proposed method can better model the lis-              Ours
+tener motions. From Fig. 6 (e) to (h), it can be seen that our
+results preserve more visual details, resulting in more vivid
+and expressiveness visuals, such as more realistic wrinkles
+                                                                        GT
+in (e), more detailed facial hair in (f), correct earring shape
+and movement in (g) and realistic teeth in (h).
+
+B.2. Ablation Study                                                                                                                               Pose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             Concatenate
+We provide more visual results of the ablation study. As
+shown in Fig. 7, without motion guidance, the network
+                                                                                                                                                Oursstruggles to learn correct and consistent motions and often
+results in visual artifacts.  This is due to the fact that the
+LDM-based methods require lots of data to train and our                                                                  Figure 8. Visualization of the ablation study on different motion
+proposed explicit motion guidance eases the training pro-                                                                       control schemes. We highlight the artifacts and inaccurate controls
+cess. In Fig. 8, it can be seen that the proposed explicit mo-      with red boxes.
+tion control scheme achieves precise and stable control over
+the facial expressions and head poses, proving the effective-
+ness of the tailored control method for head poses and facial
+expressions. Fig 9 shows that our proposed implicit motion
+refining method can revise the incorrect facial expressions      tion refinement can effectively improve the quality in both
+and refine the facial details, indicating that the implicit mo-     motion and visuals.                                                                                    Visual    Vivid   Natural-   Similarity
+                                                          Method
+ GT                                                                              Quality↑   -ness↑    ness↑      to GT↑
+
+                                           RLHG [46]     3.31      2.85     2.97       2.80
+Implicit Refinement                                            PCHL2L [25][14]      3.362.71      2.422.86     2.982.20       2.432.79
+w/o Motion                                                             Ours        4.52      4.32     4.37       4.26
+
+ Ours                                                                    Table 6. User study results. The best results are in bold.
+
+
+                                                            generated motions, 3) naturalness to evaluate whether the
+ GT                                                          generated motion is smooth and has natural transitions, 4)
+                                                                    similarity to GT to evaluate whether the generated motion
+                                                           has the similar motion pattern and expresses similar emo-
+Implicit Refinement                                                                tion and attitude as the ground truth. The results are listed
+w/o Motion                                                                in Table 6. It can be seen that our method greatly surpasses
+                                                                the compared methods in all aspects.
+ Ours
+                                             D. Ethics
+
+                                                  The proposed method may raise ethical concerns regarding
+Figure 9. Visualization of the ablation study on implicit motion
+                                                              privacy and misuse. The proposed method is designed to
+refinement. We highlight the inaccurate motion with red boxes
+                                                              synthesize realistic listener videos in face to face conver-and the improved facial details with green box.
+                                                                 sation scenarios, and can be used to impersonate individ-
+                                                                 uals in online meetings and fabricated videos.  In case of                          Conditioned   Conditioned
+           Unconditional                                 misuse and privacy violation, access control policies and                         on audio      on both
+                                                        watermarking can be used, and open-sourcing the proposed  rPCC↓       16.64          12.54         8.51
+                                                    method will be accompanied by clear guidelines to discour-  MSE↓       3.37           2.05          1.43
+                                                        age unethical usages.
+
+  Table 5. Effect of conditions, all values are multiplied by 100.
+
+
+C. Additional Experiments
+
+C.1. Ablation Study on Motion Conditions
+
+To validate the effect of different generation conditions on
+the motion generation module, We calculate Residual Pear-
+son Correlation Coefficient (rPCC) between the listener’s
+expressions (51-dim blend-shape) generated with different
+conditions and the GT speaker’s expressions to assess the
+motion synchronization, and Mean Squared Error (MSE)
+to assess motion accuracy. As shown below, after adding
+speaker’s audio and expression, the synchronization and ac-
+curacy have both significantly improved.
+
+C.2. User Study
+
+We conduct user study to further evaluate the the proposed
+and compared methods. We randomly choose 20 speaker
+videos from RealTalk dataset, and generate corresponding
+listener videos for every method. 26 volunteers are asked
+to rate (the score ranges from 1 to 5, with 5 being the best)
+every generated video by each method from four perspec-
+tives, i.e. 1) visual quality to evaluate the visual clarity and
+details, 2) vividness to evaluate the expressiveness of the

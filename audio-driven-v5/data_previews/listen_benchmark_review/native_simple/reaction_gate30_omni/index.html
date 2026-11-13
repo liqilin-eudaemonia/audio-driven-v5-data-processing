@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>30 条反应线索打标对照</title>
+<style>
+@font-face{font-family:Review;src:url(review.woff)}
+*{box-sizing:border-box}
+body{margin:0;background:#f3f5f8;color:#17243b;font:15px/1.7 system-ui,Review,sans-serif}
+main{max-width:1620px;margin:auto;padding:22px}
+h1{font-size:23px;margin:4px 0}h2{font-size:16px;margin:0 0 10px}p{margin:8px 0}
+.muted{color:#617087;font-size:13px}
+.panel{background:#fff;border:1px solid #dde3eb;border-radius:12px;padding:18px;margin-top:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button,select{font:inherit;border:1px solid #cad3e0;background:white;border-radius:7px;padding:6px 11px;color:inherit;cursor:pointer}
+button:hover{background:#f0f4fa}
+.layout{display:grid;grid-template-columns:minmax(330px,35%) minmax(0,1fr);gap:18px;align-items:start}
+.left{position:sticky;top:14px}
+video{width:100%;max-height:460px;background:#111;border-radius:9px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.old{border:1px solid #cbd5e1;background:#f8fafc;border-radius:10px;padding:14px}
+.new{border:2px solid #1b5e20;background:#f6fcf7;border-radius:10px;padding:14px}
+.caption-text{font-size:15px;line-height:1.78;white-space:pre-wrap}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.6 monospace;background:#f7f9fc;padding:12px;border-radius:8px;max-height:520px;overflow:auto}
+.lane{display:grid;grid-template-columns:72px 1fr;gap:8px;align-items:center;margin:6px 0}
+.track{position:relative;height:22px;background:#eef2f6;border-radius:4px;cursor:pointer}
+.seg{position:absolute;top:2px;bottom:2px;border-radius:3px}
+.drop{background:transparent!important;border:1.5px solid #8b97a6}
+.nodding{background:#2f7d4a}.head_shaking{background:#1d6fbf}.vocal{background:#0284c7}.smiling{background:#c9841a}
+.laughing{background:#b42318}.frowning{background:#6b4c9a}.surprised{background:#0f766e}
+.hit{outline:2px solid #111}
+.analysis li{margin:6px 0}
+.spots{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px;margin-top:8px}
+.spot{border:1px solid #d5dee9;background:#f8fafc;border-radius:9px;padding:10px 12px;cursor:pointer}
+.spot:hover{background:#eef4fb;border-color:#93c5fd}
+.spot b{color:#0f172a}
+@media(max-width:1100px){.layout,.compare{grid-template-columns:1fr}.left{position:static}}
+</style>
+<main>
+  <h1>Qwen3-Omni 发声＋反应＋点头打标对照</h1>
+  <p class="muted">合并了定版 v4 发声指令、原有点头区间，以及筛过的摇头、皱眉、抬眉。只有当条真有该类反应时才写进指令，不输入旧描述。</p>
+  <div class="panel">
+    <h2>五类原先没写、加入检测后写进描述的样本（点击直接跳到该条）</h2>
+    <div id="spotlights" class="spots"></div>
+  </div>
+  <div class="panel">
+    <h2>分析结果</h2>
+    <ul id="analysis" class="analysis"></ul>
+  </div>
+  <div class="panel">
+    <div id="summary" style="font-weight:600;margin-bottom:8px">加载中…</div>
+    <div class="row">
+      <button id="prev">← 上一条</button>
+      <select id="sample"></select>
+      <button id="next">下一条 →</button>
+      <select id="filter">
+        <option value="all">全部 30 条</option>
+        <option value="cued">送进了摇头、皱眉或抬眉</option>
+        <option value="miss">送了但新描述没写</option>
+      </select>
+      <a href="review.json" download>下载完整对照 JSON</a>
+    </div>
+  </div>
+  <div class="layout">
+    <section class="panel left">
+      <h2 id="sampleId"></h2>
+      <video id="video" controls muted playsinline></video>
+      <audio id="listenerAudio" preload="auto"></audio>
+      <audio id="speakerAudio" preload="auto"></audio>
+      <div class="row" style="margin-top:10px">
+        <button id="soundPlay">有声播放／暂停</button>
+        <select id="audioMode">
+          <option value="processed">净化 listener（模型实际输入）</option>
+          <option value="original">原始 listener（未静音参考）</option>
+          <option value="dialogue">双人对话混音（带 speaker 参考）</option>
+          <option value="silent">静音仅看画面</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label>音量 <input id="audioVolume" type="range" min="0" max="1" step=".05" value="1"></label>
+      </div>
+      <p id="audioStatus" class="muted"></p>
+    </section>
+    <section>
+      <div class="panel">
+        <h2>原始检测区间</h2>
+        <p class="muted">实心是送进描述的区间，空心是检测到但没有送进去。点击从该时间播放。</p>
+        <div id="lanes"></div>
+        <div id="events" class="row"></div>
+      </div>
+      <div class="panel">
+        <div class="compare">
+          <div class="old"><h2 style="color:#475569">打标前</h2><div id="prior" class="caption-text"></div></div>
+          <div class="new"><h2 style="color:#1b5e20">打标后</h2><div id="caption" class="caption-text"></div><p id="meta" class="muted"></p></div>
+        </div>
+      </div>
+      <details class="panel" open>
+        <summary>本条完整输入 prompt</summary>
+        <pre id="prompt"></pre>
+      </details>
+    </section>
+  </div>
+</main>
+<script src="audio.js"></script>
+<script>
+let data,visible=[],current,stopAt=null;
+const $=id=>document.getElementById(id);
+const video=$('video');
+function jump(start,end){
+  stopAt=end!==undefined&&end!==null?Math.min(current.duration,end+.25):null;
+  video.pause();
+  video.currentTime=Math.max(0,start-(end!==undefined?.15:0));
+  video.play();
+}
+video.addEventListener('timeupdate',()=>{
+  if(stopAt!==null&&video.currentTime>=stopAt){video.pause();stopAt=null;}
+  document.querySelectorAll('.seg').forEach(seg=>{
+    const [a,b]=seg.title.match(/[\d.]+/g).map(Number);
+    seg.classList.toggle('hit',video.currentTime>=a&&video.currentTime<b);
+  });
+});
+async function show(id){
+  current=data.samples.find(s=>s.id===id);
+  if(!current)return;
+  const s=current;
+  stopAt=null;video.pause();video.muted=true;
+  video.src=s.video;
+  $('sample').value=id;
+  $('sampleId').textContent=`#${s.index} · ${s.short} · ${s.duration.toFixed(2)} 秒${s.silent?' · 净化音频为静音':''}`;
+  const lanes=$('lanes');lanes.replaceChildren();
+  const events=$('events');events.replaceChildren();
+  Object.entries(data.channels).forEach(([k,name])=>{
+    const lane=document.createElement('div');lane.className='lane';
+    lane.innerHTML=`<span>${name}</span><div class="track"></div>`;
+    const track=lane.querySelector('.track');
+    track.onclick=e=>{const r=track.getBoundingClientRect();jump(s.duration*(e.clientX-r.left)/r.width);};
+    s.channels[k].forEach(ev=>{
+      const seg=document.createElement('div');
+      seg.className='seg '+k+(ev.sent?'':' drop');
+      seg.style.left=(100*ev.start/s.duration)+'%';
+      seg.style.width=(100*Math.max(ev.end-ev.start,.05)/s.duration)+'%';
+      seg.title=`${ev.label||name} ${ev.start.toFixed(2)}–${ev.end.toFixed(2)}`;
+      seg.onclick=e=>{e.stopPropagation();jump(ev.start,ev.end);};
+      track.append(seg);
+      const b=document.createElement('button');
+      b.textContent=`${ev.label||name} ${ev.start.toFixed(2)}–${ev.end.toFixed(2)}${ev.sent?' · 已送入':' · 未送入'}`;
+      b.onclick=()=>jump(ev.start,ev.end);
+      events.append(b);
+    });
+    lanes.append(lane);
+  });
+  $('prior').textContent=s.prior;
+  $('caption').textContent=s.caption;
+  $('meta').textContent=`${s.completion_tokens} tokens · ${s.seconds.toFixed(1)} 秒 · finish=${s.finish_reason}`;
+  $('prompt').textContent=s.prompt;
+  history.replaceState(null,'','?sample='+encodeURIComponent(id));
+  await window.reviewAudioLoad(s);
+}
+function rebuild(){
+  const f=$('filter').value;
+  visible=data.samples.filter(s=>f==='all'||(f==='cued'?s.cues.length:s.cues.some(c=>!c.written)));
+  $('sample').replaceChildren(...visible.map(s=>{
+    const o=document.createElement('option');o.value=s.id;
+    const tags=s.cues.map(c=>`${c.label}${c.written?'':'未写'}`).join('、')||'无反应线索';
+    o.textContent=`#${s.index} · ${s.short} · ${tags}`;
+    return o;
+  }));
+  if(visible.length)show(visible.some(s=>s.id===current?.id)?current.id:visible[0].id);
+}
+$('sample').onchange=()=>show($('sample').value);
+$('filter').onchange=rebuild;
+$('prev').onclick=()=>{const i=visible.findIndex(s=>s.id===current?.id);if(visible.length)show(visible[(i-1+visible.length)%visible.length].id);};
+$('next').onclick=()=>{const i=visible.findIndex(s=>s.id===current?.id);if(visible.length)show(visible[(i+1)%visible.length].id);};
+fetch('review.json').then(r=>r.json()).then(d=>{
+  data=d;
+  $('spotlights').replaceChildren(...(d.spotlights||[]).map(item=>{
+    const box=document.createElement('div');box.className='spot';
+    box.innerHTML=`<div><b>【${item.category}】${item.short}</b> · <span class="muted">${item.cue}</span></div>`+
+      `<div class="muted" style="margin-top:4px">旧：${item.before}</div>`+
+      `<div style="color:#1b5e20;margin-top:2px">新：${item.after}</div>`;
+    box.onclick=()=>{$('filter').value='all';rebuild();show(item.sample_id);};
+    return box;
+  }));
+  $('analysis').replaceChildren(...d.analysis.map(text=>{const li=document.createElement('li');li.textContent=text;return li;}));
+  $('summary').textContent=`${d.summary.samples} 条 · 反应区间 ${d.summary.written}/${d.summary.cues} 写进 · 发声区间 ${d.summary.vocal_written}/${d.summary.vocal_cues} 写进`;
+  const id=new URLSearchParams(location.search).get('sample');
+  current=data.samples.find(s=>s.id===id);
+  rebuild();
+});
+</script>
+</html>

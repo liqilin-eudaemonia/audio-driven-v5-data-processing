@@ -1,0 +1,53 @@
+# Interface-only example. Replace the placeholder data/checkpoint paths before use.
+model:
+  model_path: /private/ckpts/LTX/ltx-2.3-22b-dev.safetensors
+  text_encoder_path: /public/2_CKPT/0_WM/LTX2.0_TEXT_ENCODER
+  training_mode: lora
+
+lora:
+  rank: 64
+  alpha: 64
+  dropout: 0.0
+  target_modules: [to_q, to_k, to_v, to_out.0]
+  exclude_modules: '(?:^|.*\.)(?:omni_attn2|audio_omni_attn2|audio_timbre_attn2)(?:\..*)?'
+  modules_to_save:
+    - omni_attn2
+    - audio_omni_attn2
+    - video_omni_layer_adapter
+    - audio_omni_layer_adapter
+    - omni_field_resampler
+    - audio_timbre_attn2
+
+training_strategy:
+  name: text_to_video
+  with_audio: true
+  i2av_only: true
+  first_frame_conditioning_p: 1.0
+  online_text_conditioning: true
+
+  # Route-A packages currently live here. A real preprocessed dataset may use
+  # this absolute directory as a data source or provide per-sample feature_path.
+  use_omni_cond: true
+  omni_conditions_dir: /public/1_FEATURE/0_GM/3_CAPTION/1_omni_no_context_raw_v2
+  omni_cond_for_audio: true
+  omni_cross_attention_dim: 1024
+  audio_omni_cross_attention_dim: 1024
+  use_omni_layer_adapters: true
+  omni_layer_adapter_num_layers: 4
+  omni_layer_adapter_input_dim: 1024
+  use_omni_field_resampler: true
+  omni_field_resampler_input_dim: 2048
+  omni_field_resampler_num_heads: 8
+  omni_dropout: 0.1
+
+  # Supply precomputed ECAPA/other speaker embeddings when available.
+  use_listener_timbre_cond: false
+  listener_timbre_embeddings_dir: /path/to/listener_timbre_embeddings
+  listener_timbre_dim: 192
+
+  use_first_frame_audio_cond: true
+  first_frame_dropout: 0.0
+
+# Deliberately incomplete: data/optimization/validation/checkpoint sections
+# must be copied from the intended LTX training experiment after its latents,
+# audio_latents and timbre embeddings have been produced.

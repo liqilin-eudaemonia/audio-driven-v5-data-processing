@@ -1,0 +1,29 @@
+\usepackage{xeCJK}
+% Load TeX Live Fandol by filename. Name-only lookup fails on some Mac setups
+% without fontconfig, even when the OTF files are present in texmf-dist.
+\setCJKmainfont[
+  Extension=.otf,
+  BoldFont=FandolSong-Bold,
+]{FandolSong-Regular}
+\setCJKsansfont[
+  Extension=.otf,
+  BoldFont=FandolHei-Bold,
+]{FandolHei-Regular}
+\usepackage{tabularx,array,makecell}
+\usepackage{placeins}
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\definecolor{authorblue}{RGB}{40,81,125}
+\newif\ifauthornotes
+\authornotestrue
+% Chinese planning notes: keep visible in this authoring draft.
+\newcommand{\cnnote}[2]{\ifauthornotes\par\smallskip{\small\upshape\color{authorblue}\noindent\textbf{【#1】}#2\par}\smallskip\fi}
+\newcommand{\pending}{\textcolor{authorblue}{\textsf{TBD}}}
+\newcommand{\NA}{\textsf{N/A}}
+\newcommand{\on}{\ensuremath{\checkmark}}
+\newcommand{\off}{\ensuremath{-}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\figdraft}[1]{\textbf{#1 (draft).}}
+\graphicspath{{figures/}}
+% Do not hide layout defects behind the template's 30pt tolerance.
+\hfuzz=0pt
+\vfuzz=0pt

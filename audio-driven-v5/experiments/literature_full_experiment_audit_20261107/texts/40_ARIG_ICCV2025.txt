@@ -1,0 +1,628 @@
+                      This ICCV paper is the Open Access version, provided by the Computer Vision Foundation.
+                                 Except for this watermark, it is identical to the accepted version;
+                                the final published version of the proceedings is available on IEEE Xplore.
+
+
+
+
+
+ARIG: Autoregressive Interactive Head Generation for Real-time Conversations
+
+
+                 Ying Guo*, Xi Liu*, Cheng Zhen†, Pengfei Yan, Xiaoming Wei
+                                 Vision AI Department, Meituan
+        {guoying16, liuqian70, zhencheng02, yanpengfei03, weixiaoming}@meituan.com
+
+
+
+                 Abstract
+
+Face-to-face communication, as a common human activ-
+ity, motivates the research on interactive head generation.
+However, previous clip-wise generation paradigm or ex-
+plicit listener/speaker generator-switching methods have
+limitations in future signal acquisition, contextual behav-
+ioral understanding, and switching smoothness, making
+it challenging to be real-time and realistic.  In this pa-
+per, we propose an autoregressive (AR) based frame-wise
+framework called ARIG to realize the real-time genera-
+tion with better interaction realism. For real-time genera-
+tion, we model motion prediction as a non-vector-quantized
+AR process.  Unlike discrete codebook-index prediction,
+we represent motion distribution using diffusion proce-
+dure, achieving more accurate predictions in continuous      Figure 1. Development of interactive head motion generation. a)
+space. To improve realism, we emphasize interactive be-     Only speaker generation based on last speaking behaviors. b) Dif-
+havior understanding (IBU) and detailed conversational      ferent explicit generators for listener/speaker. c) Implicit clip-by-
+                                                                             clip generator based on a unified model.  d) Implicit frame-by-state understanding (CSU). In IBU, based on dual-track
+                                                              frame generator based on a unified non-quantized AR model.
+dual-modal signals, we summarize short-range behaviors
+through bidirectional-integrated learning and perform con-
+                                                                   to provide appropriate listener responses, but it only offers
+textual understanding over long ranges.  In CSU, we use
+                                                            non-verbal motion feedback and cannot generate speaker
+voice activity signals and context features to understand the
+                                                               responses. In real conversations, each participant’s response
+various states (interruption, feedback, pause, etc.) that exist
+                                                          should integrate the behaviors of both parties and possess
+in actual conversations. These serve as conditions for the
+                                                                the ability to both speak and listen. Thus, single-role gener-
+final progressive motion prediction. Extensive experiments
+                                                                 ation cannot fully simulate behaviors in conversations.
+have verified the effectiveness of our model. The Homepage
+is https://jinyugy21.github.io/ARIG/.               Recently, some works [19, 26, 28, 29, 36, 38] have
+                                                               studied the interactive head generation (IHG), as shown in
+                                                                  Fig. 1. Suppose the conversation between a user and a vir-
+1. Introduction                                                 tual agent, IHG generates interactive head responses for the
+                                                            agent by utilizing available information from both parties.
+Face-to-face communication is a common human activity       Initially, early works (Fig. 1a) such as MRecGen [29] and
+around us [31]. Research on head generation makes it pos-     [19] model the conversation as a multi-turn mode and only
+sible for virtual agents to become communication partici-     generate the agent’s speaker response based on the user’s
+pants.  Early works focus on single-role generation (talk-     speaking behavior in the last turn. Then, methods (Fig. 1b)
+ing/listening). In talking head generation, the input signal      in [36], DIM [26] and AgentAvatar [28] can generate in-
+comes only from the speaker himself and does not receive      teractive responses of both speakers and listeners. How-
+signals from the other participant for interaction. The listen-      ever, they have to assign explicit roles (speaker/listener)
+ing head generation receives signals from both participants      for the agent and switch between two respective genera-
+   *Equal Contribution                                                     tors.  Conversations involve more complex states beyond
+   †Corresponding Author                                            speaker/listener alternation (e.g. interruption, pause, giv-
+
+
+
+                                                     12956ing verbal feedback), requiring immediate and smooth role     ing module (IBU). Considering the learning difficulties and
+switching, and sometimes even both parties play the same     time costs of excessive long-range information, we first ef-
+role, which is difficult to achieve with explicit role switch-      fectively summarizes dual-modal dual-track interaction by
+ing. To solve this, in Fig. 1c, INFP [38] uses a unified gen-      bidirectional-integrated learning within a short chunk, and
+erator to switch roles implicitly and dynamically. Although     perform contextual understanding over a long range. To
+its inference speed is ideal, it is a clip-wise paradigm that     comprehensively learn complex conversation states, we
+inputs two fixed-length clips (T∼T + n) of audio and output     design a conversation states understanding module (CSU),
+motions within T∼T + n. At time T, since the signal about     which combines the voice activity signal and the contex-
+the future T +n cannot be acquired, the model must wait      tual feature of IBU module to learn current conversation
+until the audio is acquired at T +n and then forms a clip      states. Finally, we conduct a progressive motion prediction
+to generate the motion at T, which will cause a delay of at    (PMP) conditioned on context, conversation states, and au-
+least one clip, making real-time generation difficult.             dio, combining past motions to generate final motions.
+   Besides, for interaction realism, the clip-wise paradigm        In summary, this paper has the following contributions:
+limits the visible range to short clips. Without long context,      • We propose a novel frame-wise generation framework
+it may misinterpret the logic of statements and the person’s       based on continuous AR with diffusion probability mod-
+intent, resulting in unreasonable motions. Moreover, its in-        eling, which formulates the real-time paradigm of inter-
+put in motion guider contains only audio without visual in-        active head generation with higher motion fidelity.
+formation, which may not be sufficient to fully represent the      • We design an IBU module to learn the contextual interac-
+behavior of a conversation participant, who may interact in         tion, which effectively summarize dual-track dual-modal
+many non-audio ways such as frowning and nodding.              signals of short range via bidirectional-integrated learn-
+                                                                      ing, and capture contextual information over a long range.  To solve these problems, we propose a novel frame-
+                                                                          • We analyze the complex states in real-world conversa-work called ARIG based on AutoRegression to redefine
+                                                                     tions in more detail, and design a CSU module to learnthe Interaction Generation paradigm which is real-time and
+                                                                  the state feature to guide the motion generation.has better interaction realism.  For real-time generation,
+                                                                          • Extensive experiments demonstrate that our method haswe design a frame-wise generation framework (Fig. 1d)
+                                                                       significant improvements in real-time realistic interactivewhich generates the T-th frame promptly in an autoregres-
+                                                         head generation as well as single-role generation, and wesive (AR) manner based on previous T-1 frames, which can
+                                                              provide the full effects in the Supplementary Video.respond in time, without future clip being available. We
+implement it with a continuous non-quantized AR, enjoy-
+                                                          2. Related Working the advantages of sequential processing and more ac-
+curate motion representation. For better interaction real-     2.1. Single-role Head Generation
+ism, we emphasize the impact of contextual semantics by     Talking head generation (THG):  Audio-driven THG is
+combining long- and short-range features in AR sequences      to generate the speaking video with verbal-motions given
+and integrate dual-track (user and agent) dual-modal (audio      driving audio and a reference face image.  Some meth-
+and visual motion) signals to understand interactive behav-     ods [11, 25, 34] realize head animations by fine-tuning the
+iors. Furthermore, we analyze complex conversion states      pre-trained diffusion models.  Hallo[30] uses a hierarchi-
+(interrupted, feedback, wait, overlap, pause, etc.), noting      cal audio-driven visual synthesis module to enhance pre-
+that even with the same audio, the motions differ in differ-      cision and EchoMimic[2] combines both audios and fa-
+ent states. For example, for “wow it’s amazing to...”, in a      cial landmarks.  In general, THG receives audios solely
+normal speaking state, one might widen eyes to express ex-     from the speaker’s side, and focuses on audio-lip sync and
+clamation, while in a state of giving feedback to the other     expression-audio alignment for talking generation.
+party, nodding may be performed as approval.  Thus, we     Listening head generation (LHG): LHG is to generate
+learn the state features as a guide for motion generation.          listener responses synchronized with the speaker based on
+   Specifically, to achieve real-time frame-wise genera-      the speaker’s audio and motions, as well as the listener’s
+tion with higher fidelity, we model the framework as non-    own past motions. Some works, such as RLHG [35], PCH
+quantized autoregression (AR) for continuous-valued pre-      [9], L2L [17], ELP [23], and MFR-Net [14] generate head
+dictions.  Unlike conventional AR motion modeling that     motions based on 3D face coefficients, and CustomListener
+predicts discrete and finite codebook indices, we use a dif-     [15] further control motions through a text-prior guidance.
+fusion procedure to model the probability distribution of   LHG provides non-verbal responses synchronized with the
+motion, enabling the prediction of continuous values to re-      speaker, but cannot produce verbal motions.
+duce deviation of discretization and better reproduce micro-     2.2. Interactive Head Generation (IHG)
+expressions.  To better understand the contextual in-     In IHG, some works [10, 18, 24, 31] have studied person-
+teraction, we design an interactive behavior understand-      specific generation.  For generalized arbitrary identities,
+
+
+
+                                                     12957Figure 2. Overall framework of ARIG. Given the previous frame’s audio and motion AuT−1, MT−1,a MT−1u   along with the current audio
+AaT , IBU first effectively uses dual-track dual-modal signals to perform bidirectional-integrated learning over short ranges and contextual
+understanding over long ranges, obtaining a contextual interaction summary (cis-token). Then, CSU combines voice activity and cis-token
+to predict state features. Finally, PMP progressively predicts motions and uses the DiffusionMLP to sample the final motion.
+
+MRecGen [29] and [19] process the conversation as a multi-      the codebook indices. However, discrete VQ is not as accu-
+turn pattern and generate the agent’s speaker response based      rate as continuous values in representing detailed motions
+on the user’s speaking behavior in the last turn, without the     and is sensitive to gradient estimation [12, 21, 27].  Re-
+generation of synchronous listener behavior. Then, some      cently, some works [4, 13] study non-VQ AR in continuous-
+works [26, 28, 36] achieve both the role of speaker and     valued space.  Inspired by this, we model the per-motion
+listener. Zhou et al. [36] utilizes two independent gener-      probability using a diffusion procedure instead of discrete
+ators and switch generators through a role switcher net-      categorical distribution.  which enjoys both the sequence
+work. DIM [26] uses the pretraining strategy to encode a     processing ability of AR and the accuracy of continuous
+unified representation of both roles and adapts to the single      values. Note that although [18] integrates diffusion in AR,
+role by downstream masking and fine-tuning. AgentAvatar        it merely concatenates VQ and diffusion and does not uni-
+[28] designs prompts to produce detailed motion descrip-     formly model motion as a diffusion distribution, and its dif-
+tions through LLMs, which are then processed into motion     fusion input remains in clip form instead of frame by frame.
+token sequences, and further generate the final animations
+via rendering. Although they can generate both roles, they     3. Method
+need explicit role pre-assignment to match respective gen-
+                                                               3.1. Overview
+erators, which is not smooth enough when switching im-
+mediately and cannot adapt to situations where both parties     In our ARIG framework, we integrate the dual-modal (i.e.
+have the same role. Furthermore, INFP [38] uses a unified     audio and visual motion) signals from dual-track (i.e. user
+generator to learn the dynamic state, without explicit role     and agent) to generate the agent’s motions frame by frame.
+assignments. However, its clip-wise paradigm makes it dif-   We use motion coefficients extracted by [8] to represent
+ficult to achieve real-time generation, and learning based on     head motions, which include expression, pose, and scale
+a short clip and only audio signals limits its understanding     information, and use optical-flow based generation [8] to
+of long-range contextual information and the overall behav-     obtain videos. Let M ta and M tu represent the agent’s and
+ior of both parties. For our ARIG, we propose a real-time      user’s motions at time t, and Aat and Aut represent their au-
+frame-wise paradigm, and introduce long range understand-      dios. When generating the T-th frame, the audio and mo-
+ing based on dual-modal inputs to achieve better interaction.      tions of the user and agent in previous T-1 frames, as well as
+                                                                the agent’s audio at current T are available. They are used
+2.3. Autoregressive Motion Generation                                                          a
+                                                              as input to generate the agent’s motion M T . This processAutoregressive (AR) models have the nature of “predict-
+                                                        can be formulated as:ing next tokens based on known ones” [13]. Influenced by
+the discrete vocabulary of language models, common AR          a                            a       u                            M T = ARIG Aa0∼T , Au0∼T−1, M0∼T−1, M0∼T−1    (1)
+Motion Generation pre-trains a discrete-valued tokenizer,
+which involves a finite codebook obtained by vector quanti-     In our AR process, each update involves data at T −1 and
+zation (VQ) [24, 37], and then learn the correlation between     T, while the historical data has been selectively utilized,
+
+
+
+                                                    12958transformed into model features, and cached.  Therefore,     can obtain audio-visual behaviors IaT−1 and IuT−1 based on
+the actual process can be reformulated as:                       the updated AuT−1, MT−1,a MT−1u  and the historical AaT−1.
+                                                       Short-range understanding  We first divide the time into
+    M Ta = ARIG AaT , AuT−1, MT−1,a MT−1u          (2)     chunks of window size c, i.e., each chunk corresponds to
+                                                            c frames. For t-th frame, the index of the corresponding
+  The overview of our framework is shown in Fig. 2. First,
+                                                     chunk is i = ⌊t/c⌋, and the frame range corresponding to
+in IBU, we merge audio and motion and perform contex-
+                                                         each chunk is [ci, c(i + 1)), where ⌊·⌋is the floor operation.
+tual understanding via the long-short combination.  We
+                                        We use 2 chunk caches for 2 parties to store the frame-level
+first divide time into short-range chunks of window size c,
+                                                               audio-visual behaviors of the latest chunk and dynamically
+and learn the mutual interaction behavior within the chunk
+                                                          update them with a sliding window, which are the behav-
+by the bidirectional-integrated structure and obtain a sin-
+                                                                      ior sets of the user and the agent for subsequent interaction
+gle summary. Then we understand contextual behaviors in
+                                                            understanding via bidirectional-integrated learning.
+a long range. The context is composed of chunk’s com-
+                                                                 In bidirectional learning, we first consider the user and
+pressed interaction summary, which provides a more con-
+                                                                the agent as independent individuals, understand their own
+cise and clearer perspective, and effectively increases the
+                                                             information based on the audio updated at time T, and ex-
+information capacity of the long range. In CSU, we first ob-
+                                                       change information between each other through the atten-
+tain the current voice activity signals of both parties through
+                                                                   tion mechanism. This is inspired by the way MMDiT [6]
+VAD, and then learn the current state representations from
+                                                            handles text and image modalities.  In each independent
+both voice activity signals and semantics of IBU. Then in
+                                                              channel, we use the modulation mechanism composed of
+PMP, we first predict a coarse motion based on the audio
+                                                              adaptive LayerNorm and Linear layer to learn their own be-
+and then refine it with state, context, and audio for fine-
+                                                                  havior, and use the shared attention mechanism to supple-
+grained adjustment. We use temporal layers to ensure inter-
+                                                    ment respective understanding with the other party’s infor-
+frame continuity, and finally predict motions in continuous
+                                                            mation. Then, in integrated learning, we concatenate the
+space by modeling diffusion distributions in DiffusionMLP.
+                                                                dual-track output and integrate the two parties’ behavior
+3.2. Interactive Behavior Understanding Module       understanding to summarize the interaction in the current
+                                                          chunk. We also use a modulation mechanism to inject up-
+In this IBU module, we focus mainly on how to effectively
+                                                            dated audio, so as to enhance the information fusion for in-
+utilize dual-modal (audio and visual-motion) information
+                                                                   teraction understanding conditioned on audio. We use the
+from dual-track (user and agent) participants to understand
+                                                                     parallel Attention-MLP [3] to improve efficiency.  In this
+interactive behaviors. In general, we adopt a combination
+                                                        way, we effectively achieve the cooperation of the five types
+of long and short ranges. Understanding long-range context
+                                                              of signals, including dual-track dual-modal information in
+is crucial for better capturing contextual semantic informa-
+                                                                the cache and the updated audio, so that they can fully un-
+tion; otherwise, the agent might fail to grasp the tone of a
+                                                             derstand the information between each other and obtain the
+character, misunderstand the logical relationships between
+                                                                   interaction summary. Then we use a linear layer to com-
+sentences, or misinterpret a person’s intent based solely on
+                                                               press it and put it into the long-range context cache.
+short audio snippets. However, excessive information over
+                                                    Long-range understanding  We store the summary of
+long ranges can lead to computational cost and memory
+                                                         each chunk in a context cache with a capacity w. Contextual
+usage.  Besides, learning independent, scattered informa-
+                                                            understanding is achieved through a decoder-only structure
+tion frame by frame also poses challenges for effective un-
+                                                          with the causal mask, obtaining the final contextual interac-
+derstanding. Therefore, we first summarize the interaction
+                                                                   tion summary (cis-token). Note that when the frames in the
+information within a short period of time, and then con-
+                                                     chunk cache do not completely belong to the current chunk
+duct long-range learning based on the short-range summary.
+                                                                                       i, that is, when the frames of the current chunk i are in-
+This can effectively condense information to improve effi-
+                                                                        sufficient, we will refresh the summary of the chunk i in the
+ciency, and using short chunks as units can help the content
+                                                              context cache instead of putting in new ones until the frames
+understanding from a more concise and clear perspective.
+                                                           corresponding to the chunk i are sufficient over time. More
+   For dual-modal input, we believe that only by combin-
+                                                                   structure details of the IBU are shown in Appendix A.1.
+ing audio and visual motions can we accurately represent
+a person’s behavior. For example, silence with a frown or     3.3. Conversation States Understanding Module
+an angry tone without obvious expression are both negative     In this section, we first analyze the various conversational
+behaviors, and focusing on a single modality may lead to      states of the agent in detail and further design a conversa-
+misunderstandings. So we first use an MLP-based merge      tional state understanding module (CSU) to obtain a state
+block to combine the information of the two modalities     guidance for motion generation.
+to form a comprehensive audio-visual behavior for each      As shown in Fig. 3, besides the regular speaking and
+frame. Specifically at the generation of the T-th frame, we      listening, the agent encounters more complex states, such
+
+
+
+                                                     12959as receiving feedback (“wow”, “it’s amazing”, etc.) while
+speaking, pausing to think about what to say next, being in-
+terrupted, waiting during the other’s pause, or giving feed-
+back while listening. Even with the same audio, the motions
+differ in different states. For example, given a silent audio,
+if the state is “pause to think”, it may display a thoughtful
+expression with its eyes slightly tilted to one side.  If the
+state is “wait during a pause”, it may keep previous motions
+to patiently wait for the next speech. Thus, state prediction
+can guide motions, creating an explicit correlation with mo-
+tions of similar states to enable more discriminative feature
+learning, so as to enhance facial expressiveness.
+   Specifically, we combine audio signals and contextual
+interaction summary (cis-token) to predict the states classi-
+                                                                  Figure 3. Illustration of agent’s conversational state. In addition to
+fied into seven categories. We first use a pre-trained Voice
+                                                                        regular speaking/listening, it also includes many complex states,
+Activity Detector (VAD)1 to predict whether the current                                                           which are classified according to the voice activity detection.
+frame of agent’s and user’s audio are silent/active based on a
+segment of audio. These 0/1 signals can roughly divide the     combinations may reduce facial expressiveness, so we con-
+state into four categories, as shown in Fig. 3. Then we em-      tinue to model them in a continuous, non-quantized form.
+bed VAD signals into vectors which together with cis-token        Following [4, 13], to achieve continuous non-quantized
+constitute the state condition for specific state prediction.      AR, we use the diffusion procedure to represent the proba-
+  As shown in the upper right part of Fig. 2, we encode      bility distribution p(M Ta | z) of the sampler, and the metric
+the state index sT −1 into a vector as the query, let the state      loss can be formulated as a denoising criterion:
+condition be the key and the value, and obtain the state la-
+                                                                           a        h           atent feature ST through the cross attention mechanism. The            L(z, MT ) = Eε,t ∥ε −εθ (M T t | t, z)∥2i     (3)
+state category index sT  is obtained by SoftMax operation
+                                                     where εθ is the noise estimator to serve as the motion sam-on ST , and we use the cross-entropy loss to constrain the
+                                                                          pler, which is a MLP network parameterized by θ withlatent state feature ST . Then we update sT −1 to prepare for
+                                           AdaLN to inject the condition z. ε is a Gaussian noise sam-the next frame prediction. The latent state feature ST is then
+                                                            pled from N(0, I), t is a time step. Let ¯αt denote a noiseinput into the following PMP module as a state guidance.
+                                                              schedule, σt denote the noise level, then M Ta is sequentially
+3.4. Progressive Motion Prediction Module             denoised by :
+
+After      obtaining                the cis-token                         and                                      state                                           features,                                                 the                                 PMP                                                              1                                                                                                   a
+module         in this section                      focuses                          on                         how to                                                 utilize                                        them                                                             ef-  M Ta t−1 =                                  M Ta t −1 −αt εθ (M T                                                    √αt       √1 −¯αt           t | t, z) + σtε
+fectively to generate motions. First, we predict the coarse-                                                                                                                             (4)
+grained motion outline based on the previous motion M T−1,a      The detailed model structures are shown in Appendix A.1.
+conditioned on the updated audio in the historical cache.
+Subsequently, we preform the fine-grained prediction based     4. Experiments
+on cis-token, state, and the latest audio features, and ensure
+the inter-frame continuity through the temporal layer. The     4.1. Experimental Settings
+output is represented as latent z.                                                          Datasets  For training data, we first use MultiDialog[19]
+   For the latent z ∈Rr produced by AR process, the fi-                                                      and ViCo[35] for training in regular talking and listening
+nal M Ta  is obtained by the sampler with the distribution      scenarios, respectively. Then we use RealTalk[7] for di-
+M Ta ∼p(M Ta | z).  Conceptually, for common discretely     verse interactive scenario training. In order to ensure data
+quantized AR, M Ta is the index of a codebook with the size      quality, we carry out several-step data cleaning, removing
+N, and the sampler is a N-classifier which is performed                                                              data with fast camera movements and insufficient effective
+by a Softmax operation with categorical probability distri-                                                                      facial regions, ultimately retaining more than 200 hours of
+bution, and the cross-entropy is used to calculate the loss.                                                                    data.  Then, we extract motions by [8] and extract audio
+However, M a include keypoints coordinates of optical flow                                                                  features from a pretrained feature extractor Wav2Vec2[1].
+within 0 ∼1, where even small shifts can affect facial mo-                                                           Furthermore, to learn conversational states, we conduct ad-
+tions, and micro-expressions are crucial for conveying in-                                                                    ditional state annotations on the training dataset.
+formation.  Thus, compressing these coordinates into N
+                                                     Implementation Details  We divide frames at 25fps, with
+   1https://github.com/wiseman/py-webrtcvad                        each frame corresponding to 40ms. The values are c = 6,
+
+
+
+                                                     12960Figure 4. Visual results of our method on RealTalk[7] dataset. The two shown scenarios involves regular speaking/listening, and complex
+states such as interruptions, feedback, and pauses for thinking. Our method can generate highly realistic and natural agent videos in
+complex conversational scenarios.
+
+w = 512, h = 6. The inference fps of the generation pro-     speech input), our model employs contextual understanding
+cess is 31, which meets the real-time requirements. We use     and state learning to interpret the current pause as an inten-
+AdamW optimizer [16] to train our model, and the base      tion to continue speaking, thereby generating motions that
+learning rate is set to 1e−4. The diffusion step during in-      exhibit a “thinking” expression, resulting in a very natural
+ference is 15. The videos are generated by calculating the     and smooth conversational performance.
+optical flow relative to the reference image and warping ap-    Comparisons  In Figure 5, we present qualitative compar-
+pearance features using the method in [8]. More details are     isons with DIM [26] and INFP[38] conditioned on the same
+shown in Appendix A.2.                                       reference image and the same audios. Since INFP[38] is not
+                                                             open-source, we directly utilize two videos from the web-
+4.2. Interactive Head Generation
+                                                                           site of INFP[38] for visual comparison. Due to the lack of
+4.2.1. Qualitative Results                                                                the ground-truth user videos, we first generate talking head
+Visual Results  We present the visual results generated     videos based on the given user audio as the user video input
+by our method in two complex conversation scenarios in      to our model, and then generate agent motions.  It can be
+Figure 4, which, in addition to regular speaking/listening,     seen that the agent videos generated by our method exhibit
+also involve complex states such as interruptions, feedback,    more realistic and diverse facial expressions in both speak-
+and pauses for thinking.  Given the reference image, the     ing and listening. For speaking, when pronouncing some
+user’s video frames, and the dual-track audio (user’s audio      specific words (e.g. “Yes”, “Mm-hmm”, “wow”, “about”,
+and agent’s audio), our method can generate realistic and     “Yeah”, “Or” and “whatever”), the lip movements gener-
+reasonable agent motion for different conversation content.     ated by ours are more accurate and natural. For listening,
+Specifically, in the first example, we can see that the gen-     our generated agent can display a natural “curious” expres-
+erated agent exhibits natural transitions when interrupted     sion when the user says “I mean”, demonstrating the advan-
+by the user.  This can be attributed to our designs of the     tages of our method in generating highly natural and realis-
+conversational state and the strong contextual understand-       tic facial motions compared to other methods. In contrast,
+ing between two parties.  Additionally, the agent motions    DIM[26] suffers from ill-timed and inaccurate responses,
+can fluctuate naturally in response to the user’s behavior,     and INFP[38] suffers from unnatural facial expressions (e.g.
+such as smiling, demonstrating the benefits of incorporat-     suboptimal lip movements and disordered eye gaze). More
+ing the user’s visual information. In the second example,     comparisons with DIM are in Appendix C.1. The full gen-
+when both parties in the conversation are silent (i.e., no      erated videos can be found in our supplementary video.
+
+
+
+                                                    12961                      Methods          RPCC ↓  CSIM ↑   SyncScore ↑  PSNR ↑   SSIM ↑   FID ↓   SID↑    Var↑
+                DIM [26]               0.186      0.843        4.192        21.31     0.573    26.29   1.083   1.206
+                  GT                  0.000      0.964        7.322      N/A      1.000    0.000   2.902   2.514
+                        Ours                 0.125      0.901        7.218        29.67     0.827    21.64   2.428   2.397
+
+                w/o long-range context         0.140      0.885        7.128        27.09     0.803    24.68   2.381   2.326
+            w/o conversational state guidance     0.127      0.892        6.973        28.14     0.816    22.96   2.263   2.174
+              w/o visual modality in IBU       0.155      0.853        7.197        27.38     0.812    22.34   2.115   2.032
+
+
+Table 1. Quantitative comparisons on RealTalk[7]. Bold represents the best. The ↑indicates higher is better, the ↓indicates lower is better.
+
+
+                                                                FD ↓     RPCC ↓      SID↑        Var↑
+                                                                    Methods
+                                                                                   exp   pose   exp   pose   exp   pose   exp   pose
+                                                         RLHG∗[35]  39.02   0.07   0.08   0.02   3.62   3.17   1.52   0.02
+                                                                L2L∗[17]   33.93   0.06   0.06   0.08   2.77   2.66   0.83   0.02
+                                                             DIM∗[26]   23.88   0.06   0.06   0.03   3.71   2.35   1.53   0.02
+                                                                 INFP∗[38]   18.63   0.07     -        -    4.78   3.92   2.83   0.18
+                                                                       Ours      18.39   0.06   0.05   0.01   4.82   3.94   2.91   0.17
+
+                                                                  Table 2.  Quantitative results with state-of-the-art listening head
+                                                                    generation methods on ViCo[35] dataset. ∗denotes the results are
+                                                                         inherited from DIM[26] and INFP[38].
+Figure 5. Qualitative comparisons with DIM[26] and INFP[38].
+The two sample videos are from the DyConv dataset proposed by          Method    PSNR ↑  SSIM ↑  FID ↓  CSIM ↑  SyncScore ↑
+INFP[38], which is not open-sourced, thus lacking ground truth.          SadTalker[32]    25.65    0.786   23.46   0.821      6.792
+                                                                               Hallo[30]      28.32    0.801   21.77   0.860      7.116
+                                                                    EchoMimic[2]   28.65    0.805   20.91   0.862      7.382
+4.2.2. Quantitative Results                                           Ours        28.63    0.806   18.32   0.876      7.424
+
+Metrics  We evaluate our proposed methods from five as-                                                                  Table 3. Quantitative results with state-of-the-art talking head gen-
+pects, including motion synchronization between conversa-      eration methods on HDTF[33] dataset.
+tion partners, identity preservation, lip-sync performance,
+video realism and motion diversity. For motion synchro-      tion ability, which can be attributed to the effective mod-
+nization, we utilize Residual Pearson Correlation Coeffi-      eling and understanding of interactive behavior between
+cient (RPCC) to measure the correlation between the user      the user and the agent.  Additionally, the SyncScore [20]
+motions and the agent motions. For identity preservation,     of our method outperforms DIM[26] by a large margin,
+we employ CSIM to calculate the the cosine similarity of     which benefits from the introduction of the conversational
+identity features between the reference image and the gener-      state as well as the well-designed PMP module.  Further-
+ated video. For lip-sync performance, we utilize SyncScore     more, compared to DIM[26], our proposed method exhibits
+[20] to measure the lip-sync accuracy in generated videos.     higher SID and Var, showing great advantages in terms of
+For video realism, we utilize Peak Signal-to-Noise Ratio     motion diversity.  For video realism, our method has the
+(PSNR) and Structural Similarity (SSIM) to measure the      best performance in PSNR, SSIM and FID, which demon-
+pixel-level similarity between the generated video frames      strates that the motions generated by our model are closest
+and ground-truth video frames, and adopt Frechet Inception      to the ground-truth motions. Although identity preservation
+Distance (FID) to measure the feature-level difference be-       is not our main focus, we still achieve some performance
+tween them. For motion diversity, we employ SI[17] for     improvement in CSIM.
+Diversity (SID) and Variance (Var).                                                               4.3. Single-role Head Generation
+Comparisons  As our method  is not a 3DMM-based
+                                                              In addition  to dyadic  interactive head generation,  our
+method, we first extract 70-dim 3DMM coefficients (64-
+                                                    method can be directly applied to single-role head genera-
+dim for expression and 6-dim for pose) from our gener-
+                                                                        tion, such as listening head generation and talking head gen-
+ated videos by a pretrained deep 3D face reconstruction
+                                                                     eration, without additional fine-tuning. To further validate
+method[5], and then use them for the evaluation of RPCC,
+                                                                the superiority of our proposed method, in the following, we
+SID and Var. Since INFP[38] is not open-source, we only
+                                                                   will compare our method with the state-of-the-art listening
+retrained DIM[26] on our dataset and present the quantita-
+                                                       head generation and talking head generation methods.
+tive comparisons between our method and DIM[26] in Ta-
+                                                                     4.3.1. Listening Head Generationble 1. It can be seen that our method outperforms DIM[26]
+across multiple aspects. For example, our method achieves     Following DIM[26], we utilize Frechet Distance (FD) to
+the lowest RPCC, indicating superior motion synchroniza-      evaluate motion realism of the generated listener, RPCC for
+
+
+
+                                                    12962                                                             Additional  ablation  for  continuous AR modeling and
+                                                                   bidirectional-integrated learning are in Appendix B.1.
+
+                                                    Long-range Context  We utilize long-range context in
+                                              IBU module for more comprehensive contextual informa-
+                                                                   tion understanding. To validate its effectiveness, we set the
+                                                              capacity of context cache w as 4 in IBU and only consider
+                                                               short-range context (with a length of 1s, refer to [28]). The
+                                                                   quantitative results are shown in Table 1.  Without long-
+                                                          range context, the RPCC worsened greatly, which validates
+                                                            long-range context is crucial for semantic understanding
+                                                      and thus has a significant effect on motion synchroniza-
+                                                                   tion between two parties in conversation. The qualitative
+                                                                      results are shown in Figure 6 (a). It can be seen that without
+Figure 6. Ablation study. (a) Ablation of long-range context. (b)     long-range context, the model may only consider the short-
+Ablation of conversational state. (c) Ablation of visual modality     range context (e.g. “I’m not that smart...”) and misunder-
+in the IBU module.                                             stand the contextual information. This can lead to incorrect
+                                                             feedback, such as mistakenly shifting the attitude from affir-motion synchronization, and SID and Var for motion diver-
+                                                        mation (e.g. smile) to disapproval (e.g. downturned mouth).sity. We present quantitative comparisions with the state-of-
+the-art listening head generation methods (e.g. RLHG[35],     Conversational State Guidance  To validate the effec-
+L2L[17], DIM[26] and INFP[38]) on ViCo[35] dataset in      tiveness of conversation state, we remove the CSU module
+Table 2. It can be obviously seen that our proposed method      in our framework. As shown in Table 1, without conver-
+has the lowest FD values for both expression and pose, in-      sation state, the SyncScore, FID, PSNR and SSIM are all
+dicating that our method can generate highly lifelike fa-     worsened, which validates that the conversation state is ca-
+cial and head movements, which validates the effectiveness     pable of providing a strong guidance for motion prediction
+of our structural design.  Furthermore, the RPCC of our     and making the generated motion more realistic and closer
+method outperforms other methods, which justifies the su-      to the ground truth. In Figure 6 (b), we can also see that the
+periority of our model in dyadic conversation modeling. For     conversation state can greatly enhance facial expressiveness
+SID and Var, our method also shows a great advantage com-      (e.g. wide-open eyes, more precise lip motion).
+pared to other SOTA methods, which further demonstrates                                                          Visual Modality  We remove the visual modality in the
+that the motions generated by our method is more natural                                              IBU module and only consider audio features. The abla-
+and realistic. For visual comparisons, please refer to our                                                                   tion results are shown in Table 1.  It can be seen that the
+Appendix C.3 and supplementary video.                                         RPCC increases significantly, indicating suboptimal motion
+4.3.2. Talking Head Generation                              synchronization without visual modality. The similar con-
+                                                               clusion can also be reflected in Figure 6 (c), with the incor-
+We choose several widely used metrics in talking head
+                                                              poration of visual modality, the agent’s facial motions can
+generation for evaluation (e.g. PSNR, SSIM, FID, CSIM
+                                                                    fluctuate naturally with the user’s motions (e.g. smile).
+and SyncScore [20]), and we compare our method with
+SadTalker [32], Hallo [30] and EchoMimic  [2].   Fol-
+                                                          5. Conclusion
+lowing INFP [38], we randomly selected 50 videos from
+HDTF [33] dataset as the test data. As shown in Table 3,     In this paper, we propose a frame-wise framework called
+our method achieves the best performance in metrics like    ARIG based on continuous non-VQ autoregression to real-
+SyncScore [20], CSIM and FID, showing great superior-      ize real-time and more realistic interactive head generation.
+ity in lip synchronization, identity preservation and feature-     In order to learn long-range contextual behavior, we de-
+level video quality. Moreover, although EchoMimic [2] is     sign the IBU module which summarizes short-chunk audio-
+grounded in Stable Diffusion (SD) v1.5 [22], our method      visual behaviors through Bidirectional-Integrated learning
+still has comparable performance with it on metrics related     and then aggregates them to achieve long-range understand-
+to image quality (e.g. PSNR and SSIM). Apart from quanti-      ing. To understand complex states of real-world conver-
+tative comparison, we also present detailed visual compar-      sations, CSU utilizes voice activity signals and long-range
+isons in Appendix C.2 and the supplementary video.            context to generate the state feature. In PMP, we progres-
+                                                                  sively predict motions and achieve more accurate continu-
+4.4. Ablation Study
+                                                        ous motion generation through diffusion probability model-
+In this section, we present ablation results of long-range     ing in the DiffusionMLP. Comprehensive experiments vali-
+context, conversational state and visual modality in IBU.     date the superiority of our proposed method.
+
+
+
+                                                    12963References                                                           codes. Advances in Neural Information Processing Systems,
+                                                                  35:26295–26308, 2022. 3
+ [1] Alexei Baevski, Yuhao Zhou, Abdelrahman Mohamed, and
+                                                                     [13] Tianhong Li, Yonglong Tian, He Li, Mingyang Deng, and
+     Michael Auli. wav2vec 2.0: A framework for self-supervised
+                                                              Kaiming He. Autoregressive image generation without vec-
+     learning of speech representations. Advances in neural infor-
+                                                                                    tor quantization. Advances in Neural Information Processing
+     mation processing systems, 33:12449–12460, 2020. 5
+                                                                         Systems, 37:56424–56445, 2025. 3, 5
+ [2] Zhiyuan Chen, Jiajiong Cao, Zhiquan Chen, Yuming Li,
+                                                                     [14] Jin Liu, Xi Wang, Xiaomeng Fu, Yesheng Chai, Cai Yu, Jiao
+     and Chenguang Ma. Echomimic: Lifelike audio-driven por-
+                                                                         Dai, and Jizhong Han.  Mfr-net: Multi-faceted responsive
+       trait animations through editable landmark conditions. arXiv
+                                                                                 listening head generation via denoising diffusion model. In
+     preprint arXiv:2407.08136, 2024. 2, 7, 8
+                                                                     Proceedings of the 31th ACM International Conference on
+ [3] Mostafa Dehghani, Josip Djolonga, Basil Mustafa, Piotr          Multimedia (MM’23), 2023. 2
+     Padlewski, Jonathan Heek, Justin Gilmer, Andreas Peter                                                                     [15] Xi Liu, Ying Guo, Cheng Zhen, Tong Li, Yingying Ao, and
+      Steiner, Mathilde Caron, Robert Geirhos, Ibrahim Alabdul-                                                                       Pengfei Yan. Customlistener: Text-guided responsive inter-
+     mohsin, et al. Scaling vision transformers to 22 billion pa-                                                                            action for user-friendly listening head generation.  In Pro-
+     rameters. In International Conference on Machine Learning,                                                                       ceedings of the IEEE/CVF Conference on Computer Vision
+     pages 7480–7512. PMLR, 2023. 4                                                              and Pattern Recognition, pages 2415–2424, 2024. 2
+ [4] Haoge Deng, Ting Pan, Haiwen Diao, Zhengxiong Luo,                                                                     [16] Ilya Loshchilov and Frank Hutter. Decoupled weight decay
+     Yufeng Cui, Huchuan Lu, Shiguang Shan, Yonggang Qi,                                                                                 regularization. arXiv preprint arXiv:1711.05101, 2017. 6
+     and Xinlong Wang. Autoregressive video generation with-
+                                                                     [17] Evonne Ng, Hanbyul Joo, Liwen Hu, Hao Li, Trevor Dar-
+     out vector quantization.  arXiv preprint arXiv:2412.14169,
+                                                                                                  rell, Angjoo Kanazawa, and Shiry Ginosar. Learning to lis-
+     2024. 3, 5
+                                                                                   ten: Modeling non-deterministic dyadic facial motion.  In
+ [5] Yu Deng, Jiaolong Yang, Sicheng Xu, Dong Chen, Yunde                                                                     Proceedings of the IEEE/CVF Conference on Computer Vi-
+       Jia, and Xin Tong.  Accurate 3d face reconstruction with                                                                           sion and Pattern Recognition (CVPR), pages 20395–20405,
+     weakly-supervised learning: From single image to image set.                                                                     2022. 2, 7, 8
+     In Proceedings of the IEEE/CVF conference on computer vi-
+                                                                     [18] Evonne Ng, Javier Romero, Timur Bagautdinov, Shaojie Bai,
+     sion and pattern recognition workshops, pages 0–0, 2019.
+                                                                       Trevor Darrell, Angjoo Kanazawa, and Alexander Richard.
+    7
+                                                         From audio to photoreal embodiment: Synthesizing humans
+ [6] Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim            in conversations. In Proceedings of the IEEE/CVF Confer-
+      Entezari, Jonas M¨uller, Harry Saini, Yam Levi, Dominik          ence on Computer Vision and Pattern Recognition, pages
+     Lorenz, Axel Sauer, Frederic Boesel, et al.  Scaling recti-          1001–1010, 2024. 2, 3
+      fied flow transformers for high-resolution image synthesis.                                                                     [19] Se Jin Park, Chae Won Kim, Hyeongseop Rha, Minsu Kim,
+     In Forty-first international conference on machine learning,                                                                   Joanna Hong, Jeong Hun Yeo, and Yong Man Ro. Let’s go
+     2024. 4                                                                                   real talk: Spoken dialogue model for face-to-face conversa-
+ [7] Scott Geng, Revant Teotia, Purva Tendulkar, Sachit Menon,             tion. arXiv preprint arXiv:2406.07867, 2024. 1, 3, 5
+     and Carl Vondrick.  Affective faces for goal-driven dyadic                                                                     [20] KR Prajwal, Rudrabha Mukhopadhyay, Vinay P Nambood-
+     communication. arXiv preprint arXiv:2301.10939, 2023. 5,                                                                                                             iri, and CV Jawahar. A lip sync expert is all you need for
+      6, 7                                                                     speech to lip generation in the wild. In Proceedings of the
+ [8] Jianzhu Guo, Dingyun Zhang, Xiaoqiang Liu, Zhizhou           28th ACM international conference on multimedia, pages
+     Zhong, Yuan Zhang, Pengfei Wan, and Di Zhang. Livepor-          484–492, 2020. 7, 8
+       trait: Efficient portrait animation with stitching and retarget-                                                                     [21] Aditya Ramesh, Mikhail Pavlov, Gabriel Goh, Scott Gray,
+     ing control. arXiv preprint arXiv:2407.03168, 2024.  3, 5,                                                                     Chelsea Voss, Alec Radford, Mark Chen, and Ilya Sutskever.
+    6                                                                        Zero-shot text-to-image generation. In International confer-
+ [9] Ailin Huang, Zhewei Huang, and Shuchang Zhou. Percep-          ence on machine learning, pages 8821–8831. Pmlr, 2021. 3
+      tual conversational head generation with regularized driver      [22] Robin Rombach, Andreas Blattmann, Dominik Lorenz,
+     and enhanced renderer. In Proceedings of the 30th ACM In-            Patrick Esser, and Bj¨orn Ommer.  High-resolution image
+     ternational Conference on Multimedia (MM’22), 2022. 2               synthesis with latent diffusion models.  In Proceedings of
+[10] Yinghao Huang, Leo Ho, Dafei Qin, Mingyi Shi, and Taku            the IEEE/CVF conference on computer vision and pattern
+    Komura.  Interact: Capture and modelling of realistic, ex-            recognition, pages 10684–10695, 2022. 8
+     pressive and interactive activities between two persons in      [23] Luchuan Song, Guojun Yin, Zhenchao Jin, Xiaoyi Dong,
+      daily scenarios. arXiv preprint arXiv:2405.11690, 2024. 2           and Chenliang Xu. Emotional listener portrait: Neural lis-
+[11] Jianwen Jiang, Chao Liang, Jiaqi Yang, Gaojie Lin, Tianyun            tener head generation with emotion. In Proceedings of the
+     Zhong, and Yanbo Zheng.  Loopy: Taming audio-driven         IEEE/CVF International Conference on Computer Vision
+      portrait avatar with long-term motion dependency.  arXiv          (ICCV), pages 20839–20849, 2023. 2
+     preprint arXiv:2409.02634, 2024. 2                             [24] Mingze Sun, Chao Xu, Xinyu Jiang, Yang Liu, Baigui Sun,
+[12] Alexander Kolesnikov, Andr´e Susano Pinto, Lucas Beyer,          and Ruqi Huang. Beyond talking–generating holistic 3d hu-
+     Xiaohua Zhai, Jeremiah Harmsen, and Neil Houlsby. Uvim:        man dyadic motion for communication. International Jour-
+   A unified modeling approach for vision with learned guiding           nal of Computer Vision, pages 1–17, 2024. 2, 3
+
+
+
+                                                     12964[25] Linrui Tian, Qi Wang, Bang Zhang, and Liefeng Bo. Emo:            interactive head generation in dyadic conversations.  arXiv
+    Emote portrait alive generating expressive portrait videos            preprint arXiv:2412.04037, 2024. 1, 2, 3, 6, 7, 8
+     with audio2video diffusion model under weak conditions. In
+     European Conference on Computer Vision, pages 244–260.
+     Springer, 2024. 2
+[26] Minh Tran, Di Chang, Maksim Siniukov, and Mohammad
+     Soleymani. Dim: Dyadic interaction modeling for social be-
+     havior generation.  In European Conference on Computer
+      Vision, pages 484–503. Springer, 2024. 1, 3, 6, 7, 8
+[27] Aaron Van Den Oord, Oriol Vinyals, et al. Neural discrete
+     representation learning. Advances in neural information pro-
+     cessing systems, 30, 2017. 3
+[28] Duomin Wang, Bin Dai, Yu Deng, and Baoyuan Wang.
+     Agentavatar:   Disentangling  planning,  driving and  ren-
+     dering for photorealistic avatar agents.   arXiv preprint
+     arXiv:2311.17465, 2023. 1, 3, 8
+[29] Jiaqi Xu, Cheng Luo, Weicheng Xie, Linlin Shen, Xiaofeng
+     Liu, Lu Liu, Hatice Gunes, and Siyang Song.  Mrecgen:
+     Multimodal appropriate reaction generator.  arXiv preprint
+     arXiv:2307.02609, 2023. 1, 3
+[30] Mingwang Xu, Hui Li, Qingkun Su, Hanlin Shang, Liwei
+     Zhang, Ce Liu, Jingdong Wang, Yao Yao, and Siyu Zhu.
+     Hallo: Hierarchical audio-driven visual synthesis for portrait
+     image animation. arXiv preprint arXiv:2406.08801, 2024. 2,
+      7, 8
+[31] Yichao Yan, Zanwei Zhou, Zi Wang, Jingnan Gao, and Xi-
+     aokang Yang. Dialoguenerf: Towards realistic avatar face-
+      to-face conversation video generation. Visual Intelligence, 2
+      (1):24, 2024. 1, 2
+[32] Wenxuan Zhang, Xiaodong Cun, Xuan Wang, Yong Zhang,
+    Xi Shen, Yu Guo, Ying Shan, and Fei Wang.  Sadtalker:
+     Learning realistic 3d motion coefficients for stylized audio-
+     driven single image talking face animation. In Proceedings
+      of the IEEE/CVF conference on computer vision and pattern
+      recognition, pages 8652–8661, 2023. 7, 8
+[33] Zhimeng Zhang, Lincheng  Li, Yu Ding, and Changjie
+     Fan.  Flow-guided one-shot talking face generation with
+     a high-resolution audio-visual dataset.  In Proceedings of
+     the IEEE/CVF Conference on Computer Vision and Pattern
+     Recognition, pages 3661–3670, 2021. 7, 8
+[34] Longtao Zheng,  Yifan Zhang, Hanzhong Guo,  Jiachun
+     Pan, Zhenxiong Tan, Jiahao Lu, Chuanxin Tang, Bo An,
+     and Shuicheng Yan.  Memo:  Memory-guided diffusion
+      for expressive talking video generation.   arXiv preprint
+     arXiv:2412.04448, 2024. 2
+[35] Mohan Zhou, Yalong Bai, Wei Zhang, Ting Yao, Tiejun
+     Zhao, and Tao Mei. Responsive listening head generation:
+   A benchmark dataset and baseline.  In Proceedings of the
+     European conference on computer vision (ECCV), 2022. 2,
+      5, 7, 8
+[36] Mohan Zhou, Yalong Bai, Wei Zhang, Ting Yao, and Tiejun
+     Zhao.  Interactive conversational head generation.  arXiv
+     preprint arXiv:2307.02090, 2023. 1, 3
+[37] Zixiang Zhou, Yu Wan, and Baoyuan Wang. A unified frame-
+    work for multimodal, multi-part human motion synthesis.
+     arXiv preprint arXiv:2311.16471, 2023. 3
+[38] Yongming Zhu, Longhao Zhang, Zhengkun Rong, Tianshu
+     Hu, Shuang Liang, and Zhipeng Ge.  Infp: Audio-driven
+
+
+
+                                                     12965

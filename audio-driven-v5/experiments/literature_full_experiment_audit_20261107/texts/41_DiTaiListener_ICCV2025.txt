@@ -1,0 +1,794 @@
+           DiTaiListener: Controllable High Fidelity Listener Video Generation with
+                                          Diffusion
+
+
+                            Maksim Siniukov*   Di Chang*  Minh Tran
+                      Hongkun Gong   Ashutosh Chaubey  Mohammad Soleymani
+                                           University of Southern California
+                                          Los Angeles, USA
+                                         havent-invented.github.io/DiTaiListener
+                                               siniukov@usc.edu2025              Speaker Audio + Facial Motions           Customizable Listener Generation        Continuous Responses
+                                                                                                             for Longer Speaker
+
+
+                                                                                    “Relax demeanor,Apr                                                                  show agreement”
+5
+
+
+
+
+
+                                                                              “Happy with
+                                                                               a broad smile”[cs.CV]
+
+
+
+                                                                                  “Upturned
+                                                                                 Eyebrows”
+
+
+
+                                                                 DiTaiListener-Gen               DiTaiListener-Edit
+
+            Figure 1. We introduce DiTaiListener, a DiT-based listener generation model that synthesizes high-fidelity human portrait videos of listener
+             behaviors from speaker audio and facial motion inputs in an end-to-end manner. DiTaiListener-Gen generates customizable listener responses
+             in short segments, while DiTaiListener-Edit ensures seamless transitions between segments, producing continuous and natural listener
+             behaviors. Together, DiTaiListener supports user-friendly customizable listener behavior generation for variable speaker inputs.
+
+                          Abstract                        a Causal Temporal Multimodal Adapter (CTM-Adapter) to
+                                                                      process speakers’ auditory and visual cues. CTM-AdapterarXiv:2504.04010v1     Generating naturalistic and nuanced listener motions for ex-     integrates speakers’ input in a causal manner into the video
+           tended interactions remains an open problem. Existing meth-     generation process to ensure temporally coherent listener
+          ods often rely on low-dimensional motion codes for facial     responses. For long-form video generation, we introduce
+           behavior generation followed by photorealistic rendering,     DiTaiListener-Edit, a transition refinement video-to-video
+            limiting both visual fidelity and expressive richness. To ad-      diffusion model. The model fuses video segments into smooth
+            dress these challenges, we introduce DiTaiListener, powered     and continuous videos, ensuring temporal consistency in fa-
+          by a video diffusion model with multimodal conditions. Our      cial expressions and image quality when merging short video
+          approach first generates short segments of listener responses     segments produced by DiTaiListener-Gen. Quantitatively,
+           conditioned on the speaker’s speech and facial motions with     DiTaiListener achieves the state-of-the-art performance on
+           DiTaiListener-Gen.  It then refines the transitional frames     benchmark datasets in both photorealism (+73.8% in FID on
+            via DiTaiListener-Edit for a seamless transition. Specifically,     RealTalk) and motion representation (+6.1% in FD metric
+           DiTaiListener-Gen adapts a Diffusion Transformer (DiT) for    on VICO) spaces. User studies confirm the superior per-
+            the task of listener head portrait generation by introducing     formance of DiTaiListener, with the model being the clear
+                                                                        preference in terms of feedback, diversity, and smoothness,
+                 *Equally contributed as first authorsoutperforming competitors by a significant margin.             preceding speaker cues to predicted listener motions, improv-
+                                                            ing temporal coherence, in addition to long-term speaker
+                                                             audiovisual behavior encoders that gather context from up
+1. Introduction                                               to 10 seconds of speaker video. This architecture allows for
+                                                                 the generation of extended video sequences, including those
+Human behavior synthesis is an essential building block for                                                                    lasting minutes or more, via DiTaiListener-Edit, a temporal
+socially intelligent systems, with broad applications from                                                         frame-smoothing approach. Experimental evaluations show
+health to entertainment. Hence, audio-driven head motion                                                                       that DiTaiListener achieves state-of-the-art results in listener
+generation has received considerable attention due to its po-                                                           behavior synthesis according to both quantitative measures
+tential for generating engaging content [21, 36, 39, 40, 48,                                                      and human evaluations.
+53, 55, 59, 66, 77, 80]. A grand majority of work has focused
+                                                    Our main contributions can be summarized as follows.
+on speaker head generation [8, 35, 41, 51, 53, 58, 65, 66, 70,
+                                                                          • We propose an end-to-end listener generation model that
+73, 75, 77, 81] synthesizing speakers’ facial motions based
+                                                          can synthesize listener motions in pixel space and demon-
+on speech input, producing vivid lip synchronization yet
+                                                                         strate the potential of video generation methods for so-
+neglecting listeners’ nonverbal feedback or conversational
+                                                                       cially intelligent, coordinated, and controlled face and
+context. Coordinated and contextual listener behaviors are
+                                                         head gestures.
+essential to building a sense of rapport, a crucial element
+                                                                          • We introduce a causal temporal multimodal adapter (CTM-
+of human interpersonal communication with an impact on
+                                                           Adapter) that aligns listener motions with preceding au-
+interaction quality and trust [17]. Hence, Listening-head
+                                                                 diovisual speaker behaviors. This improves the temporal
+generation [32, 36, 39, 40, 48, 49, 55, 76, 79, 82] focuses
+                                                              consistency between speaker cues and the listener’s re-
+on coordinated listeners’ responses to speaker behaviors, yet
+                                                                sponses.
+typically restricts them to limited reactive facial movements
+                                                                          • Our model provides free-form text control to guide the
+in a limited temporal context, i.e., responding to immedi-
+                                                                         listener’s behaviors. Given emotional guidance and/or
+ate speaker behaviors with limited motions. While some
+                                                               dialog context, the model can produce listener reactions
+recent efforts [36, 55, 59, 80, 82] have begun exploring the
+                                                             according to the provided guidance.
+dyadic context in generating reactions, most continue to rely
+                                                                          • We develop a long-sequence video generation approach
+on motion tokenization rather than generating high-fidelity
+                                                           through frame smoothing with DiTaiListener-Edit for
+portraits with nuanced expressions and facial details.
+                                                                   variable-length listener videos.
+  We propose DiTaiListener, an end-to-end video diffusion-
+based listener head generation framework. Through exten-
+sive experiments, we study the potential of video genera-     2. Related Work
+tion models in learning nuanced and coordinated facial mo-
+                                                               2.1. Diffusion-based Portrait Generation
+tions that are well-timed, detailed, and controllable. While
+prior methods generate listener behaviors in a compact latent     Recent advances in Diffusion Probabilistic Models (DMs)
+space, e.g., 3D Morphable Models (3DMMs) or other motion      [25, 47, 50] have exhibited extraordinary performance in
+codes, and then render the face, inevitably losing detail and     a variety of generative tasks, such as image synthesis [46],
+expressiveness, we directly predict the listener’s behavior in     video generation [3], and multi-view rendering [20, 33, 34].
+a higher-fidelity video space through diffusion, offering more     Latent diffusion models (LDMs) [44] build on these suc-
+varied and fine-grained outputs. Large Video Diffusion mod-     cesses by conducting the diffusion process within a lower-
+els capture emergent, data-driven behaviors, producing more     dimensional latent space, thereby substantially reducing
+dynamic and lifelike motions, including natural blinking pat-     computational overhead.  In the realm of portrait anima-
+terns and subtle facial expressions. Our method also supports      tion, pre-trained diffusion models [44, 46] have served as
+flexible controls from users; that is, once emotion guidance     a strong foundation for image-to-video (I2V) generation.
+or response context is specified through a text prompt, the   A number of previous works [5, 31, 71] have highlighted
+model can generate listener reactions accordingly.              the efficacy of infusing reference image features into the
+   Reactivity in human interactions  is not strictly syn-     self-attention layers of LDM UNets, enabling both image
+chronous; instead, listeners react to events in the temporal      editing and video generation while preserving appearance
+context with uncertain lag. For example, smile mimicry     consistency. Additionally, ControlNet [72] expands LDM-
+occurs almost immediately, whereas a head nod is usually     based generation by incorporating structural inputs—such as
+delayed, aligning more with speaker pauses as a non-rigid     landmarks, segmentations, and dense poses—into the model.
+response. To model this, we use a temporal attention mech-     Leveraging these strategies, recent research [6, 27, 67] has
+anism that learns to adaptively time the reactions.  This     demonstrated state-of-the-art full-body animation by inte-
+enables DiTaiListener to learn better response timing. Our     grating appearance features, motion control modules, and
+design incorporates a causal temporal adapter, which aligns     temporal attention mechanisms [22, 23] within ReferenceNet     a)                                                                                                     b)   Causal                                          c)
+                                                                                                                                                                                                                                                                                                     ...                                                      ...                 Speaker                                                                    Causal                       Speech                    Speaker                          Temporal                                   Listener
+                                                                                                                                            Causal Mask             Appearance                                                                                     Audio                   Motion                                         EMOCA          Encoder                                                                                                                                                                                                         Encoder                                                                                                                                                                                                                                                                                                                                                                                                            Attention                                                                                                                                                                                                                                                                                                                        wav2vec2.0                                                                                                                                         Motion                       Causal
+                                                                                                        DiTaiListener-Gen      DiTaiListener-Gen
+Listener                                Sliceppearance                                                                                                                                                                                                                                                 MM-DiT
+                             VAE                                                                                                                                       Full                                                                                                              ...                                                      ...
+
+
+    Noisy                         C                                                         VAE                                                                                                           Attention    Latents                                                                                                                                                                                                              CTM-Adapter                  CTM-Adapter                   CTM-Adapter                   CTM-Adapter                         Slice                                                                     DiTaiListener-Edit
+                                                                                                                                                                                                                                                                        Causal
+         Text
+                                           Text      Condition                                                                                                                                                                                                                                                                                                                                                                        Temporal                                                                                                                                                                                                                                                                                                     ...                                                      ...                                                                             Encoders                                                                                                                                            Causal Mask
+                                               Diffusion Transformer                                                                                 x N                                                                                                                                            Attention
+
+                                   DiTaiListener-Gen                       CTM-Adapter attention                                 DiTaiListener-Edit
+
+Figure 2. Overview of DiTaiListener. a) Given the listener’s appearance (reference frame), speaker’s motion, encoded via EMOCA
+3DMM coefficients, speech (Wav2Vec2) and an input text control, DiTaiListener learns to generate listener face and head motions in
+pixel space through a video diffusion model powered by a modified DiT. b) We introduce a Causal Temporal Multimodal Adapter for
+seamless integration of multimodal speaker input in a temporally causal manner. c) Our long video generation pipeline consists of two video
+generation models. DiTaiListener-Gen generates video blocks that are fused by the DiTaiListener-Edit model that facilitates the smooth
+transition between two blocks, improving smoothness and reducing computational cost compared to existing long video generation strategies,
+e.g., prompt traveling and teacher forcing.
+
+
+architectures. Subsequent works [10, 37, 61, 65] have ex-     sible listener expressions by leveraging a large language
+tended portrait animation to accommodate a range of facial     model to condition motions on listeners’ goals, personalities
+motion representations and speech signals. Nevertheless,     or backgrounds. Ng et al. [39] proposed Learning2Listen
+these methods currently remain confined to one-way por-    (L2L) that relies on learning a dictionary of listener motions
+trait animation and cannot yet produce convincing two-way     through VQ-VAE [57] and generating listener motions based
+conversational interactions between speakers and listeners.     on the speaker’s motion and speech in an autoregressive man-
+                                                                       ner. Tran et al. [55] proposed Dyadic-Interaction-Modeling
+2.2. Dyadic Behavior Generation                     (DIM) that employs a similar approach to predict discrete lis-
+                                                                  tener head motions but leverages self-supervised pre-training
+Unlike human portrait generation, e.g., talking heads, listener     with a large dataset to improve representations and uses
+behavior generation in dyadic settings focuses on generating     PIRenderer [43] for photorealistic synthesis. More recently,
+a listener’s response to the speaker’s verbal and nonverbal be-     CustomListener [36] proposed a text-guided generation strat-
+haviors. Early work relied on rule-based methods and simple     egy that encodes user-defined textual attributes into portrait
+machine learning models to generate discrete behaviors for     tokens containing time-dependent cues for speaker-listener
+virtual humans, e.g., a head nod or smile [18], and heavily re-     coordination and then feeds these tokens into diffusion-based
+lied on the speaker’s speech. Huang et al. [28] extended the     motion priors for controllable video generation. Zhu et
+rule-based listener response generation with a conditional       al. [82] introduce INFP that takes a two-stage audio-driven
+random field (CRF) model to generate different kinds of     approach, learning a low-dimensional motion latent space
+head nods. Bohus and Horvitz [4] studied the effect of fa-    and mapping dual-track audio to these latent codes via a
+cial nonverbal behavior generation for facilitating multiparty     diffusion-based transformer. Although these diffusion-based
+turn-taking. Greenwood et al. [19] studied speech-driven     methods enable responsive and natural dyadic interactions,
+synchronized agent motion generation in dyadic settings.     they predict the motion latent codes that need to be rendered
+Ahuja et al. [1] focus on producing non-verbal full-body mo-     through a warping mechanism, posing challenges for directly
+tions in dyadic interactions by integrating monadic (within-     generating highly diverse and detailed results in video space.
+person) and dyadic (between-person) behaviors to predict     Unlike previous work, DiTaiListener learns to generate lis-
+socially appropriate body poses. Other techniques aim to      tener motions directly in the pixel space, providing a more
+generate realistic listener facial movements based on lan-      realistic and detailed appearance and motion.
+guage [9] or speech signals [29, 30]. For example, Song
+et al. [48] proposed Emotional Listener Portrait (ELP) that     3. Method
+learns to generate nonverbal listener motions that can be
+modulated by emotions. Geng et al.  [16] introduced the   We provide an overview of DiTaiListener in Figure 2. Given
+RealTalk database and proposed a method to retrieve plau-     the speaker’s audio and facial motions and the listener’s ref-erence frame (identity), our model synthesizes high-fidelity,     3.2. DiTaiListener
+photorealistic images of the listener’s expected facial re-
+                                        We propose a novel diffusion transformer adapter that seam-
+sponse. Unlike most prior work that first predicts 3DMM
+                                                                     lessly integrates speaker speech and motion in a temporally
+features for the listener and then applies photorealistic ren-
+                                                             causal manner. At the core of DiTaiListener are the CTM-
+dering, DiTaiListener introduces an end-to-end solution that
+                                                        Adapter layers, with our model structured as a hierarchical
+directly synthesizes high-quality listener facial images via a
+                                                              stack of these modules to effectively capture multimodal
+standard diffusion denoising process with a novel diffusion
+                                                          dependencies and generate coherent listener responses.
+transformer architecture built upon DiT. Our method not
+                                             CTM-Adapter Blocks.  Inspired by IP-Adapter [68] for
+only enhances realism but also enables text-based control
+                                                        UNet-based diffusion models [45], we propose CTM adapter
+for customizing listener responses, offering greater flexibil-
+                                                     – a video diffusion adapter that extends adapters from conven-
+ity and expressiveness in facial reaction generation. At the
+                                                                     tional spatial attention to multimodal temporal attention for
+core of our approach is the Causal Temporal Multimodal
+                                                                   better temporally-aligned guidance in a Multimodal Video
+Adapter (CTM-Adapter), a module integrated into the DiT
+                                                         DiT. Built upon the MM-DiT Full Attention blocks from
+architecture to process multimodal inputs—speaker audio
+                                                     EasyAnimate [63], our CTM-Adapter blocks introduce two
+and facial motion features—in a temporally causal manner
+                                                                additional Temporal Causal Attention (TCA) modules to
+while enabling text-based control for customized listener
+                                                            process temporally fused speech and motion features. The
+responses. We further enhance DiTaiListener by introduc-
+                                                              outputs of the standard MM-DiT Full Attention module are
+ing seamless transitions between independently synthesized
+                                                           then combined with the speech-guided and motion-guided
+video segments, allowing for the generation of long (un-
+                                                                    cross-attention features produced by our TCA modules using
+bounded), coherent listener response videos, a limitation of
+                                                         a weighted summation, effectively capturing the temporal
+prior video generation methods. In the following sections,
+                                                         dependencies between multimodal inputs. Following L2L
+we provide details for each component of DiTaiListener.
+                                                                   [39], we apply causal masks to our TCA modules so that
+                                                               current listener motions are only generated with respect to
+                                                                 past speaker motions and audio.
+3.1. Visual and behavioral Descriptors                      Formally, the original MM-DiT Full Attention block takes
+                                                                   visual and textual tokens as input, denoted as Xv and Xt, re-
+Speaker Feature Representations. For speaker motions,      spectively. In our case, Xv represents the generated listener
+we follow prior work [38, 40, 55] and utilize EMOCA [11]     video frames. For appearance control, the first CTM-Adapter
+to extract facial representations at a 12 FPS frame rate. For     block is modified to accept concatenated inputs [Xv, Xi],
+speaker audio, we employ a pre-trained Wav2Vec2-base [2]    where Xv is initialized with random noise. The text-video
+model to capture rich speech representations. Specifically,     tokens are then concatenated and passed through a multi-
+we leverage the intermediate features from all 12 layers of      layer perceptron (MLP), after which they are split back into
+Wav2Vec2 to preserve detailed acoustic information. To en-      text tokens and denoised video tokens. These tokens are sub-
+sure temporal alignment, we resample the extracted speech     sequently fed into the next layer for further processing. The
+representations to match the frame rate of the speaker motion      attention mechanism within the MM-DiT blocks is given by
+features. The features are passed to transformer-based causal
+motion encoders and causal speech encoders to extract rel-                                [QtQv] [KtKv]⊤
+                                                              AttnMMDiT ([XtXv]) = σ     √
+ative information. We denote the resulting speaker speech                                     d
+representation as Xs, and the speaker facial motion features                  × [VtVv]                   (1)
+as Xm.
+Listener identity. We utilize features extracted from Slice-    where σ is a Softmax function, [QtQv], [KtKv], [VtVv] are
+VAE [63] to encode the reference listener image into the      the concatenation of query, key, and value projections from
+diffusion latent space. This approach is commonly used for      text Xt and video Xv tokens respectively, and d is the pro-
+spatial conditioning in image and video generation through      jection dimension.
+depth maps and edge maps [64]. We extend this approach                                                      To adapt MM-DiT for the task of listener behavior gener-
+to provide appearance guidance. We denote the extracted                                                                  ation with additional speech and motion inputs, we leverage
+identity representation as Xi.                                   the Decoupled Multimodal Attention mechanism [14] to in-
+Customized text prompts. DiTaiListener optionally accepts                                                                  tegrate speech-guided and motion-guided information into
+text prompts to enable controllable listener behavior genera-                                                                the attention modules of MM-DiT. Specifically,
+tion. When a text prompt is provided, we encode it using the
+T5 [42] and BERT [12] text encoders, allowing for flexible                            !                                        M ◦[QtQv] K⊤s
+customization of listener responses. We denote the extracted        Attnspeech ([XtXv], Xs) = σ    √         Vs  (2)
+                                                                                  dtext representation as Xt.              M ◦[QtQv] K⊤m !           users can provide custom textual descriptions to guide the
+   Attnmotion ([XtXv], Xm) = σ    √      Vm                                                   model in producing personalized listener responses. De-                                 d
+                                                                             tails of our text prompts are provided in the supplementary
+                                                          (3)
+                                                                   materials.
+
+where [Ks, Km] and [Vs, Vm] are the key and value projec-
+                                                            Method      Feedback↑   Diversity↑  Smoothness↑   Overall↑
+tions of Xs and Xm respectively, and M correspond to the
+causal attention masks. Attention is computed along the tem-     ELP [48]      2.93%      4.04%       5.65%      4.21%
+                                              RLHG [79]    10.45%     12.14%      13.00%     11.86%
+poral dimension, while the spatial dimension is combined
+                                                      L2L [38]      4.20%      6.06%      10.95%     7.07%
+with the batch dimension. The outputs of the three attention     DIM [55]     10.25%     12.12%      16.11%     12.83%
+branches are combined via an element-wise summation          Ours        72.17%    65.64%     54.29%    64.03%
+
+AttnCTM-adapter ([XtXv]) = α × Attnspeech ([XtXv], Xs)         Table 1. User Study. We ask the participants to choose the best
+              + β × AttnMMDiT ([XtXv])         video among all methods for each criterion. The average preference
+                                                                   percentage for each method output is provided.
+              + γ × Attnmotion ([XtXv], Xm)
+                                                          (4)
+
+where α, β, γ are scaling parameters that control the contri-     Method          FID↓  FVD↓  LPIPS↓  PSNR↑  SSIM↑
+bution of each branch during inference.                   RLFG [38]         52.01   287.48     0.37     17.95     0.61
+   Overall, DiTaiListener-Gen consists of a stack of L CTM-     L2L [38]           56.93   285.24     0.40     18.01     0.64
+                                                    ELP [48]           67.12   281.95     0.38     17.96     0.61
+Adapter Blocks, trained using the standard diffusion loss
+                                                DIM [55]           49.75   288.27     0.36     18.51     0.62
+similar to [63].
+                                                              w/o Text-Control    10.56   57.71     0.28     20.58     0.71Causal Long Sequence Generation. DiTaiListener-Gen is
+                                                              w/o CTM-Adapter   11.56   54.79     0.28     20.77     0.72
+designed to generate segments of K frames at a time. When                                                                         DiTaiListener       10.14   53.54     0.28     20.77     0.71
+synthesizing listener behavior for input sequences longer
+than K frames, we partition the inputs into overlapping seg-     Table 2.  Quantitative comparison on VICO [69] test set. The
+ments of K frames and generate each segment independently.      metrics are reported in photorealistic video space.
+However, directly merging these segments often results in
+abrupt discontinuities in pose and expression due to the
+lack of temporal consistency across segment boundaries. To     Method          FID↓  FVD↓  LPIPS↓  PSNR↑  SSIM↑
+address this, we introduce DiTaiListener-Edit to produce
+                                             RLHG [69]         30.55   217.48     0.41     17.23     0.53
+smooth transitions between consecutive segments.             L2L [38]           56.43   522.67     0.46     16.49     0.53
+   DiTaiListener-Edit operates by selecting two consecutive    DIM [55]           30.75   204.49     0.40     17.74     0.54
+segments of length K generated by DiTaiListener and ex-                                                              w/o Text-Control     8.05    49.88     0.27     18.70     0.59
+tracting the last K′ (K′ ≪K) frames from the first segment      w/o CTM-Adapter   8.16    45.62     0.27     18.60     0.55
+and the first K′ frames from the second segment. While       DiTaiListener        7.99    45.42     0.26     18.73     0.60
+these segments should ideally form a seamless motion se-
+quence, independent generation can introduce unnatural tran-     Table 3. Quantitative comparison on RealTalk [16] test set. The
+sitions. To refine these transitions, we pass the first and the      metrics are reported in photorealistic video space.
+last of concatenated 2K′ frames through a standard DiT
+model, with the objective of reconstructing the correspond-
+ing ground-truth frames for these 2K′ timesteps. The model     4. Experiments
+is trained as a standard diffusion model, learning to synthe-
+                                                               4.1. Implementation Detailssize temporally smooth and coherent frames that effectively
+bridge discontinuities between independently generated seg-     Datasets We evaluate DiTaiListener on RealTalk [16] and
+ments.                                            ViCo [78] datasets. RealTalk [16] is a large dataset contain-
+Customized text control. Existing dyadic behavior learn-     ing 692 dyadic conversations with a total duration of 115
+ing datasets lack annotated descriptions of listener behavior,     hours. To allow comparison with existing methods, we also
+making them unsuitable for text-guided listener behavior      evaluate our method on ViCo [79], which is a smaller dataset
+generation. To bridge this gap, we leverage Google Gemini     consisting of 483 video sequences featuring 76 unique lis-
+1.5 [52] to extract affective-related descriptions of listener      teners. We present the details of dataset pre-processing in
+behavior from existing datasets. These generated textual      the supplementary material.
+descriptions are then used to train DiTaiListener, enabling it    Model Training and Inference We used a pre-trained DiT-
+to learn text-aware behavior generation. During inference,     based video diffusion model as the backbone, with initial-Speaker
+
+DIM
+
+RLHG
+
+L2L
+
+
+Our
+
+
+Figure 3. Qualitative Comparison on ViCo test set. Our method generates high-quality, photorealistic facial images with diverse and
+natural social behaviors, including head movements and blinks, whereas baseline methods often produce less varied and expressive responses.
+
+      Speaker                                   Listener                         ization weights from EasyAnimateV5.1-12b [63]. Causal
+                                                     Motion and Speech Encoders are transformers trained from
+                                                                  scratch sharing the same architecture with 6 attention blocks,
+                                                   8 heads, 512 hidden dimensions. For CTM-Adapter we set
+                                                               γ, β, and α parameters to be 1.0. We trained our model on
+                             “Happy,Smile”     “Neutral,Eyes Open“    “Sad,Looking down”       RealTalk [16] with 8 NVIDIA H100 GPUs for 20k iterations
+                                                           with a batch size of 8. The training videos were divided into
+                                                          4-second clips consisting of 144 frames, sampled at a stride
+                                                                of 3 frames. Each frame was resized to 256×256 pixels. We
+                                                        used the Adam optimizer with a learning rate of 2 × 10−5,
+                                                         a weight decay of 5 × 10−3, and gradient clipping of 0.05.                             “Happy,laugh”      “Upturned Eyebrows“     “Sad,eyes Close”
+                                                 The entire model was trained end-to-end, with text control
+                                                           sequences truncated at 512 tokens per video. Text is encoded
+                                                       and passed to the model via T5 [42] and BERT [12] encoder.
+                                                          For DiTaiListener-Edit we set K to 49, K′ to 6. To compare
+                                                          with baselines on ViCo [69], we train our DiTaiListener for
+                          “Broad smiling”       “Relaxed demeanor“ “Neutral,without motions”    5k iterations with the same hyperparameters.
+
+                                                               4.2. Evaluations and Comparisons
+
+                                                           Baselines We tested four listener behavior generation meth-
+                                                        ods to benchmark our model against, including:
+                            “Slightly pursed lips”  “Neutral,focused eyes“   “Squinting eyes”
+                                                                          • RLHG [79] is an RNN-based listener prediction model.
+                                                                          • L2L [38] uses quantized VQ-VAE to predict listener mo-
+                                                                     tions in an autoregressive manner.
+                                                                          • ELP [48] is a model that relies on emotion vectors and
+                                                              speaker features to predict listener behavior.
+                           “Expressive smile”  “Subtle,relaxed smile“    “Serious, focused”         • DIM [55] is a recent method that combines two-branch
+                                                                    speaker-listener VQ-VAE with contrastive pretraining.
+Figure 4. Listener generation from DiTaiListener on out-of-      • INFP [82] is a recent diffusion-based model which learns
+domain identities. Our method can integrate expressions from text                                                            a motion latent space trained on in-house data. Currently,
+conditions and synthesize diverse responses to the speakers.
+                                                                  the code and data are not open-sourced.Note that these methods are all multi-stage models, which     ing the setting mentioned in [38, 55]. All baselines exhibit
+predict discrete listener motion representation first, then      limited expressiveness, with most of their generated listener
+map these predictions into photorealistic videos via PIRen-     appearing almost static. Please refer to additional video ex-
+derer [43] or other similar rendering methods [13].            amples provided in the supplementary materials for clearer
+Evaluation metrics.   Since our method  is an end-to-     observations and further comparison. We also provide more
+end model that generates photorealistic videos directly,     visualizations of text-control from DiTaiListener on out-of-
+we first evaluate its performance against baseline meth-    domain data in Figure 4. Our method demonstrates user-
+ods using image-space metrics: Peak Signal-to-Noise Ra-     friendly customization of listener emotions through natural
+tio (PSNR), Learned Perceptual Image Patch Similarity     language and strong generalizability to other unseen iden-
+(LPIPS) [74], SSIM [60], and Fr´echet Inception Distance       tities. We provide more video visualizations in the supple-
+(FID). PSNR [26] is a pixel-wise image similarity metric.    mentary offline page.
+LPIPS and SSIM are perceptual image-based measures that    User Study We asked 50 participants from Prolific, a
+evaluate the similarity between predictions and ground-truth     crowdsourcing platform, to evaluate the quality of the lis-
+frames. Fr´echet Inception Distance [24] is used to measure      teners generated with the ViCo test set [79] using L2L [39],
+how different the distributions of the generated frames are   RLHG [79], ELP [48], DIM [55] and DiTaiListener. The
+from real data. Fr´echet Video Distance [56] compares distri-    methods were anonymized and randomly ordered for each
+butions of generated videos with the distribution of ground-     question. The average duration of the videos is 14 seconds.
+truth videos, including temporal information. Following     For each group of video comparisons, we ask the user to
+previous methods [38, 55], we also compare the results in     choose the best method according to the following criteria
+the 3DMM space by extracting EMOCA [11] parameters      for judgment: 1) The response from the listener provides
+from our generated frames. We use Frechet Distance (FD),     correct feedback to the speaker. 2) The head motions and
+Mean Squared Error (MSE), Paired FD (P-FD), Variance      facial expressions are diverse. 3) The general video quality
+(Var), and SI Diversity (SID) as evaluation metrics. Details       is flawless and smooth. The user study demonstrated that
+of these metrics are available in the supplementary material.    most users selected our model output as superior across all
+Note that Var and SID are metrics to evaluate the diversity of      scales (see Table 1). We present an example from our user
+data distribution, so we are able to report these for Ground     study survey in Figure. 6 of the supplementary material.
+Truth EMOCA parameters as well. FD and P-FD are the
+primary metrics to evaluate the listener generation quality.
+                                                               4.3. Ablation AnalysisQuantitative Comparison We compare our method to the
+state-of-the-art listener video generation baselines [38, 48,     In this section, a comprehensive ablation analysis of Di-
+55, 79, 82]. This work focuses on improving the quality of     TaiListener is presented. We evaluate the effectiveness of
+motions and the photorealism of the generated video. Table 2     our proposed Causal Multimodal Temporal Adapter and text
+and Table 3 present the quantitative analysis of such quality     control on ViCo and RealTalk test sets in Tables 2, 3, 4
+on ViCo and RealTalk datasets. DiTaiListener achieves sig-    and 5. Note that in all these tables, each row represents
+nificant improvements across different baseline models, indi-     the individual ablation. w/o Text-Control means an empty
+cating that the proposed method generates vivid expressive-     string replaces the input to text encoders, and w/o CTM-
+ness of listener head videos. The baseline methods heavily    Adapter denotes the Causal Temporal Attention is replaced
+rely on the renderer and are not able to directly generate high-    by simple non-causal spatial attention without masks. To
+fidelity human portraits. Since previous work [38, 48, 55, 79]      further confirm the effectiveness of text control, we show
+widely adopted 3DMM [11, 15] to represent pose and facial     videos of different listener emotions on the supplementary
+expression and provided evaluation in such parameter space,      offline page. We also visualize the comparison between our
+we extract EMOCA [11] parameters from our generated     proposed Causal Long Sequence Generation strategy, frame-
+photorealistic videos and presents a quantitative analysis     smoothing DiTaiListener-Edit, with widely used prompt
+in Tables 4 and 5. Even though our model is not trained      travel and teacher forcing [23, 62] in Figure. 5 and the sup-
+to generate 3DMM parameters, it achieves competitive per-     plementary offline page. Note that w/o DiTaiListener-Edit
+formance with the existing methods, which indicates that      in both figures and offline webpage denotes the video seg-
+DiTaiListener generates high-quality videos with diverse lis-    ments are directly concatenated in time dimension without
+tener motions that provide correct feedback to the speakers.    smooth processing with DiTaiListener-Edit. Teacher Forc-
+Qualitative Comparison We qualitatively compare the gen-     ing [62] produces longer videos recurrently relying on its
+erated listener video from DiTaiListener with previous meth-    own predictions by replacing the appearance frame with the
+ods [38, 48, 55, 79] on ViCo in Figure 3. Note that these      last generated frame. Teacher forcing suffers from error ac-
+works used 3DMMs as predictions from their models, we     cumulation and gradual information loss, leading to quality
+render the photorealistic results by PIRenderer [43] follow-     degradation for long sequences. Prompt Travel relies on                                    FD↓        P-FD↓     MSE↓       SID↑        Var↑
+                      Method
+                                    Exp   Pose   Exp   Pose  Exp   Pose  Exp   Pose  Exp   Pose
+
+                    ELP [48]           47.17   0.08   47.48   0.08   0.98   0.02   1.76   1.66   1.49   0.02
+                 RLHG [79]         39.02   0.07   40.18   0.07   0.86   0.01   3.62   3.17   1.52   0.02
+                    L2L [39]           33.93   0.06   35.88   0.06   0.93   0.01   2.77   2.66   0.83   0.02
+                  DIM [55]           23.88   0.06   24.39   0.06   0.70   0.01   3.71   2.35   1.53   0.02
+                      INFP† [82]         18.63   0.07       -         -     0.51   0.01   4.78   3.92   2.83   0.18
+                 GT                         -         -         -         -        -        -     5.03   4.07   0.93   0.01
+
+                       w/o Text-Control    18.88   0.05   21.64   0.06   0.85   0.02   4.81   3.59   1.43   0.02
+                       w/o CTM-Adapter   19.54   0.05   22.27   0.06   0.88   0.02   4.68   3.71   1.46   0.02
+                           DiTaiListener       17.49   0.04   20.53   0.05   0.85   0.02   4.73   3.74   1.51   0.02
+
+Table 4. Quantitative comparison on ViCo [79] test set in the 3DMMs (EMOCA [11]) space. † denotes the method did not release code or
+in-house training data, and the numbers are directly taken from their paper.
+
+
+                                    FD↓        P-FD↓     MSE↓       SID↑        Var↑
+                      Method
+                                    Exp   Pose   Exp   Pose  Exp   Pose  Exp   Pose  Exp   Pose
+
+                 RLHG [79]         69.04   0.05   69.09   0.06   1.37   0.01   0.35   3.23   0.14   0.01
+                    L2L [39]           72.89   0.10   72.94   0.10   1.44   0.02   0.10   2.42   0.07   0.01
+                  DIM [55]           77.97   0.15   78.70   0.15   1.52   0.02   3.49   3.29   0.74   0.01
+                 GT                         -         -         -         -        -        -     5.13   3.95   1.36   0.02
+
+                       w/o Text-Control    15.62   0.02   16.35   0.02   0.67   0.01   5.01   3.94   1.30   0.01
+                       w/o CTM-Adapter   15.10   0.02   15.82   0.02   0.66   0.01   5.11   3.98   1.30   0.01
+                           DiTaiListener       14.28   0.02   15.07   0.02   0.65   0.01   5.09   3.95   1.31   0.01
+
+                   Table 5. Quantitative comparison on RealTalk [16] test set in the 3DMMs (EMOCA [11]) space.
+
+a sliding window approach for long video generation. The     5. Conclusion
+method starts by generating long noise patterns. During each
+denoising step, a sliding window is taken over overlapping                                         We introduce DiTaiListener, a DiT-based framework for gen-
+chunks of video; denoising predictions are made for each                                                                erating high-fidelity listener response videos from speaker
+chunk independently. Predictions from overlapping chunks                                                         audio and facial motion inputs. Unlike prior methods that
+are averaged and passed to the next denoising step. Prompt                                                                   rely on intermediate 3DMM representations, DiTaiListener
+Travel requires additional resources proportional to overlap                                                                   directly synthesizes photorealistic listener portraits in an
+length. While effective against error accumulation, it suf-                                                             end-to-end manner while enabling text-controlled customiza-
+fers from blurring artifacts due to averaging and transition                                                                  tion of listener behaviors. At its core, the Causal Temporal
+artifacts, as the model is not trained on inputs produced via                                                      Multimodal Adapter (CTM-Adapter) effectively integrates
+averaging.                                                         multimodal inputs in a temporally causal manner. To ensure
+        Frame t       Frame t+1       Frame t       Frame t+1      Frame t       Frame t+1      smooth transitions between generated video segments, we
+        Forcing                                                       proposed DiTaiListener-Edit, which refines segment bound-
+                                                                      aries for continuous and natural listener behaviors over long
+        Teacher                                                         sequences. Our model demonstrates state-of-the-art perfor-
+       Travel                                                 mance in producing expressive, semantically aligned listener
+       Prompt                                                           responses with high visual fidelity and temporal consistency.                                                         This work advances AI-driven human interaction model-
+                                                            ing and has broad applications in virtual avatars, human-
+w/o                                                      computer interaction, and social robotics. Future directions
+                                                             include expanding listener behavior diversity, improving                        DiTaiListener-Edit
+                                                                  real-time inference, and integrating more contextual cues for
+                                                       enhanced responsiveness.   Our
+                                                           Limitations and Future Works Despite its effectiveness in
+                                                                the expressiveness generation of listener videos, our model
+Figure 5. Qualitative comparison of long video generation. Our     has certain limitations, particularly in inference efficiency.
+method generates smoother videos with fewer transition artifacts      In the future, we will explore further techniques to accelerate
+compared to prompt traveling and teacher forcing methods.           the sampling procedure and provide faster video generation.
+                                                         Ethics Statement. Our work aims to improve human be-havior generation from a technical perspective and is not
+intended for malicious use like impersonation. Any future
+application should implement safeguards to ensure consent
+from the people whose likeness is being generated, and syn-
+thesized videos should clearly indicate their artificial nature.
+
+Acknowledgments
+
+Research was sponsored by the Army Research Office and
+was accomplished under Cooperative Agreement Number
+W911NF-25-2-0040. The views and conclusions contained
+in this document are those of the authors and should not
+be interpreted as representing the official policies, either
+expressed or implied, of the Army Research Office or the
+U.S. Government. The U.S. Government is authorized to
+reproduce and distribute reprints for Government purposes
+notwithstanding any copyright notation hereinReferences                                                      [13] Nikita Drobyshev, Jenya Chelishev, Taras Khakhulin, Aleksei
+                                                                       Ivakhnenko, Victor Lempitsky, and Egor Zakharov. Megapor-
+ [1] Chaitanya Ahuja, Shugao Ma, Louis-Philippe Morency, and                                                                                              traits: One-shot megapixel neural head avatars. In Proceed-
+     Yaser Sheikh. To react or not to react: End-to-end visual                                                                          ings of the 30th ACM International Conference on Multime-
+     pose forecasting for personalized avatar during dyadic con-                                                                                   dia, page 2663–2671, New York, NY, USA, 2022. Association
+      versations. In 2019 International conference on multimodal                                                                                for Computing Machinery. 7
+      interaction, pages 74–84, 2019. 3
+                                                                     [14] Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim En-
+ [2] Alexei Baevski, Henry Zhou, Abdelrahman Mohamed,                                                                                          tezari, Jonas M¨uller, Harry Saini, Yam Levi, Dominik Lorenz,
+     and Michael Auli.  wav2vec 2.0: A framework for self-                                                                  Axel Sauer, Frederic Boesel, et al. Scaling rectified flow trans-
+     supervised learning of speech representations. arXiv preprint                                                                     formers for high-resolution image synthesis. In Forty-first
+     arXiv:2006.11477, 2020. 4                                                                             international conference on machine learning, 2024. 4
+ [3] Andreas Blattmann, Tim Dockhorn, Sumith Kulal, Daniel
+                                                                     [15] Yao Feng, Haiwen Feng, Michael J. Black, and Timo Bolkart.
+     Mendelevitch, Maciej Kilian, Dominik Lorenz, Yam Levi,
+                                                                    Learning an animatable detailed 3D face model from in-the-
+     Zion English, Vikram Voleti, Adam Letts, Varun Jampani,
+                                                                    wild images. ACM Transactions on Graphics, (Proc. SIG-
+     and Robin Rombach. Stable video diffusion: Scaling latent
+                                                        GRAPH), 40(8), 2021. 7
+     video diffusion models to large datasets, 2023. 2
+                                                                     [16] Scott Geng, Revant Teotia, Purva Tendulkar, Sachit Menon,
+ [4] Dan Bohus and Eric Horvitz. Facilitating multiparty dialog
+                                                               and Carl Vondrick. Affective faces for goal-driven dyadic
+     with gaze, gesture, and speech.  In International Confer-
+                                                                   communication, 2023. 3, 5, 6, 8
+     ence on Multimodal Interfaces and the Workshop on Machine
+                                                                     [17] Jonathan Gratch, Anna Okhmatovskaia, Francois Lamothe,     Learning for Multimodal Interaction, pages 1–8, 2010. 3
+                                                                     Stacy Marsella, Mathieu Morales, Rick J van der Werf,
+ [5] Mingdeng Cao, Xintao Wang, Zhongang Qi, Ying Shan, Xi-
+                                                               and Louis-Philippe Morency.  Virtual rapport.  In Interna-
+     aohu Qie, and Yinqiang Zheng. Masactrl: Tuning-free mutual
+                                                                              tional Workshop on Intelligent Virtual Agents, pages 14–27.
+      self-attention control for consistent image synthesis and edit-
+                                                                             Springer, 2006. 2
+      ing. arXiv preprint arXiv:2304.08465, 2023. 2
+                                                                     [18] Jonathan Gratch, Ning Wang, Jillian Gerten, Edward Fast, and
+ [6] Di Chang, Yichun Shi, Quankai Gao, Jessica Fu, Hongyi Xu,
+                                                                Robin Duffy. Creating rapport with virtual agents. In Intelli-
+    Guoxian Song, Qing Yan, Yizhe Zhu, Xiao Yang, and Mo-
+                                                                          gent Virtual Agents (IVA), pages 125–138, Berlin, Heidelberg,
+    hammad Soleymani. Magicpose: Realistic human poses and
+                                                                     2007. Springer Berlin Heidelberg. 3
+      facial expressions retargeting with identity-aware diffusion,
+     2024. 2                                                        [19] David Greenwood, Stephen Laycock, and Iain Matthews. Pre-
+                                                                             dicting head pose in dyadic conversation. In International [7] Di Chang, Yufeng Yin, Zongjian Li, Minh Tran, and Moham-
+                                                                   Conference on Intelligent Virtual Agents, pages 160–169.    mad Soleymani. Libreface: An open-source toolkit for deep
+                                                                             Springer, 2017. 3      facial expression analysis. In Proceedings of the IEEE/CVF
+     Winter Conference on Applications of Computer Vision, pages      [20] Yuming Gu, You Xie, Hongyi Xu, Guoxian Song, Yichun
+     8205–8215, 2024. 1                                                   Shi, Di Chang, Jing Yang, and Linjie Luo. Diffportrait3d:
+                                                                         Controllable diffusion for zero-shot portrait view synthesis, [8] Zhiyuan Chen, Jiajiong Cao, Zhiquan Chen, Yuming Li, and
+                                                                     2023. 2    Chenguang Ma. Echomimic: Lifelike audio-driven portrait an-
+     imations through editable landmark conditions. arXiv preprint      [21] Jiazhi Guan, Zhanwang Zhang, Hang Zhou, Tianshu Hu,
+     arXiv:2407.08136, 2024. 2                                       Kaisiyuan Wang, Dongliang He, Haocheng Feng, Jingtuo
+                                                                          Liu, Errui Ding, Ziwei Liu, et al. Stylesync: High-fidelity [9] Hang Chu, Daiqing Li, and Sanja Fidler. A face-to-face neural
+                                                                            generalized and personalized lip sync in style-based generator.     conversation model. In Proceedings of the IEEE Conference
+                                                                         In Proceedings of the IEEE/CVF Conference on Computer    on Computer Vision and Pattern Recognition, pages 7113–
+                                                                           Vision and Pattern Recognition, pages 1505–1515, 2023. 2     7121, 2018. 3
+                                                                     [22] Yuwei Guo, Ceyuan Yang, Anyi Rao, Maneesh Agrawala,[10] Jiahao Cui, Hui Li, Yao Yao, Hao Zhu, Hanlin Shang, Kaihui
+                                                          Dahua Lin, and Bo Dai.  Sparsectrl: Adding sparse con-     Cheng, Hang Zhou, Siyu Zhu, and Jingdong Wang. Hallo2:
+                                                                                      trols to text-to-video diffusion models.   arXiv preprint     Long-duration and high-resolution audio-driven portrait im-
+                                                                      arXiv:2311.16933, 2023. 2     age animation. arXiv preprint arXiv:2410.07718, 2024. 3
+[11] Radek Danecek, Michael  J. Black, and Timo Bolkart.      [23] Yuwei Guo, Ceyuan Yang, Anyi Rao, Yaohui Wang, Yu Qiao,
+   EMOCA: Emotion driven monocular face capture and an-         Dahua Lin, and Bo Dai. Animatediff: Animate your person-
+     imation.  In Conference on Computer Vision and Pattern            alized text-to-image diffusion models without specific tuning.
+     Recognition (CVPR), pages 20311–20322, 2022. 4, 7, 8, 1            arXiv preprint arXiv:2307.04725, 2023. 2, 7
+[12] Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina      [24] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bern-
+     Toutanova. Bert: Pre-training of deep bidirectional transform-          hard Nessler, and Sepp Hochreiter. Gans trained by a two
+      ers for language understanding. In Proceedings of the 2019           time-scale update rule converge to a local nash equilibrium.
+     conference of the North American chapter of the association           arXiv preprint arXiv:1706.08500, 2017. 7
+      for computational linguistics: human language technologies,      [25] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising dif-
+     volume 1 (long and short papers), pages 4171–4186, 2019. 4,           fusion probabilistic models. NeurIPS, 33:6840–6851, 2020.
+    6                                                         2[26] Alain Hore and Djemel Ziou. Image quality metrics: Psnr      [40] Evonne Ng, Sanjay Subramanian, Dan Klein, Angjoo
+      vs. ssim. In 2010 20th international conference on pattern          Kanazawa, Trevor Darrell, and Shiry Ginosar. Can language
+      recognition, pages 2366–2369. IEEE, 2010. 7                     models learn to listen?  In Proceedings of the IEEE/CVF
+[27] Li Hu, Xin Gao, Peng Zhang, Ke Sun, Bang Zhang, and            International Conference on Computer Vision, pages 10083–
+     Liefeng Bo. Animate anyone: Consistent and controllable          10093, 2023. 2, 4
+     image-to-video synthesis for character animation.  arXiv      [41] K R Prajwal, Rudrabha Mukhopadhyay, Vinay P. Namboodiri,
+     preprint arXiv:2311.17117, 2023. 2                               and C.V. Jawahar. A lip sync expert is all you need for speech
+[28] Lixing Huang, Louis-Philippe Morency, and Jonathan Gratch.            to lip generation in the wild. In Proceedings of the 28th ACM
+     Virtual rapport 2.0. In International workshop on intelligent            International Conference on Multimedia, page 484–492, New
+      virtual agents, pages 68–79. Springer, 2011. 3                        York, NY, USA, 2020. Association for Computing Machinery.
+[29] Patrik Jonell, Taras Kucherenko, Erik Ekstedt, and Jonas         2
+     Beskow. Learning non-verbal behavior for a social robot from      [42] Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee,
+     youtube videos. In ICDL-EpiRob Workshop on Naturalistic          Sharan Narang, Michael Matena, Yanqi Zhou, Wei Li, and
+     Non-Verbal and Affective Human-Robot Interactions, Oslo,           Peter J. Liu. Exploring the limits of transfer learning with a
+     Norway, August 19, 2019, 2019. 3                                       unified text-to-text transformer. Journal of Machine Learning
+[30] Patrik Jonell, Taras Kucherenko, Gustav Eje Henter, and Jonas           Research, 21(140):1–67, 2020. 4, 6
+     Beskow. Let’s face it: Probabilistic multi-modal interlocutor-      [43] Yurui Ren, Ge Li, Yuanqi Chen, Thomas H Li, and Shan
+     aware generation of facial gestures in dyadic settings.  In           Liu. Pirenderer: Controllable portrait image generation via
+     Proceedings of the 20th ACM International Conference on           semantic neural rendering. In Proceedings of the IEEE/CVF
+      Intelligent Virtual Agents, pages 1–8, 2020. 3                          International Conference on Computer Vision, pages 13759–
+[31] Yukang Lin, Haonan Han, Chaoqun Gong, Zunnan Xu,          13768, 2021. 3, 7
+    Yachao Zhang, and Xiu Li. Consistent123: One image to      [44] Robin Rombach, Andreas Blattmann, Dominik Lorenz,
+     highly consistent 3d asset using case-aware diffusion priors,           Patrick Esser, and Bj¨orn Ommer.  High-resolution image
+     2023. 2                                                               synthesis with latent diffusion models, 2021. 2
+[32] Jin Liu, Xi Wang, Xiaomeng Fu, Yesheng Chai, Cai Yu, Jiao      [45] Robin Rombach, Andreas Blattmann, Dominik Lorenz,
+     Dai, and Jizhong Han. Mfr-net: Multi-faceted responsive            Patrick Esser, and Bj¨orn Ommer. High-resolution image syn-
+      listening head generation via denoising diffusion model. In            thesis with latent diffusion models. In IEEE Conf. Comput.
+     Proceedings of the 31st ACM International Conference on             Vis. Pattern Recog., pages 10684–10695, 2022. 4
+     Multimedia, pages 6734–6743, 2023. 2                          [46] Chitwan Saharia, William Chan, Saurabh Saxena, Lala Li,
+[33] Minghua  Liu,  Chao Xu,  Haian  Jin,  Linghao  Chen,           Jay Whang, Emily L Denton, Kamyar Ghasemipour, Raphael
+    Mukund Varma T, Zexiang Xu, and Hao Su. One-2-3-45:           Gontijo Lopes, Burcu Karagol Ayan, Tim Salimans, et al. Pho-
+    Any single image to 3d mesh in 45 seconds without per-shape             torealistic text-to-image diffusion models with deep language
+     optimization, 2023. 2                                                understanding. NeurIPS, 35:36479–36494, 2022. 2
+[34] Ruoshi Liu, Rundi Wu, Basile Van Hoorick, Pavel Tokmakov,      [47] Jiaming Song, Chenlin Meng, and Stefano Ermon. Denoising
+     Sergey Zakharov, and Carl Vondrick. Zero-1-to-3: Zero-shot            diffusion implicit models. arXiv preprint arXiv:2010.02502,
+     one image to 3d object, 2023. 2                                    2020. 2
+[35] Tao Liu, Feilong Chen, Shuai Fan, Chenpeng Du, Qi Chen,      [48] Luchuan Song, Guojun Yin, Zhenchao Jin, Xiaoyi Dong, and
+    Xie Chen, and Kai Yu.  Anitalker: Animate vivid and di-          Chenliang Xu. Emotional listener portrait: Realistic listener
+     verse talking faces through identity-decoupled facial motion          motion simulation in conversation. In 2023 IEEE/CVF In-
+     encoding, 2024. 2                                                    ternational Conference on Computer Vision (ICCV), pages
+[36] Xi Liu, Ying Guo, Cheng Zhen, Tong Li, Yingying Ao, and          20782–20792. IEEE, 2023. 2, 3, 5, 6, 7, 8
+     Pengfei Yan. Customlistener: Text-guided responsive interac-      [49] Siyang Song, Micol Spitale, Cheng Luo, Cristina Palmero,
+      tion for user-friendly listening head generation. In Proceed-        German Barquero, Hengde Zhu, Sergio Escalera, Michel
+     ings of the IEEE/CVF Conference on Computer Vision and            Valstar, Tobias Baur, Fabien Ringeval, Elisabeth Andre, and
+     Pattern Recognition, pages 2415–2424, 2024. 2, 3                    Hatice Gunes. React 2024: the second multiple appropriate
+[37] Yue Ma, Hongyu Liu, Hongfa Wang, Heng Pan, Yingqing             facial reaction generation challenge, 2024. 2
+     He, Junkun Yuan, Ailing Zeng, Chengfei Cai, Heung-Yeung      [50] Yang Song, Jascha Sohl-Dickstein, Diederik P Kingma, Ab-
+    Shum, Wei Liu, et al. Follow-your-emoji: Fine-controllable           hishek Kumar, Stefano Ermon, and Ben Poole. Score-based
+     and expressive freestyle portrait animation. In SIGGRAPH            generative modeling through stochastic differential equations.
+     Asia 2024 Conference Papers, pages 1–12, 2024. 3                   arXiv preprint arXiv:2011.13456, 2020. 2
+[38] Evonne Ng.   Learning2listen.  https://evonneng.     [51] Jiaxiang Tang, Kaisiyuan Wang, Hang Zhou, Xiaokang Chen,
+    github.io/learning2listen/. 4, 5, 6, 7, 1                 Dongliang He, Tianshu Hu, Jingtuo Liu, Gang Zeng, and
+[39] Evonne Ng, Hanbyul Joo, Liwen Hu, Hao Li, Trevor Darrell,          Jingdong Wang. Real-time neural radiance talking portrait
+    Angjoo Kanazawa, and Shiry Ginosar. Learning to listen:           synthesis via audio-spatial decomposition. arXiv preprint
+     Modeling non-deterministic dyadic facial motion. In Proceed-          arXiv:2211.12368, 2022. 2
+     ings of the IEEE/CVF Conference on Computer Vision and      [52] Gemini Team. Gemini 1.5: Unlocking multimodal under-
+     Pattern Recognition, pages 20395–20405, 2022. 2, 3, 4, 7, 8           standing across millions of tokens of context, 2024. 5, 2[53] Linrui Tian, Qi Wang, Bang Zhang, and Liefeng Bo. Emo:      [67] Zhongcong Xu, Jianfeng Zhang, Jun Hao Liew, Hanshu Yan,
+    Emote portrait alive-generating expressive portrait videos           Jia-Wei Liu, Chenxu Zhang, Jiashi Feng, and Mike Zheng
+     with audio2video diffusion model under weak conditions.          Shou.  Magicanimate: Temporally consistent human im-
+     arXiv preprint arXiv:2402.17485, 2024. 2                         age animation using diffusion model.  In Proceedings of
+[54] Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Mar-           the IEEE/CVF Conference on Computer Vision and Pattern
+      tinet, Marie-Anne Lachaux, Timoth´ee Lacroix, Baptiste           Recognition (CVPR), pages 1481–1490, 2024. 2
+      Rozi`ere, Naman Goyal, Eric Hambro, Faisal Azhar, Aurelien      [68] Hu Ye, Jun Zhang, Sibo Liu, Xiao Han, and Wei Yang. Ip-
+     Rodriguez, Armand Joulin, Edouard Grave, and Guillaume            adapter: Text compatible image prompt adapter for text-to-
+     Lample.  Llama: Open and efficient foundation language         image diffusion models. arXiv preprint arXiv:2308.06721,
+     models, 2023. 2                                                  2023. 4
+[55] Minh Tran, Di Chang, Maksim Siniukov, and Mohammad      [69] Jun Yu, Shenshen Du, Haoxiang Shi, Yiwei Zhang, Renbin
+     Soleymani. Dim: Dyadic interaction modeling for social           Su, Zhongpeng Cai, and Lei Wang. Responsive listening head
+     behavior generation. In European Conference on Computer            synthesis with 3dmm and dual-stream prediction network. In
+      Vision, pages 484–503. Springer, 2024. 2, 3, 4, 5, 6, 7, 8, 1            Proceedings of the 1st International Workshop on Multime-
+[56] Thomas Unterthiner, Sjoerd Van Steenkiste, Karol Kurach,           dia Content Generation and Evaluation: New Methods and
+      Rapha¨el Marinier, Marcin Michalski, and Sylvain Gelly. Fvd:           Practice, pages 137–143, 2023. 5, 6
+   A new metric for video generation. 2019. 7                      [70] Chenxu Zhang, Chao Wang, Jianfeng Zhang, Hongyi Xu,
+[57] Aaron van den Oord, Oriol Vinyals, and Koray Kavukcuoglu.         Guoxian Song, You Xie, Linjie Luo, Yapeng Tian, Xiaohu
+     Neural discrete representation learning. In Proceedings of         Guo, and Jiashi Feng. Dream-talk: diffusion-based realistic
+      the 31st International Conference on Neural Information Pro-          emotional audio-driven method for single image talking face
+     cessing Systems, pages 6309–6318, 2017. 3                            generation. arXiv preprint arXiv:2312.13578, 2023. 2
+[58] Cong Wang, Kuan Tian, Jun Zhang, Yonghang Guan, Feng      [71] Lyumin Zhang.  [major update] reference-only control  ·
+     Luo, Fei Shen, Zhiwei Jiang, Qing Gu, Xiao Han, and Wei           mikubill/sd-webui-controlnet · discussion #1236, 2023. 2
+     Yang. V-express: Conditional dropout for progressive training      [72] Lvmin Zhang, Anyi Rao, and Maneesh Agrawala. Adding
+     of portrait video generation. arXiv preprint arXiv:2406.02511,           conditional control to text-to-image diffusion models. In Int.
+     2024. 2                                                           Conf. Comput. Vis., pages 3836–3847, 2023. 2
+[59] Duomin Wang, Bin Dai, Yu Deng, and Baoyuan Wang. Agen-      [73] Longhao Zhang, Shuang Liang, Zhipeng Ge, and Tianshu
+      tavatar: Disentangling planning, driving and rendering for         Hu. Personatalk: Bring attention to your persona in visual
+      photorealistic avatar agents. CoRR, abs/2311.17465, 2023. 2           dubbing. arXiv preprint arXiv:2409.05379, 2024. 2
+[60] Zhou Wang, Alan C Bovik, Hamid R Sheikh, and Eero P      [74] Richard Zhang, Phillip Isola, Alexei A Efros, Eli Shechtman,
+     Simoncelli. Image quality assessment: From error visibility to          and Oliver Wang. The unreasonable effectiveness of deep
+      structural similarity. IEEE Transactions on Image Processing,            features as a perceptual metric. In CVPR, 2018. 7
+     13(4):600–612, 2004. 7                                         [75] Wenxuan Zhang, Xiaodong Cun, Xuan Wang, Yong Zhang,
+[61] Huawei Wei, Zejun Yang, and Zhisheng Wang. Aniportrait:         Xi Shen, Yu Guo, Ying Shan, and Fei Wang.  Sadtalker:
+     Audio-driven synthesis of photorealistic portrait animation,          Learning realistic 3d motion coefficients for stylized audio-
+     2024. 3                                                               driven single image talking face animation. In Proceedings of
+[62] Ronald J Williams and David Zipser. A learning algorithm for           the IEEE/CVF Conference on Computer Vision and Pattern
+     continually running fully recurrent neural networks. Neural           Recognition, pages 8652–8661, 2023. 2
+     computation, 1(2):270–280, 1989. 7                             [76] Wei Zhao, Peng Xiao, Rongju Zhang, Yijun Wang, and
+[63] Jiaqi Xu, Xinyi Zou, Kunzhe Huang, Yunkuo Chen, Bo Liu,           Jianxin Lin. Semantic-aware responsive listener head synthe-
+    MengLi Cheng, Xing Shi, and Jun Huang. Easyanimate: A               sis. In Proceedings of the 30th ACM International Conference
+     high-performance long video generation method based on         on Multimedia, pages 7065–7069, 2022. 2
+     transformer architecture. arXiv preprint arXiv:2405.18991,      [77] Hang Zhou, Yasheng Sun, Wayne Wu, Chen Change Loy, Xi-
+     2024. 4, 5, 6                                                 aogang Wang, and Ziwei Liu. Pose-controllable talking face
+[64] Jiaqi Xu, Xinyi Zou, Kunzhe Huang, Yunkuo Chen, Bo Liu,           generation by implicitly modularized audio-visual representa-
+    MengLi Cheng, Xing Shi, and Jun Huang. Easyanimate: A             tion. In Proceedings of the IEEE Conference on Computer
+     high-performance long video generation method based on           Vision and Pattern Recognition (CVPR), 2021. 2
+     transformer architecture, 2024. 4                                [78] Mohan Zhou, Yalong Bai, Wei Zhang, Ting Yao, Tiejun
+[65] Mingwang Xu, Hui Li, Qingkun Su, Hanlin Shang, Liwei          Zhao, and Tao Mei. Vico-x: Multimodal conversation dataset.
+     Zhang, Ce Liu, Jingdong Wang, Yao Yao, and Siyu Zhu.        https://project.mhzhou.com/vico, 2022. Ac-
+     Hallo: Hierarchical audio-driven visual synthesis for portrait           cessed: 2022-09-30. 5
+     image animation. arXiv preprint arXiv:2406.08801, 2024. 2,      [79] Mohan Zhou, Yalong Bai, Wei Zhang, Ting Yao, Tiejun Zhao,
+    3                                                            and Tao Mei. Responsive listening head generation: a bench-
+[66] Sicheng Xu, Guojun Chen, Yu-Xiao Guo, Jiaolong Yang,         mark dataset and baseline. In European Conference on Com-
+    Chong Li, Zhenyu Zang, Yizhong Zhang, Xin Tong, and           puter Vision, pages 124–142. Springer, 2022. 2, 5, 6, 7, 8
+     Baining Guo. Vasa-1: Lifelike audio-driven talking faces      [80] Mohan Zhou, Yalong Bai, Wei Zhang, Ting Yao, and Tiejun
+     generated in real time.  arXiv preprint arXiv:2404.10667,          Zhao.  Interactive conversational head generation.  arXiv
+     2024. 2                                                                preprint arXiv:2307.02090, 2023. 2[81] Yang Zhou, Xintong Han, Eli Shechtman, Jose Echevar-
+       ria, Evangelos Kalogerakis, and Dingzeyu Li. Makelttalk:
+     speaker-aware talking-head animation. ACM Transactions on
+     Graphics, 39(6):1–15, 2020. 2
+[82] Yongming Zhu, Longhao Zhang, Zhengkun Rong, Tianshu
+    Hu, Shuang Liang, and Zhipeng Ge.  Infp: Audio-driven
+      interactive head generation in dyadic conversations. arXiv
+     preprint arXiv:2412.04037, 2024. 2, 3, 6, 7, 8   DiTaiListener: Controllable High Fidelity Listener Video Generation with
+                                   Diffusion
+
+                           Supplementary Material
+
+
+                                                        bounding boxes, bounding boxes changing size, and extreme
+                                                       head poses.
+
+                                                               Training the model on raw data led to model collapse
+                                                                    (floating hands, blurry, distorted faces, face out of frame),
+                                                                necessitating data cleaning. To address this, we applied a
+                                                               multi-step filtering process. First, for each clip, instead of
+                                                           using per-frame bounding boxes, we identified the largest
+                                                      bounding box covering faces in all frames and used it for
+                                                             cropping. This provided a static background and a constant
+                                                      bounding box size and removed frame-to-frame jitter. We
+                                                           then used LibreFace [7] to estimate head pose and only
+                                                            kept frames with frontal-looking faces by applying pitch
+                                                     and yaw thresholds; the acceptable range of yaw and pitch
+                                                              angles was set to [−30, 30] degrees. In order to remove other
+                                                                frame-level artifacts, we collected annotations in-house. For
+                                                             every one of the 50,000 clips, we randomly selected a frame.
+                                                           Annotators were to label if each frame had artifacts of some
+                                                              category: split screens, text overlays or transition effects,
+                                                        non-hand objects blocking the view, visible hands, and other
+                                                                visual disturbances such as glare. Frames without artifacts
+Figure 6. A screenshot of user study survey example. The methods    were automatically labeled as clean. Initial manual sparse
+are anonymized as A, B, C, D, E, and the order is randomized.        annotations were used to finetune a CLIP image encoder
+                                                                  for artifact detection. This method provided 0.95 recall on
+                                                        unseen clips. As a result, 13.6% of all data was marked for
+6. Detailed User Study                               removal due to detected artifacts. The resulting model was
+                                                              applied with a high sensitivity threshold to filter artifacts on
+We show an example screenshot of our user study survey
+                                                                              all the other frames in the dataset.
+in Figure. 6. The methods are well-anonymized, and we
+keep track of the original method order for each comparison
+offline. The participants are paid $12/hr for their labor, and                                                          8. Details of 3DMM Space Evaluation Metrics
+we collect the results of each user after careful human review.
+The incomplete and invalid responses are rejected. After      • Fr´echet Distance (FD) measures discrepancies between
+such a review, we have 50 valid responses in total. The result        distributions of real and generated listener’s EMOCA
+is presented in Table. 1                       3DMM coefficients.  It is separately computed for head
+                                                            poses and facial expressions.
+7. Details of Dataset Processing                             • Paired FD (P-FD) is an extension of FD for synchrony.
+                                                  P-FD is calculated by concatenating listener motions with
+RealTalk database includes videos from The Skin Deep     GT speaker motions and measuring Fr´echet Distance of
+YouTube Podcast and contains 692 dyadic conversations.       resulting features. It measures how well listener motions
+The total duration of the videos is 115 hours. The database        are temporally aligned with speaker motions.
+provides bounding boxes of participants’ faces, as well as      • Variance (Var) and SI for Diversity (SID) are used to mea-
+EMOCA 3DMM coefficients [11]. The dataset contains        sure the diversity of generated listener motions, following
+around 50,000 conversational turns of dyadic interactions     DIM [55] and L2L [38]. SID is computed by applying
+with specified roles, i.e., speaker vs listener. We noticed      k-means clustering to 3DMM features and computing en-
+that some of the videos contain artifacts that make them       tropy of the histogram of cluster assignments. The higher
+hard to use for direct training in the video-generation model;       the SID, the more diverse the motions are. Var is the
+such artifacts include occlusions between the listener and       variance of pose and expression features that indicate how
+the camera, bounding boxes not covering full faces, shaky        expressive the movements are across temporal dimensions.9. Text control                               emotions. Only retain direct
+                                           observations about the listener’s
+We add text control inputs to guide the model with text                                           facial expressions, emotions, or other
+prompts. ViCo and RealTalk datasets do not contain any                                           reactions. Give only extracted
+textual captions. Therefore, we performed captioning in                                           information in plaintext form in a
+two stages: text extraction and prompt refinement.  In                                           single sentence.
+the first stage, we used a Large Video-Language-Model
+(VLM) Google Gemini 1.5 Flash 002 [52] to extract text                                           Analytical description example:
+descriptions of audio-visual emotional cue information                                           "The person in the video is shown
+from the listener video with the speaker audio. The fol-                                           smiling broadly, with their mouth wide
+lowing prompt was used:                                           open and eyes crinkled at the corners.
+Which emotion is present in the video?     This is a classic display of happiness
+Emotion can belong to only one of the      There are no other indicators of any
+following classes - angry, happy, sad,     other emotion present."
+neutral, disgust, fear, surprise. Give
+your response in JSON format as            Example extracted: Listener looks
+following: {"emotion": "angry",            happy, smiling broadly with mouth open
+"reason":"reason for your response"}       and eyes crinkled.
+
+Example of model respose:                         User:
+                                           Analytical description:{"emotion": "happy", "reason": "The
+                                             "{text}"person in the video is expressing
+feelings of freedom and self-
+                                           Assistant:acceptance. The overall tone is
+                                           Extracted: Listener looks """positive, suggesting contentment
+and happiness. He talks about being
+able to be himself without                                                 The processed text is used as text control. Example of
+conforming to external pressures.                                                                  resulting text control: “happy, smiling broadly, showing
+This indicates a sense of                                                             her teeth”.
+liberation and joy. Phrases such as
+"I’m free" and "I get to be me"
+directly convey positive emotions."}
+
+
+Extracted information has emotional cues from the speech
+and quotes that are important to describe the context of
+the conversation. However, those do not directly affect
+the appearance of the listener; sometimes, the VLM lists
+what emotions are not present in the video. Therefore,
+an extra step of text processing was needed to create a
+text control prompt from extracted information. We use
+Llama-3.3-70B-Instruct Large Language Model (LLM)
+[54] with the following prompt:
+
+ """
+Instructions:
+Given an analytical description of a
+dyadic conversation with a video of a
+listener, extract only information
+about the listener’s physical
+expressions and emotions, conversation
+emotions. Discard conversation quotes,
+reasoning thoughts, and any general
+explanations or definitions of

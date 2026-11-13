@@ -1,0 +1,143 @@
+{
+  "timestamp_utc": "2026-10-29T13:39:19.262337+00:00",
+  "read_only": true,
+  "cutting_started": false,
+  "training_modified": false,
+  "nodes": [
+    {
+      "node": "node8",
+      "host": "172.29.104.233",
+      "hostname": "dedicated-developjob-zz-dev-machine-1-l1o08",
+      "utc": "2026-10-29 13:36:08",
+      "cpu_quota_cores": 160,
+      "cpu_cores_used": 28.22,
+      "cpu_quota_usage_pct": 17.6,
+      "cpu_affinity_busy_pct": 18.0,
+      "memory_available_GiB": 1167.2,
+      "gpu_count": 8,
+      "gpu_mean_utilization_pct": 91.9,
+      "gpu_utilization_range": [
+        68.0,
+        100.0
+      ],
+      "gpu_memory_used_GiB_range": [
+        100.0,
+        102.4
+      ],
+      "iowait_pct": 0.0,
+      "cpu_throttled_usec_delta": 0,
+      "memory_pressure_avg10": "some avg10=0.00 avg60=0.00 avg300=0.00 total=352026110",
+      "selected_rg_cpu_cores": 0
+    },
+    {
+      "node": "node17",
+      "host": "172.29.15.91",
+      "hostname": "dedicated-developjob-lq-dev-machine-2-taaft",
+      "utc": "2026-10-29 13:36:09",
+      "cpu_quota_cores": 160,
+      "cpu_cores_used": 30.99,
+      "cpu_quota_usage_pct": 19.4,
+      "cpu_affinity_busy_pct": 20.76,
+      "memory_available_GiB": 779.1,
+      "gpu_count": 8,
+      "gpu_mean_utilization_pct": 96.8,
+      "gpu_utilization_range": [
+        44.0,
+        100.0
+      ],
+      "gpu_memory_used_GiB_range": [
+        100.1,
+        102.2
+      ],
+      "iowait_pct": 0.0,
+      "cpu_throttled_usec_delta": 0,
+      "memory_pressure_avg10": "some avg10=3.09 avg60=2.54 avg300=1.43 total=1199570037",
+      "selected_rg_cpu_cores": 0
+    },
+    {
+      "node": "node12",
+      "host": "172.29.252.37",
+      "hostname": "dedicated-developjob-lq-dev-machine-1-4btg8",
+      "utc": "2026-10-29 13:36:21",
+      "cpu_quota_cores": 160,
+      "cpu_cores_used": 88.59,
+      "cpu_quota_usage_pct": 55.4,
+      "cpu_affinity_busy_pct": 57.39,
+      "memory_available_GiB": 1233.9,
+      "gpu_count": 8,
+      "gpu_mean_utilization_pct": 80.0,
+      "gpu_utilization_range": [
+        28.0,
+        100.0
+      ],
+      "gpu_memory_used_GiB_range": [
+        99.8,
+        103.1
+      ],
+      "iowait_pct": 0.02,
+      "cpu_throttled_usec_delta": 0,
+      "memory_pressure_avg10": "some avg10=0.00 avg60=0.00 avg300=0.00 total=2686",
+      "selected_rg_cpu_cores": 56.06
+    },
+    {
+      "node": "node4",
+      "host": "172.29.225.51",
+      "hostname": "dedicated-developjob-lq-dev-machine-3-zhw7q",
+      "utc": "2026-10-29 13:36:24",
+      "cpu_quota_cores": 160,
+      "cpu_cores_used": 28.57,
+      "cpu_quota_usage_pct": 17.9,
+      "cpu_affinity_busy_pct": 18.64,
+      "memory_available_GiB": 1048.3,
+      "gpu_count": 8,
+      "gpu_mean_utilization_pct": 91.7,
+      "gpu_utilization_range": [
+        69.0,
+        100.0
+      ],
+      "gpu_memory_used_GiB_range": [
+        98.9,
+        102.4
+      ],
+      "iowait_pct": 0.0,
+      "cpu_throttled_usec_delta": 0,
+      "memory_pressure_avg10": "some avg10=0.00 avg60=0.00 avg300=0.00 total=1276840506",
+      "selected_rg_cpu_cores": 0
+    }
+  ],
+  "training_baseline": {
+    "utc": "2026-10-29T13:36:40.851365+00:00",
+    "log": "/private/codes/learning/LTX-infer-LiHR/server-monitor-20261028/node17.f34.log",
+    "mtime_utc": "2026-10-29T13:36:40.221900+00:00",
+    "count": 100,
+    "first_step": 18538,
+    "last_step": 18637,
+    "seconds": {
+      "median": 2.7558,
+      "p95": 3.149,
+      "min": 2.45,
+      "max": 3.3346
+    },
+    "batch_seconds": {
+      "median": 2.7517,
+      "p95": 3.1451,
+      "min": 2.4463,
+      "max": 3.3296
+    },
+    "between_batches_seconds": {
+      "median": 0.0046,
+      "p95": 0.006,
+      "min": 0.0036,
+      "max": 0.0113
+    }
+  },
+  "assessment": "CPU-only low-concurrency cutting is feasible; no A/B coexistence test has been run, so zero training slowdown is not established. All 32 GPUs are occupied by the active distributed training job. Shared WekaFS and per-node data loading can propagate contention to all ranks.",
+  "suggested_initial_limits": {
+    "workers_per_node": 1,
+    "torch_threads_per_worker": 2,
+    "openblas_threads_per_worker": 1,
+    "gpu_for_cutting": false,
+    "preview_rendering": false
+  },
+  "suggested_pilot": "Start on node8/node4 and compare 5–10 minutes of training step-time median/p95 with a nearby baseline, excluding validation/checkpoint periods; expand only if stable. Sustained >5% slowdown is a suggested backoff condition, not a measured result."
+}

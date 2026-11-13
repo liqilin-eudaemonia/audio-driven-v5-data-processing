@@ -1,0 +1,155 @@
+# DualTalk: Dual-Speaker Interaction for 3D Talking Head Conversations [CVPR 2025]
+
+Official PyTorch implementation for the paper:
+
+> **DualTalk: Dual-Speaker Interaction for 3D Talking Head Conversations**, ***CVPR 2025***.
+>
+> Ziqiao Peng, Yanbo Fan, Haoyu Wu, Xuan Wang, Hongyan Liu, Jun He, Zhaoxin Fan
+>
+<p align='center'>
+  <b>
+    <a href="https://arxiv.org/abs/2505.18096">Paper</a>
+    | 
+    <a href="https://ziqiaopeng.github.io/dualtalk/">Project Page</a>
+    |
+    <a href="https://github.com/ZiqiaoPeng/DualTalk">Code</a> 
+  </b>
+</p> 
+
+<p align="center">
+<img src="./media/DualTalk.png" width="95%" />
+</p>
+
+> Comparison of single-role models (Speaker-Only and Listener-Only) with DualTalk. Unlike single-role models, which lack key interaction elements, DualTalk supports speaking and listening role transition, multi-round conversations, and natural interaction.
+
+## **Environment**
+
+- Linux
+- Python 3.6+
+- Pytorch 1.12.1
+- CUDA 11.3
+- ffmpeg
+- **[MPI-IS/mesh](https://github.com/MPI-IS/mesh)**	
+
+Clone the repo:
+  ```bash
+  git clone https://github.com/ZiqiaoPeng/DualTalk.git
+  cd DualTalk
+  ```  
+Create conda environment:
+```bash
+conda create -n dualtalk python=3.8.8
+conda activate dualtalk
+pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+pip install -r requirements.txt
+python install_pytorch3d.py
+```
+Before installation, you need to create an account on the [FLAME website](https://flame.is.tue.mpg.de/) and prepare your
+login and password beforehand. You will be asked to provide them in the installation script.
+Then, run the install.sh script to download the FLAME data and install the environment.
+```bash
+bash install.sh
+```
+
+## **Demo**
+
+Download the pretrained model.
+
+```bash
+# If you are in China, you can set up a mirror.
+# export HF_ENDPOINT=https://hf-mirror.com
+pip install huggingface-hub
+huggingface-cli download ZiqiaoPeng/DualTalk --local-dir model
+```
+
+
+Given the audio and blendshape data, run:
+
+```bash
+python demo.py --audio1_path ./demo/xkHwlcDSOjc_sub_video_109_000_speaker2.wav --audio2_path ./demo/xkHwlcDSOjc_sub_video_109_000_speaker1.wav --bs2_path ./demo/xkHwlcDSOjc_sub_video_109_000_speaker1.npz
+```
+
+The results will be saved to `result_DualTalk` folder. 
+
+## **Dataset**
+Download the dataset from [DualTalk_Dataset](https://huggingface.co/datasets/ZiqiaoPeng/DualTalk_Dataset), unzip it, and place it in the data folder.
+The data folder format is as follows:
+- data
+	- train
+		- xxx.npz
+		- xxx.wav
+		- ...
+	- test
+		- xxx.npz
+		- xxx.wav
+		- ...
+	- ood
+		- xxx.npz
+		- xxx.wav
+		- ...
+
+
+
+## **Training and Testing**
+
+### Training
+
+- To train the model, run:
+
+	```
+	python main.py
+	```
+
+	You can find the trained models in `save_DualTalk` folder.
+
+### Testing
+
+- To test the model, run:
+
+    ```
+	python test.py
+    ``` 
+
+	The results will be saved to `result_DualTalk` folder.
+
+
+### Visualization
+
+- To visualize the results, run:
+
+	```
+	cd render
+	python render_dualtalk_output.py
+	```
+	You can find the outputs in the `result_DualTalk` folder.
+
+- To stitch the two speakers' video, run:
+
+	```
+	cd render
+	python two_person_video_stitching.py
+	```
+
+### Evaluation
+
+- To evaluate the model, run:
+
+	```
+	cd metric
+	python metric.py
+	```
+	You can find the metrics results in the `metric` folder.
+
+## **Citation**
+
+If you find this code useful, please consider citing:
+
+```bibtex
+@inproceedings{peng2025dualtalk,
+  title={Dualtalk: Dual-speaker interaction for 3d talking head conversations},
+  author={Peng, Ziqiao and Fan, Yanbo and Wu, Haoyu and Wang, Xuan and Liu, Hongyan and He, Jun and Fan, Zhaoxin},
+  booktitle={Proceedings of the Computer Vision and Pattern Recognition Conference},
+  pages={21055--21064},
+  year={2025}
+}
+```

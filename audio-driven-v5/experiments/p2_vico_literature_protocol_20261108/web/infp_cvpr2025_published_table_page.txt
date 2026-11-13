@@ -1,0 +1,72 @@
+       Methods           SSIM↑  PSNR↑   FID↓   SyncScore↑  LPIPS↓  CSIM↑  SID↑   Var↑
+
+      DIM [39]              0.651    20.417   34.361     4.778      0.485    0.824   0.766   0.825
+       INFP (Ours)            0.834    31.562   15.727     7.188      0.257    0.904   2.613   2.386
+
+       w/o Motion Memory    0.830    31.218   18.334     6.103      0.259    0.899   2.153   2.016
+       w/o Style Modulation   0.831    31.442   16.029     7.062      0.271    0.904   2.551   2.316
+       w/ Intact Image         0.802    28.488   16.990     6.812      0.266    0.842   2.470   2.148
+       w/ Landmarks Map     0.821    30.693   16.327     6.833      0.281    0.901   2.601   2.335
+
+      GT                    1.000    N/A     0.000      7.261      0.000    0.967   2.891   2.435
+
+
+                            Table 1. Quantitative comparison of interactive head generation on DyConv.
+
+
+
+ Methods         Naturalness  Motion Diversity  AV-Align  Visual
+
+ DIM [39]           2.71            2.14           2.65      3.13
+ INFP w/o Style      4.02            3.98           4.28      4.11
+ INFP (Ours)        4.38            4.49           4.33      4.13
+
+
+     Table 2. User study measured by Mean Opinion Scores.
+
+
+              FD↓      MSE↓      SID↑        Var↑
+  Method      Exp   Pose  Exp  Pose  Exp  Pose  Exp  Pose
+
+ L2L [23]     33.93  0.06  0.93  0.01  2.77  2.66  0.83  0.02
+ RLHG [58]   39.02  0.07  0.86  0.01  3.62  3.17  1.52  0.02
+ DIM [39]     23.88  0.06  0.70  0.01  3.71  2.35  1.53  0.02
+
+ INFP (Ours)  18.63  0.07  0.51  0.01  4.78  3.92  2.83  0.18
+                                                                  Figure 5. Visualization of style control with our style modulation.
+
+Table 3. Quantitative comparison of listening head generation on
+ViCo [58].
+                                                          6. Conclusion
+
+  Methods      SSIM↑  PSNR↑  FID↓   SyncScore↑  CSIM↑
+                                                              In this paper, we propose INFP, a novel audio-driven in-
+  SadTalker [52]   0.781   26.650  28.516     6.125      0.814         teractive head generation framework for dyadic conversa-
+  AniTalker [17]   0.789   26.822  28.778     5.738      0.858
+                                                                       tions, which aims to mimic facial behaviors of human-  EchoMimic [2]   0.807   28.983  20.873     6.251      0.863
+                                                human interactions conditioning on the dyadic audio. As
+  INFP (Ours)     0.804   28.657  18.582     6.670      0.886
+                                                            demonstrated, our method is a unified framework and is ca-
+                                                            pable of smoothly and naturally adapting to various con-
+Table 4.  Quantitative comparison of talking head generation on
+                                                                 versational roles without explicit assignment or switching.HDTF [53].
+                                                       Meanwhile, we collect a large scale audio-visual dataset for
+                                                                multi-turn dyadic conversations, which could facilitate fur-
+  Hybrid Facial Representation. We change the input      ther researches of dyadic interactive head generation. Ex-
+to Em in stage 1 from our carefully-designed hybrid facial      tensive experiments and ablations prove the advancement
+representation to the original intact image or 2D landmarks     and effectiveness of our method over other SOTA methods.
+map. We observe that there is degradation in generation        Limitation and Future Work.  Currently, our method
+quality and a leakage of appearance information.               only takes conversation audios as the input, combining con-
+                                                                           trol signals from multiple modalities, such as visual and tex-
+5.4. Visualization of Style Control                                                                     tual contents, can offer additional capacities. As our pro-
+As illustrated in Sec. 3.2, our model supports inputting style     posed framework focus on head synthesis, extending the
+vector sm extracted from any portrait video to globally con-     generation range to the upper, even whole body might be
+trol the emotions or attitudes of the generated results. Here     a interesting and challenging future work.
+we select 3 video clips with varying degrees of “happiness”        Ethical Considerations.  There might be the poten-
+to control emotions during generation. Results are shown       tial misuse of our method to fabricate deceptive talks and
+in Fig. 5. It can be seen from the figure that sm effectively     speeches. To this end, we will restrict access to our core
+control the emotions of the driven individual.                models exclusively to research institutions.
+
+
+
+                                                     10674

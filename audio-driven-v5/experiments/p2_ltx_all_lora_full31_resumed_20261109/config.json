@@ -1,0 +1,173 @@
+{
+  "schema": "p2-matrix16-v1",
+  "id": "guided_av_event_feature_s1",
+  "text_condition": "guided",
+  "loss": "av_event_feature",
+  "stage": 1,
+  "data_config": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_train500h_cache_20261101/manifest.json",
+  "plan_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_train_dev500h_qwen_hidden_20261105",
+  "teacher_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_train_dev500h_teacher_cache_20261105",
+  "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_all_lora_full31_resumed_20261109",
+  "parent_experiment": null,
+  "loss_weights": {
+    "av": 1.0,
+    "event": 0.05,
+    "video_feature": 0.025,
+    "audio_feature": 0.025
+  },
+  "qwen_lora": {
+    "enabled": false,
+    "rank": 8,
+    "alpha": 8,
+    "learning_rate": 1e-05,
+    "targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ],
+    "gradient_checkpointing": true
+  },
+  "text_lora": {
+    "enabled": true,
+    "rank": 8,
+    "alpha": 8,
+    "learning_rate": 1e-05
+  },
+  "training": {
+    "seed": 20261023,
+    "global_batch": 31,
+    "steps": 9169,
+    "save_every": 500,
+    "warmup_steps": 50,
+    "connector_lr": 3e-05,
+    "feature_lr": 3e-05,
+    "event_lr": 0.0001,
+    "clip_norm": 1.0,
+    "weight_decay": 0.0,
+    "gradient_checkpointing": "all",
+    "tensorboard": true
+  },
+  "j_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_train_dev500h_qwen_hidden_20261105",
+  "clip_labels": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_clip_guarded_current500h_20261106",
+  "event_supervision": {
+    "mode": "clip_multilabel",
+    "classes": {
+      "video": [
+        "visual:blinking",
+        "visual:eye closing",
+        "visual:eye opening",
+        "visual:eyebrow raising",
+        "visual:frowning",
+        "visual:gaze shifting",
+        "visual:hand lowering",
+        "visual:hand raising",
+        "visual:head nodding",
+        "visual:head tilting",
+        "visual:head turning",
+        "visual:lip pursing",
+        "visual:mouth closing",
+        "visual:mouth movement",
+        "visual:mouth opening",
+        "visual:smiling"
+      ],
+      "audio": [
+        "audio:audible laughter",
+        "audio:speech",
+        "audio:vocalization"
+      ]
+    },
+    "min_positive": 5000
+  },
+  "connector": {
+    "fusion_width": 1024,
+    "fusion_depth": 4,
+    "fusion_heads": 16
+  },
+  "duration_sampling": {
+    "policy": "duration",
+    "window": 496,
+    "start_step": 0,
+    "manifest": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_current500h_av_whisper31_20261107/duration.schedule.json",
+    "sha256": "32b6593ce7e586a4b3ce08eb692b4f773c840923ef403718ade44505c7b58ce1",
+    "sample_list_sha256": "198f166ed643b3fe3d0ea74896b97197cf93823474c02f4ae55cc897051d4135"
+  },
+  "event_head_training": true,
+  "baseline_config": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_qwen_whisper_av_tuned_20261104/config.json",
+  "baseline_output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_qwen_whisper_av_tuned_20261104",
+  "qwen_hidden_source": "base_pre_sft",
+  "whisper_cache": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_train_dev500h_whisper_cache_20261105",
+  "whisper": {
+    "model_path": "/private/codes/exp/boxian_workspace/models/benchmark/huggingface/hub/models--openai--whisper-large-v3/snapshots/06f233fe06e710322aca913c1bc4249a0d71fce1",
+    "input_dim": 1280,
+    "context_dim": 1280,
+    "temporal_rope": true,
+    "enable_video": true,
+    "enable_audio": true,
+    "learning_rate": 3e-05,
+    "encoder_dtype": "float32"
+  },
+  "whisper_training_execution": {
+    "gradient_reduction": "streaming_fp64",
+    "gradient_bucket_mb": 256,
+    "optimizer_state_cpu_offload": false,
+    "longest_sample_check": true
+  },
+  "whisper_aux_experiment": "p2-qwen-whisper-event-feature-v1",
+  "combined_execution": {
+    "prefetch_batches": 2,
+    "gradient_bucket_mb": 512
+  },
+  "world31_execution": {
+    "kind": "fresh31-same-initialization-v1",
+    "world": 31,
+    "samples": 285638,
+    "parent_config": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_whisper_event_feature_train31_20261105/parent_config.json",
+    "parent_config_sha256": "bef014827bf12a3467021083ccc6e09dbf98818ab50ac0485e5b363b22ac2591",
+    "reserved_node": "node8",
+    "reserved_gpu": 7
+  },
+  "hidden_event_experiment": "p2-ltx-hidden-events-v1",
+  "hidden_event_parent_config": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_j_whisper_event_feature_train31_20261105/config.json",
+  "current_cache_index": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_j_upright_av500h_train_dev_v3_20261105/TRAINING_CACHE_INDEX.json",
+  "current_source": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_event_current_sources_v2_20261106",
+  "hidden_event_supervision": {
+    "readout": "last_block_before_output",
+    "clip_weight": 1.0,
+    "temporal_weight": 0.0
+  },
+  "clip_numeric_labels": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_clip_numeric_guarded_current500h_20261106",
+  "execution": {
+    "prefetch_batches": 2,
+    "gradient_reduction": "streaming_fp64",
+    "gradient_bucket_mb": 512,
+    "optimizer_state_cpu_offload": false,
+    "longest_sample_check": true
+  },
+  "sample_list": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_event_current_sources_v2_20261106/sample_list.csv",
+  "ltx_all_lora_experiment": "p2-ltx-all-attention-ffn-lora-v1",
+  "ltx_lora_scope": {
+    "attention": [
+      "attn1",
+      "attn2",
+      "audio_attn1",
+      "audio_attn2",
+      "audio_to_video_attn",
+      "video_to_audio_attn"
+    ],
+    "ffn": [
+      "ff",
+      "audio_ff"
+    ],
+    "optional_attention_gate": true,
+    "whisper_full": [
+      "qwen_attn2",
+      "audio_qwen_attn2"
+    ],
+    "frozen_norms_and_nonblock_projections": true
+  },
+  "ltx_all_lora_reference": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_ltx_clip_train32_after_gpu67_20261106/config.json",
+  "ltx_all_lora_reference_sha256": "f509abbdabf680d6da2c04c0d30cd7edabb01e341d8f8c199753c77a1786e360",
+  "matched_reference": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_current500h_av_whisper31_20261107/config.json",
+  "matched_reference_sha256": "26f2748d12fa748f4ccc926de60dbbd9d45ef216ed3a3b5f17d5d3d78fd6c251"
+}

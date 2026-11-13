@@ -1,0 +1,219 @@
+{
+  "schema": "p2-j-system-cache-v1",
+  "config": {
+    "version": "p2-listen-event-v2-visual6-audio1",
+    "reuse_root": "/private/liqi_workspace/project_code/audio-driven-v4",
+    "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_system_prompt_cache_smoke_20261101/j24_fast_v1",
+    "extractor": {
+      "hidden_layers": [
+        8,
+        18,
+        28,
+        35
+      ],
+      "layer_fusion": "attention",
+      "fusion_width": 512,
+      "fusion_depth": 2,
+      "fusion_heads": 8,
+      "vision_fps": 8,
+      "audio_hz": 8,
+      "vision_max_pixels": 50176,
+      "feature_video_weight": 1,
+      "feature_audio_weight": 1,
+      "av_weight": 1
+    },
+    "data": {
+      "fps": 25,
+      "size": 512,
+      "max_frames": 305,
+      "min_seconds": 2.0
+    },
+    "events": {
+      "types": [
+        "head_nod",
+        "head_shake",
+        "smile",
+        "laugh",
+        "frown",
+        "surprise",
+        "listener_vocalization"
+      ],
+      "weight": 0.05,
+      "head_width": 128,
+      "pos_weight_cap": 10,
+      "schema": "listen-events-v2-visual6-audio1",
+      "K_train": [
+        "head_nod",
+        "head_shake",
+        "smile",
+        "laugh",
+        "frown",
+        "surprise",
+        "listener_vocalization"
+      ],
+      "mapping_version": "listen-candidate-training-v2",
+      "admission_policy": "event-interval-weak-background-v1"
+    },
+    "training": {
+      "global_batch": 8,
+      "steps": 1000,
+      "connector_lr": 3e-05,
+      "feature_lr": 3e-05,
+      "event_lr": 0.0001,
+      "warmup_steps": 50,
+      "save_every": 100,
+      "clip_norm": 1,
+      "weight_decay": 0,
+      "feature_loss_enabled": false
+    },
+    "generation": {
+      "steps": 30,
+      "video_cfg": 3,
+      "audio_cfg": 7,
+      "seeds": [
+        137,
+        251
+      ],
+      "u_in_cfg": "both_branches"
+    }
+  },
+  "code": {
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/listen_benchmark/frame_crop.py": "6ef9b0301709e8adfba5a3def243a083a34e923812208d409271f72238589a45",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/listen_benchmark/j_omni.py": "e4d6047d0026e3f0ea6ba3ccc0f8bcabeb59178c4bc096254f351e560d2f7a45",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/listen_benchmark/j_omni_crop.py": "b09a5162e92a59611b57954e59189b30e8c19be1ba4294427ccb86801de0743b",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/p2_j_cache/__init__.py": "500ce5a7d2d451e1a55c3d973ff7da73386fca53c2a78253b61dabc5dc854957",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/p2_j_cache/cluster.py": "9fa895a43340cc2b724ba5e80bc82b7ea47b6962186ef604a47399277b47ed1a",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/p2_j_cache/data.py": "5005c890622dc1ceedcdfe5846cf3dec42694601f46e3c40ef939023c74aa269",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/p2_j_cache/runtime.py": "880f4c25514cee64eaaafbbbe006fe5bcf6cde4f222db87c272cb531b227895c",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/p2_listen/features.py": "79d6ab53ffb799f1c99fe9c80362022c0621beacbef1ae3f529d9324a8d38f1a",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/p2_listen/runtime.py": "637d068515f5e22eb6b6a4836dc27ed12196f19e81cd5e83533f39052c2535e9",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/p2_plan_cache/encoding.py": "b2a3963b14863d1230ea6ae8bb3f24c5e5f1fa7a43c0d055ce594b262b945446",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/p2_plan_cache/runtime.py": "12bfed53fe4dccc9a23ca927676a8620f6df5603d327a8b9fd09874eb6a07077",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/p3_listen/features.py": "06ebb24b88588c03a82376926cc3c118be33de22330a1f6364835a7ec5a3b8f8",
+    "/private/liqi_workspace/project_code/audio-driven-v5/src/p3_listen/prompts.py": "6c3edbf59ad29a813fb41926e645d4f7578865e60ac8e3b2b8f1c3beea0f8555"
+  },
+  "prompts": {
+    "version": "fixed-listening-system-v2",
+    "omni": "You model natural audiovisual responses for a listener in a conversation.\n\nThe reference image shows the listener. The input audio belongs to\nthe other participant, who holds the conversational floor. The\nlistener's response spans the same time interval as the input audio.\n\nUse facial expressions, head movements, and brief vocal feedback\nappropriate to the speaker's meaning and tone, while remaining in\nthe listening role.\n\nPreserve the listener's identity. Align mouth movements with the\nlistener's own vocalizations. The output audio contains only the\nlistener's vocalizations and natural silent intervals.",
+    "gemma": "A continuous close-up video of the person in the reference image\nlistening to another person speaking off-camera. The camera remains\nfixed, and the person's identity and background remain consistent.\nFacial expressions, head movements, and brief vocal feedback, when\nappropriate, form a natural listening response. The person remains\nin the listening role throughout. The soundtrack contains only the\nlistener's own vocalizations and natural silent intervals. Mouth\nmovements match the listener's own vocalizations.",
+    "omni_messages": [
+      {
+        "role": "system",
+        "content": [
+          {
+            "type": "text",
+            "text": "You model natural audiovisual responses for a listener in a conversation.\n\nThe reference image shows the listener. The input audio belongs to\nthe other participant, who holds the conversational floor. The\nlistener's response spans the same time interval as the input audio.\n\nUse facial expressions, head movements, and brief vocal feedback\nappropriate to the speaker's meaning and tone, while remaining in\nthe listening role.\n\nPreserve the listener's identity. Align mouth movements with the\nlistener's own vocalizations. The output audio contains only the\nlistener's vocalizations and natural silent intervals."
+          }
+        ]
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "image"
+          },
+          {
+            "type": "audio"
+          }
+        ]
+      }
+    ],
+    "add_generation_prompt": true,
+    "sha256": "2937bd4a1b81c1fa58dd90c6e8007fac70eb7e3824e2b3e0cb72cc97847b06fa"
+  },
+  "sources": {
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_train50h_postprocessed_reselected_20261027/config.json": "2d2862303455e69461f9d2b170c6e593905f9d82027f7441af8555c7ece3233e",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_j_face224_training_review_20261101/review_sample_list.csv": "bbd32627ed68b78d6bf33e0fa99be6d13a10aa837021366bf2adb6a20a6984ac",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_j_omni_20261030/config.json": "a8aa27b8587f4f855ee004a93da617f704b8ee4dd70680984fa1fda68096a774",
+    "/private/liqi_workspace/project_code/audio-driven-v5/data_previews/listen_benchmark_review/j_face224_training_20261101/data.json": "a58082b38edcf5a655bf005d5a2c4b4d50b00112c3ebbebfebc7fe2c043882c2"
+  },
+  "entries": {
+    "naturalistic_V03_S0204_I00000137_local_951b2fcefdda": "c6a453d592e6419f0aadcc7c2905010c221a21c2f596867354318611ab62b2b2",
+    "naturalistic_V03_S0555_I00000166_local_f16a6d24808b": "bcffbca23c8f283de101379b8d1576620de5eddfcb919747fde2291cd8f834af",
+    "naturalistic_V01_S1558_I00000309_local_27725e5e8382": "09632634164d69d60f7e1837b738d0c415290cb35777f3575f377ee8cd97b53f",
+    "naturalistic_V03_S1582_I00000000_local_5a573df554ac": "fc9375b58d02f2ce9281d0b7abdcc3c94c44c552dd9bd95d8e93bf9c9dca7aa5",
+    "naturalistic_V03_S0242_I00000371_local_3e5477274b4d": "778f7187f744c079ebc27a75d33ee41b5fda4f5a4328e1487eab9b7cfd8b94e6",
+    "naturalistic_V03_S2026_I00000094_local_c89850b2679d": "4e63b7c4ef65b3b8c37176bcdd6b30530b97b8c43d63769cecd50acdeaac5186",
+    "naturalistic_V03_S2050_I00000179_local_9e8e7d3d4f6b": "41d0a32009e2995c8c6ef8366a0e5fd515092972a483dad0060ca5db1c108d5d",
+    "naturalistic_V03_S1022_I00000167_local_d9c5e69f4766": "6c8bbe413c38ebe6a61129c6ef452c62ea95d8bf53de2b649177806f1607f132",
+    "naturalistic_V03_S0862_I00000108_local_55863a0f73d2": "40bfaccd7cbb4ef6b78b65d5e00039a0ee9f33d2671a97b4aa8060f958026500",
+    "improvised_V03_S1174_I00000372_local_0b26de7f88f3": "3a7ee9ae635ce187fb7103faa600dfb9db1727478d5177a4c30561985167cf8a",
+    "naturalistic_V03_S0555_I00000170_local_31300c1d682e": "4172722d7a7d8f7b31cb779ef0e938986c14a0dc65cf6099d2348fade106fc1f",
+    "improvised_V01_S0227_I00001226_local_2262c9e23394": "be8baeb9062f2a1a6ecb1ac389ae20715dbd55628b4d7fdd8968fbd715d72043",
+    "naturalistic_V03_S1764_I00000415_local_2248f12b97af": "5659ebe6b1417d503be143e7b151daf35cf8035edf9bc2f3ac8b280fdfa7817b",
+    "naturalistic_V03_S1877_I00000202_local_9a894c7408a3": "fcda691a4d576a143fa605a5a867054fb3f46f20d25e1e769e917b126777846a",
+    "naturalistic_V03_S0887_I00000089_local_b044895829dd": "9bdff7c0e97b44ae27d39acd19fcecf9ec2e63d696856252003e732c864b3fc5",
+    "improvised_V03_S0286_I00000135_local_20ee2a00acbd": "17f2b37145c531073e15783d5a7077bfe3fab13551c2eab377ae6c2d346a79a7",
+    "naturalistic_V03_S0845_I00000396_local_664d6dda36eb": "d288292e5590a3b851f241161d7ac50e9e4f6ac08b7c2201a61f850ea81ac19d",
+    "naturalistic_V03_S1553_I00000254_local_61813ed9f110": "9cc7654ad10152870cb111a5d0a2f458d06b7eab1ee29d549b0d0859fac47eb5",
+    "naturalistic_V03_S2100_I00000181_local_0c6cd218cc1c": "e1defb4cbc2a84591f20daf96dd6178764e23c3f20d80e60eb9df6d29442342a",
+    "naturalistic_V03_S1805_I00000045_local_cb1763d3f0c3": "cd24c171b85530137671c4b354bcb71c6281f1e4a238e2f6ab5c277c81c0ec57",
+    "naturalistic_V03_S1096_I00000005_local_7b992fb1bd42": "a01ae23d0b9a22102a4615922e22e84a55a11784b50bfce6c7858160f292e2ca",
+    "naturalistic_V03_S1662_I00000115_local_72814e892167": "42a833bc05a536943ebb1ab8f94b99478f072acf66a1598687d8ae1d5c1a06ed",
+    "improvised_V03_S0209_I00000582_local_5ffe6778447f": "ac4889f858c1f525e6a7c929fa1de47c25e3d83015c47abbd18cd0838c588b3a",
+    "naturalistic_V03_S0120_I00000125_local_d78fd06302b9": "6167047a3d5efea36b400d0d1ece8a61622b5165feb5308c62522ad017a0bc35"
+  },
+  "sample_ids": [
+    "naturalistic_V03_S0204_I00000137_local_951b2fcefdda",
+    "naturalistic_V03_S0555_I00000166_local_f16a6d24808b",
+    "naturalistic_V01_S1558_I00000309_local_27725e5e8382",
+    "naturalistic_V03_S1582_I00000000_local_5a573df554ac",
+    "naturalistic_V03_S0242_I00000371_local_3e5477274b4d",
+    "naturalistic_V03_S2026_I00000094_local_c89850b2679d",
+    "naturalistic_V03_S2050_I00000179_local_9e8e7d3d4f6b",
+    "naturalistic_V03_S1022_I00000167_local_d9c5e69f4766",
+    "naturalistic_V03_S0862_I00000108_local_55863a0f73d2",
+    "improvised_V03_S1174_I00000372_local_0b26de7f88f3",
+    "naturalistic_V03_S0555_I00000170_local_31300c1d682e",
+    "improvised_V01_S0227_I00001226_local_2262c9e23394",
+    "naturalistic_V03_S1764_I00000415_local_2248f12b97af",
+    "naturalistic_V03_S1877_I00000202_local_9a894c7408a3",
+    "naturalistic_V03_S0887_I00000089_local_b044895829dd",
+    "improvised_V03_S0286_I00000135_local_20ee2a00acbd",
+    "naturalistic_V03_S0845_I00000396_local_664d6dda36eb",
+    "naturalistic_V03_S1553_I00000254_local_61813ed9f110",
+    "naturalistic_V03_S2100_I00000181_local_0c6cd218cc1c",
+    "naturalistic_V03_S1805_I00000045_local_cb1763d3f0c3",
+    "naturalistic_V03_S1096_I00000005_local_7b992fb1bd42",
+    "naturalistic_V03_S1662_I00000115_local_72814e892167",
+    "improvised_V03_S0209_I00000582_local_5ffe6778447f",
+    "naturalistic_V03_S0120_I00000125_local_d78fd06302b9"
+  ],
+  "selection_sqlite": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/listen_j_final_quality_selection_20261101/selection.sqlite",
+  "splits": {
+    "train": [
+      "naturalistic_V03_S0204_I00000137_local_951b2fcefdda",
+      "naturalistic_V03_S0555_I00000166_local_f16a6d24808b",
+      "naturalistic_V01_S1558_I00000309_local_27725e5e8382",
+      "naturalistic_V03_S1582_I00000000_local_5a573df554ac",
+      "naturalistic_V03_S0242_I00000371_local_3e5477274b4d",
+      "naturalistic_V03_S2026_I00000094_local_c89850b2679d",
+      "naturalistic_V03_S2050_I00000179_local_9e8e7d3d4f6b",
+      "naturalistic_V03_S1022_I00000167_local_d9c5e69f4766",
+      "naturalistic_V03_S0862_I00000108_local_55863a0f73d2",
+      "improvised_V03_S1174_I00000372_local_0b26de7f88f3",
+      "naturalistic_V03_S0555_I00000170_local_31300c1d682e",
+      "improvised_V01_S0227_I00001226_local_2262c9e23394",
+      "naturalistic_V03_S1764_I00000415_local_2248f12b97af",
+      "naturalistic_V03_S1877_I00000202_local_9a894c7408a3",
+      "naturalistic_V03_S0887_I00000089_local_b044895829dd",
+      "improvised_V03_S0286_I00000135_local_20ee2a00acbd",
+      "naturalistic_V03_S0845_I00000396_local_664d6dda36eb",
+      "naturalistic_V03_S1553_I00000254_local_61813ed9f110",
+      "naturalistic_V03_S2100_I00000181_local_0c6cd218cc1c",
+      "naturalistic_V03_S1805_I00000045_local_cb1763d3f0c3"
+    ],
+    "dev": [
+      "naturalistic_V03_S1096_I00000005_local_7b992fb1bd42",
+      "naturalistic_V03_S1662_I00000115_local_72814e892167",
+      "improvised_V03_S0209_I00000582_local_5ffe6778447f",
+      "naturalistic_V03_S0120_I00000125_local_d78fd06302b9"
+    ],
+    "test": []
+  },
+  "guidance": "original_whole_clip_caption_verbatim",
+  "event_labels": "not_mapped_from_open_statistics",
+  "source_admission_flags_preserved": true,
+  "intermediate_wav": false,
+  "intermediate_video": false
+}

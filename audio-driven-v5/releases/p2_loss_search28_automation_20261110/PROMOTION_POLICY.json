@@ -1,0 +1,37 @@
+{
+  "schema": "losssearch-generation-screening-v1",
+  "bootstrap_draws": 20000,
+  "seed": 137,
+  "family_alpha": 0.05,
+  "minimum_source_groups": 12,
+  "minimum_common_class_coverage": 0.9,
+  "minimum_retained_reference_positive_fraction": 0.9,
+  "minimum_valid_bootstrap_fraction": 0.99,
+  "reaction_min_gain_by_stage": {
+    "500": 0.05,
+    "1500": 0.02,
+    "3000": 0.02
+  },
+  "noninferiority_margins": {
+    "visual_f1": 0.02,
+    "audio_f1": 0.02,
+    "lpips": 0.01,
+    "psnr": 0.25,
+    "ssim": 0.01,
+    "false_sound_rate": 0.02,
+    "missed_response_rate": 0.02,
+    "supported_class_f1": 0.05
+  },
+  "keep_baseline": true,
+  "require_repeat_dominance_after_first_stage": true,
+  "budget_targets": {
+    "1500": 3,
+    "3000": 2,
+    "6000": 2
+  },
+  "uncertainty_action": "retain; no forced top-k or training-loss tie-break",
+  "reference_policy": "frozen_reference_positive_support; common known labels only; unknown never negative",
+  "interpretation": "Automatic pilot detector category agreement; not contextual appropriateness, identity, sound quality or AV synchronization",
+  "final_policy": "6000 produces finalists, not an automatic best-model claim; compare extra generation seeds, incumbent and independent holdout",
+  "statistical_scope": "approximate paired source-group percentile bootstrap; per-stage ordered-pair multiplicity adjustment; not cross-stage familywise proof"
+}

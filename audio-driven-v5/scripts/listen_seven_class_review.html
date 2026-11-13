@@ -1,0 +1,72 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>六类视觉＋一类音频 · 标注整合</title>
+<style>
+@font-face{font-family:Review;src:url(review.woff)}body{font-family:Review,system-ui,sans-serif!important}
+*{box-sizing:border-box}body{margin:0;background:#f3f6f8;color:#183243;font:15px/1.6 system-ui,sans-serif}header,main{max-width:1400px;margin:auto;padding:20px}h1{font-size:27px}h2{font-size:19px}a{color:#08767c}button,select{font:inherit;padding:7px 10px;border:1px solid #b6c8d1;border-radius:6px;background:white;max-width:100%;cursor:pointer}button:hover{background:#e8f4f1}.notice{padding:15px;border-left:4px solid #278e83;background:#e3f2ee}.stats{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}.stat{background:white;padding:12px 18px;border-radius:8px}.stat strong{display:block;font-size:24px}.viewer{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;background:white;padding:18px;border-radius:8px}video,audio{width:100%}video{max-height:300px;background:#15252f}.tools{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}.columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}article,.export{background:white;padding:16px;border-radius:8px;min-width:0}.list{max-height:65vh;overflow:auto}.event{padding:10px;border:1px solid #d5e0e5;border-radius:7px;margin:10px 0;overflow-wrap:anywhere}.selected{border:2px solid #178675;background:#eaf6f1}.pill{display:inline-block;padding:2px 7px;background:#e6efef;border-radius:4px}.review{background:#fff3da}.muted{font-size:13px;color:#55707c}.seek{width:100%;text-align:left}.export{margin-top:18px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:320px;overflow:auto}table{border-collapse:collapse;width:100%;background:white}td,th{padding:8px;border-bottom:1px solid #dbe4e9;text-align:left}#sid{overflow-wrap:anywhere}@media(max-width:750px){.viewer,.columns{grid-template-columns:1fr}header,main{padding:12px}h1{font-size:23px}}
+.batch-scroll{max-height:620px;overflow:auto;border:1px solid #dbe4e9;border-radius:8px}.batch-scroll th{position:sticky;top:0;background:#edf4f5;z-index:1}.batch-scroll td{vertical-align:top}.batch-id{overflow-wrap:anywhere;min-width:150px}.batch-events{margin:8px 0;padding-left:18px}.batch-events li{margin:8px 0;overflow-wrap:anywhere}.batch-open{white-space:nowrap}@media(max-width:750px){.batch-scroll{max-height:500px;font-size:12px}.batch-scroll th,.batch-scroll td{padding:5px}.batch-id{min-width:100px}}
+</style>
+<header><a href="../open_merge/">← 开放事件整合</a><h1 id="heading">六类视觉反应＋一类音频回应</h1>
+<div class="notice" id="method">原始开放事件 → 七类候选。保留原来的每次起止时间与描述，允许视觉、音频同时发生。<br>这是依据已有描述的映射，没有重新观看媒体；“可映射”不等于已人工确认。未覆盖时间仍为未知，不自动作为训练负例。</div>
+<div id="stats" class="stats"></div><table><thead><tr><th>类别</th><th>可映射候选</th><th>待核验线索</th></tr></thead><tbody id="classCounts"></tbody></table>
+<p class="muted">数量表示本批描述的映射结果，不代表准确率。零条不等于视频中没有该动作。ASR 词时间保留，但单个词不一定构成一次完整回应。</p></header>
+<main><section id="batchOverview" hidden><h2>全部样本 · 合并后的结果</h2><p id="batchNote"></p><div class="batch-scroll"><table><thead><tr><th>样本与全部候选标签</th><th>音频观测 → 回应区间</th><th>视觉候选</th><th>合并组数</th><th>复核</th></tr></thead><tbody id="batchRows"></tbody></table></div></section><div class="tools"><select id="samples" aria-label="选择样本"></select><button id="prev">上一段</button><button id="next">下一段</button></div>
+<section class="viewer"><div><video id="video" muted controls playsinline></video><audio id="audio" controls></audio></div><div><h2 id="sid"></h2><p id="counts"></p><p id="clock"></p><button id="whole">从头播放</button> <button id="stop">停止循环</button><p class="muted">视频静音，播放独立 listener 音轨。点击事件循环播放原时间区间。</p></div></section>
+<div class="tools"><label>类别 <select id="category" aria-label="筛选类别"><option value="all">全部类别</option></select></label><label>映射状态 <select id="status" aria-label="筛选状态"><option value="all">全部状态</option><option value="mapped_candidate">可映射候选</option><option value="needs_review">需要复核</option><option value="out_of_scope">七类之外</option></select></label></div>
+<div class="columns"><article><h2>开放事件与映射依据</h2><div id="original" class="list"></div></article><article><h2>自然语言描述＋类别标签</h2><div id="mapped" class="list"></div></article></div>
+<div class="export"><h2>标签与溯源</h2><p><a id="mainDownload" href="labels.jsonl" download>七类候选 JSONL</a><span id="candidateDownload"></span> · <a href="labels.json" download>JSON</a> · <a href="provenance.json" download>全部映射决定与原始依据</a> · <a href="summary.json" download>统计</a> · <a href="mapping_policy.json" download>映射版本与规则</a></p><p class="muted">开放数据原样保留；需要复核、七类之外及上游排除项均可追溯。没有自动确认审核覆盖，也没有开启训练准入；当前训练导入器仍为旧二类协议，需完成七维适配及标签核验后使用。</p></div></main>
+<script>
+const D=__DATA__;window.sevenClassReview=D;
+const $=id=>document.getElementById(id),esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));let current=0,selected=null,loop=null;
+const types=e=>e.categories||(e.type?[e.type]:[]);
+const sourceTextOriginal=e=>D.policy.semantic?'<div class="muted">原始模型描述（原文保留）：</div>'+[...new Set((e.source_descriptions||[]).map(x=>x.description))].map(t=>'<p>'+esc(t)+'</p>').join(''):'';
+const memberIds=e=>e.member_event_ids||[e.source_open_event_id];
+const groupFor=id=>D.samples[current].events.find(e=>memberIds(e).includes(id));
+const selectedIds=()=>new Set(selected?(memberIds(groupFor(selected)||{source_open_event_id:selected})):[]);
+const sourceText=e=>D.policy.episodes&&e.member_event_ids?'<details><summary>展开 '+e.member_event_ids.length+' 条原始观测的描述</summary>'+sourceTextOriginal(e)+'</details>':sourceTextOriginal(e);
+const episodeInfo=e=>e.event_unit==='vocal_response_episode'?`<p class="notice">${e.member_event_ids.length} 条观测 → 1 个回应区间。${e.word_observations.length?'边界取连续词对齐区间。':'边界取重叠模型区间。'}<br>观测条数不表示说了几次；内部重复次数未推断。${e.overlapping_visual_event_ids.length?'同时发生的视觉动作独立保留。':''}</p><details><summary>内部词对齐证据（${e.word_observations.length} 条，不作回应次数）</summary><pre>${esc(JSON.stringify(e.word_observations,null,2))}</pre></details>`:'';
+const names=D.policy.names,statusNames={mapped_candidate:'可映射候选',needs_review:'需要复核',out_of_scope:'七类之外'};
+const reasonNames={no_explicit_visual_class:'未描述七类中的明确视觉动作',no_explicit_audio_vocalization:'没有明确音频发声依据',normalized_class_not_supported_by_original_description:'规范化类别缺少原始描述支持',mixed_source_semantics_require_review:'原始来源的语义不完全一致',surprise_requires_original_multicue_evidence:'惊讶缺少原始多项表情线索',multiple_cycles_without_individual_boundaries:'描述含多个周期，尚无逐次边界',state_transition_boundaries_require_review:'表情转换区间需要复核',source_observation_uncertain:'原始描述带有不确定性',unverified_gap_in_event_support:'事件区间跨接了未确认间隙',breathing_or_bodily_sound_response_requires_review:'需区分回应与呼吸等身体声音',audio_word_alignment_conflict:'声音事件与词对齐存在冲突',composite_or_conflicting_class_requires_review:'复合动作或类别冲突需要核验',normalization_incomplete:'上游规范化未完成'};
+$('stats').innerHTML=[['样本',D.summary.samples],['开放事件',D.summary.open_events],['可映射',D.summary.status_counts.mapped_candidate||0],['待复核',D.summary.status_counts.needs_review||0],['七类之外',D.summary.status_counts.out_of_scope||0]].map(([k,v])=>`<div class="stat">${k}<strong>${v}</strong></div>`).join('');
+$('classCounts').innerHTML=D.policy.taxonomy.map(k=>`<tr><td>${names[k]}</td><td>${D.summary.mapped_by_class[k]}</td><td>${D.summary.review_candidates_by_class[k]}</td></tr>`).join('');
+$('category').innerHTML+=D.policy.taxonomy.map(k=>`<option value="${k}">${names[k]}</option>`).join('');
+$('samples').innerHTML=D.samples.map(s=>`<option value="${s.id}">${esc(s.id)} · ${s.events.length} 条</option>`).join('');
+function renderBatch(){
+if(!D.policy.episodes)return;
+$('batchOverview').hidden=false;
+$('batchNote').textContent=`本批全部 ${D.samples.length} 段，包含未发生合并及没有七类候选的样本。展开样本可看其全部候选标签；点击“播放复核”查看原始观测和媒体。此处是当前测试批次，不是全量训练数据。`;
+$('batchRows').innerHTML=D.samples.map((s,i)=>{
+const before=s.decisions.filter(d=>d.status==='mapped_candidate'&&d.candidate_types.includes('listener_vocalization')).length;
+const after=s.events.filter(e=>e.modality==='audio').length;
+const visual=s.events.filter(e=>e.modality==='visual').length;
+const groups=s.events.filter(e=>(e.member_event_ids||[]).length>1).length;
+const events=s.events.map(e=>`<li><strong>${e.start.toFixed(3)}–${e.end.toFixed(3)} 秒 · ${types(e).map(k=>names[k]).join('、')}</strong><br>${esc(e.behavior)}${(e.member_event_ids||[]).length>1?`<br><span class="pill">${e.member_event_ids.length} 条观测合为一个区间</span>`:''}</li>`).join('');
+return `<tr data-sample="${esc(s.id)}"><td class="batch-id"><details><summary>${i+1}. ${esc(s.id)}<br><span class="muted">${s.duration.toFixed(2)} 秒 · ${s.events.length} 条候选 · 点击展开</span></summary><ol class="batch-events">${events||'<li>没有七类候选，不代表已确认无事件；原始描述仍可在复核区查看。</li>'}</ol></details></td><td>${before} → ${after}</td><td>${visual}</td><td>${groups}</td><td><button class="batch-open" data-sample="${esc(s.id)}">播放复核</button></td></tr>`;
+}).join('');
+$('batchRows').onclick=e=>{const b=e.target.closest('.batch-open');if(!b)return;$('category').value='all';$('status').value='all';show(b.dataset.sample);document.querySelector('.viewer').scrollIntoView({behavior:'smooth',block:'start'});};
+}
+function button(e,id){return `<button class="seek" data-id="${esc(id)}" data-start="${e.start}" data-end="${e.end}"><strong>${e.start.toFixed(3)}–${e.end.toFixed(3)} 秒</strong> · ${e.modality==='visual'?'视觉':'音频'}<br>${esc(e.behavior)}</button>`}
+function render(){const s=D.samples[current],cls=$('category').value,status=$('status').value,filtered=s.decisions.filter(d=>(cls==='all'||d.candidate_types.includes(cls))&&(status==='all'||d.status===status)),visible=new Set(filtered.map(d=>d.open_event_id)),highlighted=selectedIds();
+$('original').innerHTML=filtered.map(d=>`<div class="event ${highlighted.has(d.open_event_id)?'selected':''}"><span class="pill ${d.status==='needs_review'?'review':''}">${statusNames[d.status]}</span> <span class="muted">${esc(d.open_event_id)}</span>${button(d.open_event,d.open_event_id)}<p>${d.candidate_types.map(k=>names[k]).join('、')||'保留开放描述'}</p>${d.previous_rule_status?'<div class="muted">旧规则：'+statusNames[d.previous_rule_status]+'</div>':''}${d.reasons.map(r=>`<div class="muted">${esc(reasonNames[r]||r)}</div>`).join('')}<details><summary>原始描述、时间与映射依据</summary><pre>${esc(JSON.stringify(d,null,2))}</pre></details></div>`).join('')||'<p>本段没有符合筛选条件的事件。</p>';
+$('mapped').innerHTML=s.events.filter(e=>memberIds(e).some(id=>visible.has(id))).map(e=>`<div class="event ${memberIds(e).some(id=>highlighted.has(id))?'selected':''}"><span class="pill">${types(e).map(k=>names[k]).join('、')}</span> <span class="muted">${esc(e.event_id)}</span>${button(e,e.source_open_event_id)}${episodeInfo(e)}${sourceText(e)}${e.semantic_reason?'<p class="muted">模型归类依据：'+esc(e.semantic_reason)+'</p>':''}${e.text?`<p>原词：${esc(e.text)} · ${e.event_unit==='vocal_response_episode'?'回应区间内识别的词；次数未推断':'逐词时间，回应边界待核验'}</p>`:''}<details><summary>标签 JSON</summary><pre>${esc(JSON.stringify(e,null,2))}</pre></details></div>`).join('')||'<p>本段当前筛选下没有可映射候选；不表示已确认无事件。</p>'}
+function show(id){$('video').pause();$('audio').pause();current=D.samples.findIndex(s=>s.id===id);selected=null;loop=null;const s=D.samples[current];$('samples').value=s.id;$('sid').textContent=s.id;$('video').src=s.video;$('audio').src=s.audio;$('counts').textContent=`${s.decisions.length} 条原始观测 → ${s.events.length} 条七类候选${D.policy.episodes?'（音频按回应区间计）':''}`;render()}
+function seek(a,b){loop=[a,b];$('video').currentTime=a;$('audio').currentTime=a;$('video').play().catch(()=>{});$('audio').play().catch(()=>{})}
+document.addEventListener('click',e=>{const b=e.target.closest('.seek');if(!b)return;selected=b.dataset.id;const a=+b.dataset.start,z=+b.dataset.end;render();seek(a,z)});
+$('video').onplay=()=>{$('audio').currentTime=$('video').currentTime;$('audio').play().catch(()=>{})};$('video').onpause=()=>$('audio').pause();$('video').onseeking=()=>{if(Math.abs($('audio').currentTime-$('video').currentTime)>.08)$('audio').currentTime=$('video').currentTime};
+$('video').ontimeupdate=()=>{const v=$('video'),a=$('audio');if(loop&&v.currentTime>=loop[1]){v.currentTime=loop[0];a.currentTime=loop[0]}else if(Math.abs(v.currentTime-a.currentTime)>.15)a.currentTime=v.currentTime;$('clock').textContent=`${v.currentTime.toFixed(3)} / ${D.samples[current].duration.toFixed(3)} 秒`};
+$('audio').onplay=()=>{if($('video').paused){$('video').currentTime=$('audio').currentTime;$('video').play().catch(()=>{})}};$('audio').onpause=()=>{if(!$('video').paused)$('video').pause()};
+$('whole').onclick=()=>{loop=null;$('video').currentTime=0;$('video').play().catch(()=>{})};$('stop').onclick=()=>{loop=null};$('samples').onchange=e=>show(e.target.value);$('category').onchange=render;$('status').onchange=render;
+function move(n){show(D.samples[(current+n+D.samples.length)%D.samples.length].id)}$('prev').onclick=()=>move(-1);$('next').onclick=()=>move(1);window.sevenClassState=()=>({current,selected,loop});
+if(D.policy.semantic){$('heading').textContent='保留自然语言 · 模型语义归类';$('method').textContent='全部自然语言描述、每次起止时间与原始来源均保留。Qwen3-VL 逐条理解描述并附加七类标签；没有用关键词规则决定类别，也没有重新分析音视频。类别与判断理由仍是模型候选，待核验项不会从完整标签中删除。';$('mainDownload').textContent='全部自然语言标签 JSONL';$('candidateDownload').innerHTML=' · <a href="category_candidates.jsonl" download>仅已归类候选 JSONL</a>';}
+if(D.policy.episodes){
+$('heading').textContent='连续回应合并 · 原始描述保留';
+$('method').textContent='同一内容的重叠、连续音频观测合为一个回应区间；内部词对齐证据原样保存，不能按观测条数推断说了几次。视觉动作独立保留，点头不会切开同时发生的声音。有时间间隔的回应保持分开。这里使用已有时间信息，没有重新分析音视频，合并边界仍需试听核验。';
+$('mainDownload').textContent='回应区间标签 JSONL';
+$('candidateDownload').innerHTML=' · <a href="observations.jsonl" download>全部原始观测 JSONL</a> · <a href="category_candidates.jsonl" download>仅七类候选 JSONL</a>';
+document.querySelector('#original').previousElementSibling.textContent='原始观测（含重复来源）';
+document.querySelector('#mapped').previousElementSibling.textContent='整合后的候选时间线';
+$('stats').insertAdjacentHTML('beforeend',`<div class="stat">音频：观测 → 回应区间<strong>${D.summary.audio_observations_before} → ${D.summary.audio_response_episodes_after}</strong></div>`);
+}
+renderBatch();
+const requestedSample=new URLSearchParams(location.search).get('sample');
+show(D.samples.some(s=>s.id===requestedSample)?requestedSample:D.samples[0].id);
+</script></html>

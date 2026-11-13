@@ -1,0 +1,25 @@
+--- native/runtime.cache
++++ joint/cache_recorded_truncation.cache
+@@ -39,15 +39,18 @@
+         use_audio_in_video=False,eos_token_id=eos,pad_token_id=processor.tokenizer.pad_token_id)
+      ids=gen[0,single.input_ids.shape[1]:].tolist();del single,gen
+      attempts.append(dict(token_ids=ids,max_new_tokens=p['planner_retry_tokens']))
+-    if eos not in ids:
+-     save(q/'failed.json',dict(reason='Planner missing EOS',attempts=attempts));raise ValueError('Planner truncated: '+item['key'])
+-    ids=ids[:ids.index(eos)+1];text=processor.tokenizer.decode(ids,skip_special_tokens=True).strip()
++    truncated=eos not in ids
++    if truncated:
++     save(q/'truncation.json',dict(reason='Planner hit token limit after native retry',attempts=attempts,kept_raw_output=True,synthetic_eos=False))
++    ids=ids[:ids.index(eos)+1] if not truncated else ids
++    text=processor.tokenizer.decode(ids,skip_special_tokens=True).strip()
+     if not text or '<|' in text or '|>' in text:raise ValueError('Invalid generated planning text')
+     prompt=caption_prompt(text)
+     with torch.inference_mode():payload=extract_planned_input(d,observation(item,folder,row['audio']),prompt,runtime,processor,32768)
+     atomic_torch(q/'hidden.pt',payload)
+     save(q/'plan.json',dict(description=text,prompt=prompt,source=p['planner'],adapter=adapter,
+-       system=SYSTEM,user=USER.format(duration=row['duration']),attempts=attempts,target_description_access=False))
++       system=SYSTEM,user=USER.format(duration=row['duration']),attempts=attempts,target_description_access=False,
++       planner_truncated=truncated,finish_reason='length' if truncated else 'eos'))
+     complete(q,[q/'hidden.pt',q/'plan.json'],source_only=True)
+     progress(work,'cache',rank,part='qwen',sample=item['key'],done=start+batch.index(item)+1,total=len(qtodo))
+    del raw,batch,generated

@@ -1,0 +1,14 @@
+diff --git a/metrics/express/lib/metric/fvd.py b/metrics/express/lib/metric/fvd.py
+index 5c10c67..6f680a7 100644
+--- a/metrics/express/lib/metric/fvd.py
++++ b/metrics/express/lib/metric/fvd.py
+@@ -9,7 +9,8 @@ import torch.nn.functional as F
+ def load_i3d_pretrained(device=torch.device('cpu')):
+     i3D_WEIGHTS_URL = "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt"
+     # filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'i3d_torchscript.pt')
+-    filepath = "/data/workspace/code/compare_all/compare_lipsync/metrics/metric/assets/i3d_torchscript.pt"
++    from pathlib import Path
++    filepath = str(Path(__file__).resolve().parents[2] / "assets/i3d_torchscript.pt")
+     print('Loading model from: %s'%filepath)
+     if not os.path.exists(filepath):
+         print(f"preparing for download {i3D_WEIGHTS_URL}, you can download it by yourself.")

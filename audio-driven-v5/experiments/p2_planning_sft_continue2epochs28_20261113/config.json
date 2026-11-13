@@ -1,0 +1,52 @@
+{
+  "model": "/public/2_CKPT/3_PreTRAINED/Qwen2.5-Omni-3B",
+  "output": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_continue2epochs28_20261113/training",
+  "seed": 20261102,
+  "cpu_threads": 2,
+  "max_length": 4096,
+  "lora": {
+    "rank": 32,
+    "alpha": 64,
+    "dropout": 0.0
+  },
+  "training": {
+    "epochs": 3,
+    "micro_batch": 10,
+    "eval_batch": 4,
+    "gradient_accumulation": 1,
+    "learning_rate": 0.0001,
+    "warmup_ratio": 0.03,
+    "weight_decay": 0.01,
+    "workers": 4,
+    "save_total_limit": 3,
+    "gradient_checkpointing": false,
+    "save_steps": 500,
+    "evaluate": false,
+    "prefetch_factor": 4,
+    "global_batch_size": 256,
+    "sampler_group_batch": 256
+  },
+  "data": {
+    "mode": "reference_jsonl",
+    "seal": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_continue2epochs28_20261113/data_seal.json",
+    "smoke_train": 8,
+    "smoke_dev": 4,
+    "input_pipeline": {
+      "version": "verified-png-isolated-auto4-v2",
+      "decode_threads": 4,
+      "legacy_seal": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_filtered_3b_32gpu_20261102/performance/legacy_frame_seal.json",
+      "legacy_seal_sha256": "21b68cbd37285a6a9c99c3034414dacb4ecaf7158e745fc12e94169f6d7ae6e0",
+      "decode_timeout_s": 30,
+      "decode_log_dir": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_upright_3b_gpu7_20261105/decoder_logs"
+    }
+  },
+  "max_pixels": 50176,
+  "initialization": "extend_completed_sft_preserve_optimizer",
+  "extend_from": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_continue2epochs28_20261113/load_checkpoint/checkpoint-2752",
+  "extension_policy": {
+    "parent_checkpoint": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_planning_sft_upright_3b_32gpu_resume_20261106/training/checkpoint-2752",
+    "additional_epochs": 2,
+    "parent_world_size": 32,
+    "world_size": 28
+  }
+}

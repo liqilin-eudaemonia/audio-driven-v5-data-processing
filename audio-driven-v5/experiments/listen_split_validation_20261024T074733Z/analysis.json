@@ -1,0 +1,104 @@
+{
+  "completed_at_utc": "2026-10-24T07:55:25Z",
+  "human_ground_truth": false,
+  "boundary_target_s": 0.2,
+  "boundary_target_verified": false,
+  "requests_total": 921,
+  "stats": {
+    "visual_windows": {
+      "schema_pass": 237,
+      "valid_candidate_rows": 1006,
+      "invalid_candidate_rows": 29,
+      "truncated": 0,
+      "failed": 20,
+      "positive_parent_clips": 49
+    },
+    "audio_windows": {
+      "schema_pass": 256,
+      "valid_candidate_rows": 56,
+      "invalid_candidate_rows": 1,
+      "truncated": 0,
+      "failed": 1,
+      "positive_parent_clips": 13
+    },
+    "visual_full": {
+      "schema_pass": 47,
+      "valid_candidate_rows": 311,
+      "invalid_candidate_rows": 0,
+      "truncated": 3,
+      "failed": 3,
+      "positive_parent_clips": 44
+    },
+    "audio_full": {
+      "schema_pass": 49,
+      "valid_candidate_rows": 14,
+      "invalid_candidate_rows": 1,
+      "truncated": 0,
+      "failed": 1,
+      "positive_parent_clips": 11
+    }
+  },
+  "asr_reproducibility": {
+    "same_transcripts_languages_and_word_times": 307,
+    "compared": 307,
+    "comparison_run": "listen_localization_20261024T070145Z"
+  },
+  "candidate_counts_by_source": {
+    "omni_audio": 56,
+    "asr_aligner": 42,
+    "qwen3_vl": 991
+  },
+  "invalid_window_word_intervals": 24,
+  "resource_stats": {
+    "0": {
+      "peak_memory_mib": 126158.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_with_vllm_resident": 36.75
+    },
+    "1": {
+      "peak_memory_mib": 125842.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_with_vllm_resident": 33.371428571428574
+    },
+    "2": {
+      "peak_memory_mib": 126596.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_with_vllm_resident": 50.73529411764706
+    },
+    "3": {
+      "peak_memory_mib": 125842.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_with_vllm_resident": 36.5
+    },
+    "4": {
+      "peak_memory_mib": 126454.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_with_vllm_resident": 35.65
+    },
+    "5": {
+      "peak_memory_mib": 126624.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_with_vllm_resident": 24.72222222222222
+    },
+    "6": {
+      "peak_memory_mib": 127186.0,
+      "peak_gpu_utilization_percent": 100.0,
+      "mean_gpu_utilization_with_vllm_resident": 39.5
+    },
+    "7": {
+      "peak_memory_mib": 126366.0,
+      "peak_gpu_utilization_percent": 40.0,
+      "mean_gpu_utilization_with_vllm_resident": 18.5
+    }
+  },
+  "last_worker_completed_utc": "2026-10-24T07:52:15.984888+00:00",
+  "paragraphs": [
+    "建议：用 ASR＋ForcedAligner 做语言反馈预标注，Qwen3-VL 做视觉候选，头部轨迹辅助点头/摇头复核，Omni 音频只补充声音线索。分路流程已验证跑通，但整体还不能宣称召回率、准确率或 ±0.2 秒边界达标。",
+    "目前最稳定的是语言反馈定位：307 份 ASR 转写、语言和词时间与上一轮逐项一致。S0699 两次 okay 分别为 1.78–2.10 秒、4.08–4.40 秒；S3370 的 yeah 为 4.40–4.68 秒。这说明结果可复现，不代表已经通过人工准确性验证。",
+    "验证完成：node8 的 8 张 H200 共完成 921 项测试请求。视觉 Qwen3-VL、纯音频 Qwen3-Omni 各跑 50 个整段与 257 个短窗口；ASR＋ForcedAligner 跑同样的 307 份音频。音频完成后，5 张卡转给剩余视觉任务。",
+    "实际 prompt 明确要求标出所有识别到的 backchannel，每次分别输出 start、end、modality、behavior；没有限定类别，也没有追加长规则。ASR 负责逐词转写和对齐，不承担开放式事件描述。",
+    "视觉仍需要人工复核：Qwen3-VL 短窗口在 49/50 段产生区间合法候选，但有持续表情拆分过碎、主观情绪描述以及明显头部运动未准确定位的问题。例如 S0699 中，头部运动轨迹与部分模型时间仍不相符。",
+    "纯音频 Omni 仍只能补充候选：S0699 整段输出两次 okay，时间为 1.71–2.15 秒、3.88–4.32 秒；但短窗口中仍有把词语描述成 sigh、把事件放在窗口起点的情况。S3370 整段甚至返回 Silence，不能把格式通过当成语义正确。非语言声音尚未验证为可靠最终标签。",
+    "整合保留视觉、声音、ASR 词各自的起止时间与原始来源。只对同来源、同文本且两个边界差均不超过 0.2 秒的重叠窗口结果做保守聚合；跨模态仅关联时间重叠。不同描述或不同来源仍可能重复，所有输出均是待复核候选，不是正式训练标签。"
+  ]
+}

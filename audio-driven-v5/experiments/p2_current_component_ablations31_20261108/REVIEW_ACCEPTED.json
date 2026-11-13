@@ -1,0 +1,130 @@
+{
+  "success": true,
+  "at": 1794117077.86474,
+  "scope": "three current500h leave-one-component-out pipelines",
+  "training_code_changes_required": false,
+  "training_source_unchanged": true,
+  "tests": {
+    "total_passed": 126,
+    "suites": [
+      {
+        "files": [
+          "tests/test_p2_current_component_ablation.py",
+          "tests/test_p2_current_av_feature.py",
+          "tests/test_p2_current_av_whisper.py",
+          "tests/test_p2_ltx_events.py"
+        ],
+        "passed": 92,
+        "seconds": 24.53,
+        "warnings": "3 existing multiprocessing fork deprecation warnings"
+      },
+      {
+        "files": [
+          "tests/test_p2_current_component_ablation_review.py"
+        ],
+        "passed": 6,
+        "seconds": 3.65
+      },
+      {
+        "files": [
+          "tests/test_p2_evidence_guard.py",
+          "tests/test_p2_numeric_labels.py",
+          "tests/test_p2_clip_events.py"
+        ],
+        "passed": 28,
+        "seconds": 7.67
+      }
+    ]
+  },
+  "real_data": {
+    "samples": 284218,
+    "hours": 500.001259126154,
+    "source_splits": {
+      "train": 281060,
+      "dev": 3158
+    },
+    "test_samples": 0,
+    "canary_reads_per_arm": 32,
+    "random_prefetch_reads_per_arm": 16,
+    "unique_random_ids": 16,
+    "latest_full_caption_exact": true,
+    "numeric": {
+      "success": true,
+      "rows": 284218,
+      "classes": 19,
+      "class_targets": 5400142,
+      "positive": 633139,
+      "weak_negative": 3265452,
+      "masked": 1501551,
+      "guarded_mask_entries": 124573,
+      "note": "Before the unchanged minimum-positive class enable mask; not a new visual annotation audit"
+    },
+    "receipt": "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_current_component_ablations31_20261108/REVIEW_DATA_ACCEPTED.json",
+    "receipt_sha256": "0621eaaff71951b979765cb1769b76a6101c20355800d3ec12567ddf059bddf8"
+  },
+  "shared_initialization_and_exact_next_update_resume": true,
+  "full_recompute_loss_and_all_gradients_exact": true,
+  "cfg_enabled_conditions_and_reference_preserved": true,
+  "distributed_test": "actual 2-process CPU Gloo FP64 SUM and Adam; not 31-GPU NCCL acceptance",
+  "all_sample_membership_and_noise_ordinals_verified": true,
+  "launch_commands_unchanged": true,
+  "world": 31,
+  "reserved_gpu": "node11:7",
+  "pipeline_training_started": false,
+  "gpu_acceptance": "Not performed: native longest sample two complete forward/backward/Adam updates before formal training; full-size memory/NCCL/throughput pending resources",
+  "source_identity_sha256": "3353526bc19b9776bcdffc92a73de79bf58a91134a1a348c184e6ed44fafa064",
+  "arms": {
+    "no_whisper": {
+      "components": {
+        "whisper": false,
+        "feature": true,
+        "event": true
+      },
+      "loss_weights": {
+        "av": 1.0,
+        "event": 0.05,
+        "video_feature": 0.025,
+        "audio_feature": 0.025
+      },
+      "config_sha256": "7ec8fdd59c415e04440aae85f1f490501a5f8bc35807ba83ac5bafd8c3391c2f",
+      "preflight_sha256": "799ce42a6ea7dc07b0673b30c9b96234f2a119f56767205c69ee7f9124943d09",
+      "training_started": false
+    },
+    "no_feature": {
+      "components": {
+        "whisper": true,
+        "feature": false,
+        "event": true
+      },
+      "loss_weights": {
+        "av": 1.0,
+        "event": 0.05,
+        "video_feature": 0.0,
+        "audio_feature": 0.0
+      },
+      "config_sha256": "c3933751dcf4917206318755b1702e7a623f1536c732ca5432c0fda43b6b07f5",
+      "preflight_sha256": "199278ab39bfbaf2492608713021d635f47fd42ecd928e15085cc82fde2e0e13",
+      "training_started": false
+    },
+    "no_event": {
+      "components": {
+        "whisper": true,
+        "feature": true,
+        "event": false
+      },
+      "loss_weights": {
+        "av": 1.0,
+        "event": 0.0,
+        "video_feature": 0.025,
+        "audio_feature": 0.025
+      },
+      "config_sha256": "138faa4075815660abc47f150027d3d9993fe73416036b6c177ec0355db2278e",
+      "preflight_sha256": "2bbd9875382097e6509b6c359ce57ea7f0bf13691460ddf91f7355fc55e59208",
+      "training_started": false
+    }
+  },
+  "review_files": {
+    "/private/liqi_workspace/project_code/audio-driven-v5/tests/test_p2_current_component_ablation_review.py": "783e54c1f1aff7dc903a1c26f077ff72a84859e2e6c876d801a4f78f3efae31b",
+    "/private/liqi_workspace/project_code/audio-driven-v5/experiments/p2_current_component_ablations31_20261108/review_data.py": "d83bf74d63afe41eec31e2397005e841f9a8f499f9b8b64c7ac94f906d96e52f"
+  }
+}

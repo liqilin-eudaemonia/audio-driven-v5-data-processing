@@ -1,0 +1,1 @@
+python inference_sync_api.py --video_dir /mnt/wangduomin/data/cctv/xtm/ori_videos/ --save_dir /mnt/wangduomin/public_to_group/test_results/test_sync_xtm/

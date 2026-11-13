@@ -1,0 +1,102 @@
+{
+  "schema": "listen-richness-record-v1",
+  "date": "2026-10-31",
+  "purpose": "per_clip_open_behavior_types_counts_and_dataset_selection",
+  "accepted_workflow": "existing_v3_response_to_CPU_quantity_tables",
+  "scope": "50_clip_pilot_only",
+  "selected_model": "/private/ckpts/Qwen3-30B-A3B-Instruct-2507",
+  "selected_extraction_contract": {
+    "version": "caption-observable-evidence-v3-selection-only",
+    "system_sha256": "a6eeeef764e602e1c4258ef32e3d905b88c5564401ec3f6febf33a81f1b0473c",
+    "model": "/private/ckpts/Qwen3-30B-A3B-Instruct-2507",
+    "temperature": 0,
+    "max_tokens": 8192,
+    "input": "caption_only"
+  },
+  "prompt_file": "experiments/listen_richness_gpu7_pilot_20261031/prompt_v3.txt",
+  "prompt_file_sha256": "4d32a05d1744f391f381054e97d1c98cc624e59319a006b889e2d109dc844cb7",
+  "current_generic_entry_default": "caption-observable-evidence-v4-grounded-selection",
+  "explicit_v3_execution_adapter_required": true,
+  "measured_single_gpu": {
+    "batch": 64,
+    "max_num_seqs": 64,
+    "max_num_batched_tokens": 32768,
+    "gpu_memory_utilization": 0.92,
+    "max_model_len": 12288,
+    "compilation": {
+      "mode": 0,
+      "cudagraph_mode": "FULL_DECODE_ONLY",
+      "cudagraph_capture_sizes": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ],
+      "max_cudagraph_capture_size": 64
+    },
+    "vllm": "0.19.0",
+    "torch": "2.10.0+cu129"
+  },
+  "dtype": "bfloat16",
+  "tensor_parallel_size": 1,
+  "actual_pilot_batch": 50,
+  "temperature": 0,
+  "max_output_tokens": 8192,
+  "max_attempts": 2,
+  "cpu_threads": {
+    "OMP_NUM_THREADS": 8,
+    "MKL_NUM_THREADS": 8,
+    "OPENBLAS_NUM_THREADS": 1
+  },
+  "current_cpu_statistics_entry": "scripts/analyze_listen_richness_pilot.py",
+  "ranking_audit_entry": "scripts/check_listen_richness_ranking.py",
+  "statistics_schema": "richness-type-quantity-tables-v2",
+  "statistics_output": "experiments/listen_richness_statistics50_20261031/tables_v2",
+  "invariants": [
+    "preserve_original_caption_and_raw_response",
+    "keep_all_samples_including_partial_failures",
+    "unknown_count_is_null_not_zero",
+    "state_groups_not_occurrence_counts",
+    "detector_and_caption_counts_not_added",
+    "split_preserved",
+    "no_new_audio_or_video_cache"
+  ],
+  "confirmed_for": "coarse_selection_and_evidence_qualified_statistics",
+  "not_confirmed_for": "exact_video_event_totals_or_optimal_rank_order",
+  "llm_score_used": false,
+  "multi_node_deployment_ready": false,
+  "full_dataset_run_started": false,
+  "full_run_estimate": {
+    "candidate_clips": 1151805,
+    "cards": 32,
+    "ideal_inference_hours": 3.24,
+    "provisional_runtime_hours": [
+      5,
+      8
+    ],
+    "basis": "50_clip_single_H200_extrapolation_not_32_GPU_measurement",
+    "assumptions": [
+      "inputs_ready",
+      "dedicated_equivalent_GPUs",
+      "streaming_sharded_adapter_implemented"
+    ],
+    "excludes": [
+      "upstream_caption_generation",
+      "implementation_time"
+    ]
+  },
+  "pending_full_scale_work": [
+    "explicit_v3_contract_adapter",
+    "distributed_independent_shards_and_resume",
+    "streaming_input_output",
+    "replace_quadratic_overlap_audit",
+    "bulk_source_reads",
+    "merge_tables_without_dropping_unknowns",
+    "connect_selection_policy_and_current_split_catalog",
+    "measure_sustained_32_GPU_throughput"
+  ],
+  "github_pushed": false
+}
