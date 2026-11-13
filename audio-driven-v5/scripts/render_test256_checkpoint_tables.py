@@ -21,6 +21,10 @@ def glare_runs():
  if (extra/'COMPLETE.json').exists() and (extra/'step3935/COMPLETE.json').exists():
   assert read(extra/'COMPLETE.json')['success']
   runs.append((3935,extra/'step3935','GLARE step3935（早期batch8）'))
+ extra2000=EX/'glare2000_test256_after_ablation_20261113'
+ if (extra2000/'COMPLETE.json').exists() and (extra2000/'step2000/COMPLETE.json').exists():
+  assert read(extra2000/'COMPLETE.json')['success']
+  runs.append((2000,extra2000/'step2000','GLARE step2000（早期batch8）'))
  return runs
 def sources():return [*(p/'RESULTS.json' for p in SEEDS.values()),MEAN/'RESULTS.json',*(p/'RESULTS.json' for _,p,_ in glare_runs())]
 def value(r,key):

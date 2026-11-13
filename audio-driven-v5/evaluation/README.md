@@ -1,4 +1,8 @@
-**当前重要权重已统一归档说明（2026-11-13）：** 主候选Qwen7500＋LTX6800、四组256条双seed组合、Qwen保留adapter、完整LTX候选、六份消融晋级权重及GLARE两条训练线均列出实际路径与评测状态；注明step2000排队、完整test代码尚未启动及恢复入口。[权重位置与评测交接](../related/P2_当前重要权重与评测入口汇总_20261113.md)。
+**Seamless固定600条已抽取并接入评测（2026-11-13，未启动推理或评分）：** 沿用256条的12层比例配额、seed20261113、来源组均衡和每原视频对一段规则，保留原256条并新增344条。600个不同原视频对、56个来源组，共60.13分钟；naturalistic457／improvised143，处理后listener音轨非零180／全零420。沿用当前转正版test6624的GT、首帧、裁框、时间和音频配方，提供原生Seamless binder／完整listener metrics入口；仍为test调参子集。原256及运行队列保持。[数据、规则及评测命令](../experiments/seamless_test_tuning600_20261113/README.md) · [机器入口](SEAMLESS_TUNING600.json) · [逐条CSV](../experiments/seamless_test_tuning600_20261113/selection.csv) · [接入核验](../experiments/seamless_test_tuning600_20261113/FRAMEWORK_ACCEPTANCE.json)。
+
+**重装前重要权重独立备份已启动（2026-11-13，尚未完成）：** 931个文件约5.75TiB，当前主候选Qwen7500推理adapter＋LTX6800已复制并校验，其余按优先级推进；配置、代码与交接快照已保存。源权重和GPU任务保持。[audio-driven-v5_important_weights_20261113T142104Z](/public/5_BACKUP/linliqi/audio-driven-v5_important_weights_20261113T142104Z/README.md) · [实时进度](/public/5_BACKUP/linliqi/audio-driven-v5_important_weights_20261113T142104Z/STATUS.json) · [权重清单](../related/P2_当前重要权重与评测入口汇总_20261113.md)。
+
+**当前权重清单已补全核对范围（2026-11-13）：** 原候选摘要已补入Qwen早期500／1000／1500、当前完整LTX全部保存点、三组消融全部保留文件、历史完整与单加组件基线及五个参考方法；49个相关目录共316个检查点／adapter条目（含备份和诊断），31项参考模型／统计资源路径确认存在。注明推理adapter与训练恢复检查点、历史模型与当前候选的区别。[权重位置与评测交接](../related/P2_当前重要权重与评测入口汇总_20261113.md) · [逐路径清单及核对边界](../related/P2_可复用权重清单_20261113.json)。
 
 **GLARE早期step2000已接入后续256条队列（2026-11-13）：** 采用早期batch8训练的best.pt，内部step2000及SHA已固定；相同Seamless256／seed137／NFE10／CFG2，输入与官方韵律缓存复用，256条预测重新生成。等待当前6组消融256条推理评分完成并释放控制器后，自动使用node12＋node11共16卡，node8不参与；6项CPU检查通过，完成自动更新同256条结果页。[运行、结果与恢复](../experiments/glare2000_test256_after_ablation_20261113/README.md) · [接续状态](../experiments/glare2000_test256_after_ablation_20261113/QUEUE_STATE.json)。
 
@@ -324,6 +328,10 @@ DIM论文的LM Listener表只用Trevor2366／222／543段，并非当前三人�
 公开打分实现在 [OpenVideoFDB](OpenVideoFDB/)。数据目录固定为 `/public/0_DATA/2_Avatar/VideoFDB`。本地入口是 [videofdb_local.py](videofdb_local.py)：`snapshot` 下载，`manifest validation|test` 写清单，`bind` 把已经生成的 listener wav/mp4 放进打分目录，`score` 计算时机和评分细则。生成清单每行一个 `clip_id`，以及 `audio` 或 `video`。评分员是本地 Qwen3-Omni：把模型目录写进 `OpenVideoFDB/.env` 的 `QWEN3_OMNI_PATH`。`score` 默认使用 node8 的 7 号卡，可用环境变量 `VIDEOFDB_CUDA` 改卡。
 
 ## Seamless
+
+**当前新增固定600条（2026-11-13）：** [机器入口](SEAMLESS_TUNING600.json)指向`experiments/seamless_test_tuning600_20261113/prepared_600/`。原256条作为前256条保留，新增344条，按场景×处理后音轨全零/非零×时长12层比例抽样；[selection.csv](../experiments/seamless_test_tuning600_20261113/selection.csv)含逐条原视频与起止时间，[added344.ids.txt](../experiments/seamless_test_tuning600_20261113/added344.ids.txt)列出增量。将既有`evaluation.seamless.bind`或`evaluation.listener_metrics.suite`的`--prepared`指向该目录即可接入；[完整读取及评测命令](../experiments/seamless_test_tuning600_20261113/README.md)。该600属于test调参子集，完整6624包含它；FID/FVD按600条全部特征重算，不平均分片或沿用256条总分。本次只准备数据和验证框架读取，未启动模型生成或评分。
+
+600条中保留了1条已有源GT缺帧记录：`naturalistic_V03_S0208_I00000490_local_4f4afb744d0a`，原reader需51帧、原素材只能读取50帧；沿用现有N/A及覆盖率口径，不补帧、不静默剔除，见[历史来源诊断](../experiments/glare_final_seamless_test6624_20261112/source_issues/042.json)及[本轮接入核验](../experiments/seamless_test_tuning600_20261113/FRAMEWORK_ACCEPTANCE.json)。本次验证全部600条引用与来源，并抽查真实首帧及双路音轨，未重复全600条GT逐帧解码。
 
 完整接入为独立test 6624条／11.05小时，见[OmniResponse接入与读取](../../OmniResponse/evaluation/seamless/README.md)。
 

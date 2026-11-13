@@ -1,8 +1,10 @@
+> 本快照补齐了增量复核发现的修改和新增文件。详情见 `backup_metadata/incremental_recheck.json`。文件复制时仍有生产任务运行，快照不会自动包含后续变化。
+
 # 两个项目目录的 GitHub 备份
 
-快照时间（UTC）：2026-11-13T15:08:56.211907+00:00
+快照时间（UTC）：2026-11-13T15:51:20.282344+00:00
 
-按用户确认的范围，保存代码、配置、文档及不超过 100 MB 的数据清单。两个原目录分别保存在同名子目录下。共备份 **143,775 个文件**，未压缩原始内容 **42,558,354,814 字节**。
+按用户确认的范围，保存代码、配置、文档及不超过 100 MB 的数据清单。两个原目录分别保存在同名子目录下。共备份 **143,783 个文件**，未压缩原始内容 **42,559,246,139 字节**。
 
 这是上述范围的快照，不是包含全部训练数据的整盘备份。音视频、模型权重、训练产物、虚拟环境、缓存、逐样本中间结果和超过 100 MB 的清单保留在原机器。原目录没有被修改。原有仓库的 main 分支保留。
 
@@ -13,7 +15,7 @@
 克隆本分支后，用 Python 3 校验全部已备份内容：
 
 ```bash
-git clone --single-branch --branch backup-20261113 git@github.com:liqilin-eudaemonia/audio-driven-v5-data-processing.git audio-project-backup
+git clone --single-branch --branch backup-20261113-155045 git@github.com:liqilin-eudaemonia/audio-driven-v5-data-processing.git audio-project-backup
 cd audio-project-backup
 python3 restore_backup.py --verify-only
 ```

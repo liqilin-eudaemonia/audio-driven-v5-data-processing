@@ -1,3 +1,13 @@
+**Seamless固定600条已准备并接入评测（2026-11-13，未启动推理或评分）：** 按原256条相同规则，从当前转正版test6624保留原256条、新增344条；固定seed20261113、12层比例配额、来源组均衡，每原始视频对仅一段。共600个原视频对、56个来源组、60.13分钟，处理后音轨非零180／全零420。既有Seamless binder及完整listener metrics可直接读取，原256及运行队列保持；仍标为test调参子集。[数据、抽样与接入命令](experiments/seamless_test_tuning600_20261113/README.md) · [机器入口](evaluation/SEAMLESS_TUNING600.json) · [逐条CSV](experiments/seamless_test_tuning600_20261113/selection.csv)。
+
+**重装前重要权重独立备份已启动（2026-11-13，尚未完成）：** 931个文件约5.75TiB，当前主候选Qwen7500推理adapter＋LTX6800已复制并校验，其余按优先级推进；配置、代码与交接快照已保存。源权重和GPU任务保持。[audio-driven-v5_important_weights_20261113T142104Z](/public/5_BACKUP/linliqi/audio-driven-v5_important_weights_20261113T142104Z/README.md) · [实时进度](/public/5_BACKUP/linliqi/audio-driven-v5_important_weights_20261113T142104Z/STATUS.json) · [权重清单](related/P2_当前重要权重与评测入口汇总_20261113.md)。
+
+**当前权重清单已补全核对范围（2026-11-13）：** 原候选摘要已补入Qwen早期500／1000／1500、当前完整LTX全部保存点、三组消融全部保留文件、历史完整与单加组件基线及五个参考方法；49个相关目录共316个检查点／adapter条目（含备份和诊断），31项参考模型／统计资源路径确认存在。注明推理adapter与训练恢复检查点、历史模型与当前候选的区别。[权重位置与评测交接](related/P2_当前重要权重与评测入口汇总_20261113.md) · [逐路径清单及核对边界](related/P2_可复用权重清单_20261113.json)。
+
+**GLARE早期step2000已接入后续256条队列（2026-11-13）：** 采用早期batch8训练的best.pt，内部step2000及SHA已固定；相同Seamless256／seed137／NFE10／CFG2，输入与官方韵律缓存复用，256条预测重新生成。等待当前6组消融256条推理评分完成并释放控制器后，自动使用node12＋node11共16卡，node8不参与；6项CPU检查通过，完成自动更新同256条结果页。[运行、结果与恢复](experiments/glare2000_test256_after_ablation_20261113/README.md) · [接续状态](experiments/glare2000_test256_after_ablation_20261113/QUEUE_STATE.json)。
+
+**消融6候选已启动固定256条测评（2026-11-13）：** 用户明确先与完整模型比较，暂不要求高于GLARE。相同64条下，去Event6500／6573、去Feature5500／6643、去Whisper5500／6643均至少6/10项数值较差，视觉／反应至少5/8项较差；去Event6000不满足，已替换。仅node12＋node11共16卡；共1536条，复用384条、新增1152条，固定Qwen7500／seed137及原采样评分配置。全部12份结果保留；此为按test子集成绩筛选的探索性比较，不能称各消融最优，256条排序可能变化。[筛选依据、运行与恢复](experiments/p2_ablation6_test256_qwen7500_16gpu_20261113/README.md) · [实时状态](experiments/p2_ablation6_test256_qwen7500_16gpu_20261113/status.json)。
+
 **Qwen7500＋LTX6800完整双seed三机代码已准备（未启动GPU，2026-11-13）：** 最新指令先完成全部推理与导出，顺序Seamless6624 seed137→238，再ResponseNet完整586 seed137→238；不自动评分、不做双seed汇总。三机24卡，24路缓存／22路生成＋2路常驻解码，复用512条同身份结果，新增13908条；7210条Whisper与输入缓存核验、7项CPU测试通过。启动前要求24卡释放，评分入口单独保留。[代码、输出位置、启动与恢复](experiments/p2_qwen7500_ltx6800_full_dualseed_24gpu_20261113/README.md)。
 
 **后续GLARE3935改用两机16卡并填充空卡（2026-11-13）：** 按用户最新要求暂不使用node8；node12/node11各0–7卡动态领取全部24个逻辑分片，不留分片等待node8。消融768条视频已全部生成，GLARE可在剩余评分之外的空卡接续，自动避开仍在评分的卡；该评分完成后两机16卡全部可用。样本／seed／采样／评分不变，完成后自动更新结果页。[运行与恢复](experiments/glare3935_test256_after_ablation_20261113/README.md)。
